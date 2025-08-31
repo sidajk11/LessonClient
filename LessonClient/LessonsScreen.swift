@@ -9,13 +9,26 @@ struct LessonsScreen: View {
         NavigationStack {
             List(items) { l in
                 NavigationLink(l.name) { LessonDetailScreen(lessonId: l.id) }
-                .badge("Lv.\(l.level)")
+                    .badge("Lv.\(l.level)")
             }
             .navigationTitle("레슨")
             .task { await load() }
             .overlay(alignment: .bottomTrailing) {
-                // 레슨 생성 API가 없다면 상세에서 수정만 제공
-                EmptyView()
+                NavigationLink {
+                    LessonEditScreen { newLesson in
+                        // 새로 만든 레슨을 즉시 목록에 반영
+                        items.insert(newLesson, at: 0)
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title)
+                        .padding()
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
+                        .clipShape(Circle())
+                        .shadow(radius: 4)
+                }
+                .padding()
             }
         }
         .alert("오류", isPresented: .constant(error != nil)) {
@@ -25,7 +38,7 @@ struct LessonsScreen: View {
 
     private func load() async {
         do { items = try await APIClient.shared.lessons() }
-        catch { self.self.error = (error as NSError).localizedDescription }
+        catch let err { self.error = err.localizedDescription }
     }
 }
 

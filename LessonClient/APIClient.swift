@@ -5,7 +5,7 @@ final class APIClient {
     static let shared = APIClient()
     private init() {}
 
-    var baseURL: URL = URL(string: "http://34.64.239.171:3000")!
+    var baseURL: URL = URL(string: "http://34.64.239.171")!
 
     var accessToken: String? {
         get { UserDefaults.standard.string(forKey: "access_token") }
@@ -79,7 +79,7 @@ final class APIClient {
     struct TokenRes: Codable { let access_token: String; let token_type: String }
     func login(email: String, password: String) async throws {
         // OAuth2PasswordRequestForm: username=email, password=...
-        let res: TokenRes = try await request("POST", "/auth/login",
+        let res: TokenRes = try await request("POST", "/api/login",
             formBody: ["username": email, "password": password], authorized: false, as: TokenRes.self)
         accessToken = res.access_token
     }
@@ -92,6 +92,18 @@ final class APIClient {
     }
 
     // MARK: Lessons
+    
+    func createLesson(name: String, level: Int, topic: String?, grammar: String?) async throws -> Lesson {
+        struct Body: Codable {
+            let name: String
+            let level: Int
+            let topic: String?
+            let grammar_main: String?
+        }
+        let body = Body(name: name, level: level, topic: topic, grammar_main: grammar)
+        return try await request("POST", "/lessons", jsonBody: body, as: Lesson.self)
+    }
+
     func lessons() async throws -> [Lesson] {
         try await request("GET", "/lessons", as: [Lesson].self)
     }
