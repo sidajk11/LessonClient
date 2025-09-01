@@ -5,7 +5,7 @@ final class APIClient {
     static let shared = APIClient()
     private init() {}
 
-    var baseURL: URL = URL(string: "http://34.64.239.171")!
+    var baseURL: URL = URL(string: "http://34.64.239.171:8000")!
 
     var accessToken: String? {
         get { UserDefaults.standard.string(forKey: "access_token") }
@@ -79,7 +79,7 @@ final class APIClient {
     struct TokenRes: Codable { let access_token: String; let token_type: String }
     func login(email: String, password: String) async throws {
         // OAuth2PasswordRequestForm: username=email, password=...
-        let res: TokenRes = try await request("POST", "/api/login",
+        let res: TokenRes = try await request("POST", "/auth/login",
             formBody: ["username": email, "password": password], authorized: false, as: TokenRes.self)
         accessToken = res.access_token
     }
@@ -111,8 +111,23 @@ final class APIClient {
         try await request("GET", "/lessons/\(id)", as: Lesson.self)
     }
     func updateLesson(id: Int, payload: Lesson) async throws -> Lesson {
-        try await request("PUT", "/lessons/\(id)", jsonBody: payload, as: Lesson.self)
+        struct Body: Codable {
+            let id: Int
+            var name: String
+            var level: Int
+            var topic: String?
+            var grammar_main: String?
+            var word_ids: [Int]?
+        }
+        var word_ids: [Int]?
+        if let words = payload.words {
+            word_ids = words.map { $0.id }
+        }
+        
+        let body = Body(id: payload.id, name: payload.name, level: payload.level, grammar_main: payload.grammar_main, word_ids: word_ids)
+        return try await request("PUT", "/lessons/\(id)", jsonBody: body, as: Lesson.self)
     }
+    
     func deleteLesson(id: Int) async throws { _ = try await request("DELETE", "/lessons/\(id)", as: Empty.self) }
     func attachWord(lessonId: Int, wordId: Int) async throws { struct Body: Codable { let word_id: Int }
         _ = try await request("POST", "/lessons/\(lessonId)/words", jsonBody: Body(word_id: wordId), as: Empty.self)
