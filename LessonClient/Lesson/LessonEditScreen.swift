@@ -13,7 +13,7 @@ struct LessonEditScreen: View {
     // 생성이 끝났을 때 목록에 즉시 반영하려면 콜백을 받아옵니다.
     var onCreated: ((Lesson) -> Void)? = nil
 
-    @State private var name = ""
+   //@State private var name = ""
     @State private var level = 1
     @State private var topic = ""
     @State private var grammar = ""
@@ -23,7 +23,7 @@ struct LessonEditScreen: View {
     var body: some View {
         Form {
             Section("기본 정보") {
-                TextField("레슨 이름", text: $name)
+                //TextField("레슨 이름", text: $name)
                 Stepper("레벨: \(level)", value: $level, in: 1...100)
                 TextField("토픽", text: $topic)
                 TextField("문법", text: $grammar)
@@ -34,7 +34,6 @@ struct LessonEditScreen: View {
             Button(saving ? "저장 중…" : "저장") {
                 Task { await save() }
             }
-            .disabled(saving || name.isEmpty)
             .buttonStyle(.borderedProminent)
         }
         .navigationTitle("새 레슨")
@@ -42,11 +41,10 @@ struct LessonEditScreen: View {
     }
 
     private func save() async {
-        guard !name.isEmpty else { return }
         saving = true
         do {
             let newLesson = try await APIClient.shared.createLesson(
-                name: name,
+                name: "Level \(level)",
                 level: level,
                 topic: topic.isEmpty ? nil : topic,
                 grammar: grammar.isEmpty ? nil : grammar

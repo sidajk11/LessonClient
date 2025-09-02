@@ -19,7 +19,7 @@ struct WordsScreen: View {
                     .badge(w.meanings.joined(separator: ", "))
                 }
                 .task { await load() }
-
+                
                 NavigationLink("+ 새 단어", destination: WordEditScreen())
                     .padding()
             }
