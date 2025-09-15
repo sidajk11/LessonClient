@@ -5,7 +5,8 @@ final class APIClient {
     static let shared = APIClient()
     private init() {}
 
-    var baseURL: URL = URL(string: "http://34.64.239.171:8000")!
+    //var baseURL: URL = URL(string: "http://34.64.239.171:8000")!
+    var baseURL: URL = URL(string: "http://127.0.0.1:8000")!
 
     var accessToken: String? {
         get { UserDefaults.standard.string(forKey: "access_token") }
@@ -104,8 +105,11 @@ final class APIClient {
         return try await request("POST", "/lessons", jsonBody: body, as: Lesson.self)
     }
 
-    func lessons() async throws -> [Lesson] {
-        try await request("GET", "/lessons", as: [Lesson].self)
+    func lessons(levelMin: Int? = nil, levelMax: Int? = nil) async throws -> [Lesson] {
+        var query: [URLQueryItem] = []
+        if let levelMin { query.append(.init(name: "level_min", value: "\(levelMin)")) }
+        if let levelMax { query.append(.init(name: "level_max", value: "\(levelMax)")) }
+        return try await request("GET", "/lessons", query: query.isEmpty ? nil : query, as: [Lesson].self)
     }
     func lesson(id: Int) async throws -> Lesson {
         try await request("GET", "/lessons/\(id)", as: Lesson.self)
@@ -117,14 +121,19 @@ final class APIClient {
             var level: Int
             var topic: String?
             var grammar_main: String?
+            var expression_ids: [Int]?
             var word_ids: [Int]?
         }
         var word_ids: [Int]?
         if let words = payload.words {
             word_ids = words.map { $0.id }
         }
+        var expression_ids: [Int]?
+        if let expressions = payload.expressions {
+            expression_ids = expressions.map { $0.id }
+        }
         
-        let body = Body(id: payload.id, name: payload.name, level: payload.level, grammar_main: payload.grammar_main, word_ids: word_ids)
+        let body = Body(id: payload.id, name: payload.name, level: payload.level, topic: payload.topic, grammar_main: payload.grammar_main, expression_ids: expression_ids, word_ids: word_ids)
         return try await request("PUT", "/lessons/\(id)", jsonBody: body, as: Lesson.self)
     }
     
@@ -134,6 +143,12 @@ final class APIClient {
     }
     func detachWord(lessonId: Int, wordId: Int) async throws {
         _ = try await request("DELETE", "/lessons/\(lessonId)/words/\(wordId)", as: Empty.self)
+    }
+    func attachExpression(lessonId: Int, expressionId: Int) async throws { struct Body: Codable { let expression_id: Int }
+        _ = try await request("POST", "/lessons/\(lessonId)/expressions", jsonBody: Body(expression_id: expressionId), as: Empty.self)
+    }
+    func detachExpression(lessonId: Int, expressionId: Int) async throws {
+        _ = try await request("DELETE", "/lessons/\(lessonId)/expressions/\(expressionId)", as: Empty.self)
     }
 
     // MARK: Words
@@ -154,31 +169,86 @@ final class APIClient {
     func wordByText(_ t: String) async throws -> Word {
         try await request("GET", "/words/by-text/\(t.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!)", as: Word.self)
     }
-
-    // MARK: Examples
-    func examples(wordId: Int) async throws -> [ExampleItem] {
-        try await request("GET", "/words/\(wordId)/examples", as: [ExampleItem].self)
+    
+    // MARK: Expresion
+    // GET /expressions
+    func expressions() async throws -> [Expression] {
+        try await request("GET", "/expressions", as: [Expression].self)
     }
-    func createExample(wordId: Int, en: String, ko: String?) async throws -> ExampleItem {
+    
+    func expression(id: Int) async throws -> Expression { try await request("GET", "/expressions/\(id)", as: Expression.self) }
+
+    // POST /expressions  { text }
+    func createExpression(text: String, meanings: [String]) async throws -> Expression {
+        struct Body: Codable { let text: String; let meanings: [String] }
+        return try await request("POST", "/expressions", jsonBody: Body(text: text, meanings: meanings), as: Expression.self)
+    }
+    
+    func updateExpression(id: Int, text: String, meanings: [String]) async throws -> Expression {
+        struct Body: Codable { let text: String; let meanings: [String] }
+        return try await request("PUT", "/expressions/\(id)", jsonBody: Body(text: text, meanings: meanings), as: Expression.self)
+    }
+
+    // DELETE /expressions/{id}
+    func deleteExpression(id: Int) async throws {
+        _ = try await request("DELETE", "/expressions/\(id)", as: Empty.self)
+    }
+
+    // GET /expressions/by-lesson/{lesson_id}
+    func expressionsOfLesson(lessonId: Int) async throws -> Lesson {
+        try await request("GET", "/expressions/by-lesson/\(lessonId)", as: Lesson.self)
+    }
+
+    // POST /expressions/{expr_id}/examples  { sentence_en, translation_ko? }
+    func addExampleToExpression(exprId: Int, en: String, ko: String?) async throws -> ExampleItem {
         struct Body: Codable { let sentence_en: String; let translation_ko: String? }
-        return try await request("POST", "/words/\(wordId)/examples", jsonBody: Body(sentence_en: en, translation_ko: ko), as: ExampleItem.self)
+        return try await request("POST", "/expressions/\(exprId)/examples",
+                                 jsonBody: Body(sentence_en: en, translation_ko: ko),
+                                 as: ExampleItem.self)
+    }
+    
+    func searchExpressions(q: String, level: Int? = nil, limit: Int = 20) async throws -> [Expression] {
+        var query: [URLQueryItem] = [
+            .init(name: "q", value: q),
+            .init(name: "limit", value: "\(limit)")
+        ]
+        if let level {
+            query.append(.init(name: "level", value: "\(level)"))
+        }
+        return try await request("GET", "/expressions/search", query: query, as: [Expression].self)
+    }
+    
+    // MARK: Examples
+    func examples(expressionId: Int) async throws -> [ExampleItem] {
+        try await request("GET", "/expressions/\(expressionId)/examples", as: [ExampleItem].self)
+    }
+    func createExample(expressionId: Int, en: String, ko: String?) async throws -> ExampleItem {
+        struct Body: Codable { let sentence_en: String; let translation_ko: String? }
+        return try await request("POST", "/expressions/\(expressionId)/examples", jsonBody: Body(sentence_en: en, translation_ko: ko), as: ExampleItem.self)
     }
     func updateExample(exampleId: Int, en: String, ko: String?) async throws -> ExampleItem {
         struct Body: Codable { let sentence_en: String; let translation_ko: String? }
-        return try await request("PUT", "/words/examples/\(exampleId)", jsonBody: Body(sentence_en: en, translation_ko: ko), as: ExampleItem.self)
+        return try await request("PUT", "/expressions/examples/\(exampleId)", jsonBody: Body(sentence_en: en, translation_ko: ko), as: ExampleItem.self)
     }
-    func deleteExample(exampleId: Int) async throws { _ = try await request("DELETE", "/words/examples/\(exampleId)", as: Empty.self) }
+    func deleteExample(exampleId: Int) async throws { _ = try await request("DELETE", "/expressions/examples/\(exampleId)", as: Empty.self) }
 
     // MARK: Global Example Search
     struct ExampleRow: Codable, Identifiable {
         let id: Int
-        let word_id: Int
+        let expression_id: Int
         let sentence_en: String
         let translation_ko: String?
-        let word_text: String
+        let expression_text: String
     }
-    func searchExamples(q: String, limit: Int = 20) async throws -> [ExampleRow] {
-        try await request("GET", "/examples/search", query: [.init(name: "q", value: q), .init(name: "limit", value: "\(limit)")], as: [ExampleRow].self)
+    func searchExamples(q: String, level: Int? = nil, limit: Int = 20) async throws -> [ExampleRow] {
+        var query: [URLQueryItem] = [
+            .init(name: "q", value: q),
+            .init(name: "limit", value: "\(limit)")
+        ]
+        if let level {
+            query.append(.init(name: "level", value: "\(level)"))
+        }
+        return try await request("GET", "/examples/search", query: query, as: [ExampleRow].self)
     }
 }
 

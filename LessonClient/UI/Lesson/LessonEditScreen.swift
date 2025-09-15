@@ -44,7 +44,7 @@ struct LessonEditScreen: View {
         saving = true
         do {
             let newLesson = try await APIClient.shared.createLesson(
-                name: "Level \(level)",
+                name: "",
                 level: level,
                 topic: topic.isEmpty ? nil : topic,
                 grammar: grammar.isEmpty ? nil : grammar

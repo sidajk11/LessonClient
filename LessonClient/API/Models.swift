@@ -14,7 +14,7 @@ struct Word: Codable, Identifiable, Hashable {
 
 struct ExampleItem: Codable, Identifiable {
     let id: Int
-    let word_id: Int
+    let expression_id: Int
     var sentence_en: String
     var translation_ko: String?
 }
@@ -26,4 +26,11 @@ struct Lesson: Codable, Identifiable {
     var topic: String?
     var grammar_main: String?
     var words: [Word]?
+    var expressions: [Expression]?
+}
+
+struct Expression: Codable, Identifiable {
+    let id: Int
+    var text: String
+    var meanings: [String]
 }

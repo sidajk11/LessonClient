@@ -45,13 +45,12 @@ struct WordsScreen: View {
 struct WordDetailScreen: View {
     let wordId: Int
     @State private var model: Word?
-    @State private var examples: [ExampleItem] = []
     @State private var en = ""; @State private var ko = ""
     @State private var error: String?
 
     var body: some View {
         Form {
-            if var w = model {
+            if let w = model {
                 Section("단어") {
                     TextField("텍스트", text: Binding(get: { w.text }, set: { model?.text = $0 }))
                     TextField("뜻(쉼표로 구분)", text: Binding(
@@ -60,23 +59,6 @@ struct WordDetailScreen: View {
                     ))
                     Button("수정 저장") { Task { await save() } }
                     Button(role: .destructive) { Task { await remove() } } label: { Text("삭제") }
-                }
-                Section("예문") {
-                    ForEach(examples) { ex in
-                        VStack(alignment: .leading) {
-                            Text(ex.sentence_en)
-                            if let tr = ex.translation_ko { Text(tr).foregroundStyle(.secondary) }
-                            HStack {
-                                Button("수정") { Task { await updateExample(ex) } }
-                                Button("삭제", role: .destructive) { Task { await deleteExample(ex.id) } }
-                            }
-                        }
-                    }
-                    HStack {
-                        TextField("영어 문장", text: $en)
-                        TextField("번역", text: $ko)
-                        Button("추가") { Task { await addExample() } }
-                    }
                 }
             }
         }
@@ -90,7 +72,6 @@ struct WordDetailScreen: View {
     private func load() async {
         do {
             model = try await APIClient.shared.word(id: wordId)
-            examples = try await APIClient.shared.examples(wordId: wordId)
         } catch { self.error = (error as NSError).localizedDescription }
     }
     private func save() async {
@@ -101,20 +82,6 @@ struct WordDetailScreen: View {
     private func remove() async {
         guard let w = model else { return }
         do { try await APIClient.shared.deleteWord(id: w.id) }
-        catch { self.error = (error as NSError).localizedDescription }
-    }
-    private func addExample() async {
-        guard let w = model else { return }
-        do { let ex = try await APIClient.shared.createExample(wordId: w.id, en: en, ko: ko.isEmpty ? nil : ko)
-             examples.insert(ex, at: 0); en = ""; ko = "" }
-        catch { self.error = (error as NSError).localizedDescription }
-    }
-    private func updateExample(_ ex: ExampleItem) async {
-        do { _ = try await APIClient.shared.updateExample(exampleId: ex.id, en: ex.sentence_en, ko: ex.translation_ko) }
-        catch { self.error = (error as NSError).localizedDescription }
-    }
-    private func deleteExample(_ id: Int) async {
-        do { try await APIClient.shared.deleteExample(exampleId: id); examples.removeAll { $0.id == id } }
         catch { self.error = (error as NSError).localizedDescription }
     }
 }
@@ -235,22 +202,18 @@ struct BulkWordImportScreen: View {
         isImporting = true
         defer { isImporting = false }
 
-        do {
-            let pairs = previewPairs() ?? []
-            var created: [Word] = []
-            for (text, meanings) in pairs {
-                do {
-                    let w = try await APIClient.shared.createWord(text: text, meanings: meanings)
-                    created.append(w)
-                } catch {
-                    // 개별 실패는 스킵하고 마지막에 에러 표시
-                    self.error = (error as NSError).localizedDescription
-                }
+        let pairs = previewPairs() ?? []
+        var created: [Word] = []
+        for (text, meanings) in pairs {
+            do {
+                let w = try await APIClient.shared.createWord(text: text, meanings: meanings)
+                created.append(w)
+            } catch {
+                // 개별 실패는 스킵하고 마지막에 에러 표시
+                self.error = (error as NSError).localizedDescription
             }
-            if !created.isEmpty { onImported?(created) }
-            dismiss()
-        } catch {
-            self.error = (error as NSError).localizedDescription
         }
+        if !created.isEmpty { onImported?(created) }
+        dismiss()
     }
 }
