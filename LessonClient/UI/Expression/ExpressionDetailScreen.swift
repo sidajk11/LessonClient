@@ -39,7 +39,7 @@ struct ExpressionDetailScreen: View {
                     ForEach(examples) { ex in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(ex.sentence_en)
-                            if let tr = ex.translation_ko { Text(tr).foregroundStyle(.secondary) }
+                            if let tr = ex.translation { Text(tr).foregroundStyle(.secondary) }
                             HStack {
                                 Button("수정") { Task { await updateExample(ex) } }
                                 Button("삭제", role: .destructive) { Task { await deleteExample(ex.id) } }
@@ -120,7 +120,7 @@ struct ExpressionDetailScreen: View {
 
     private func updateExample(_ ex: ExampleItem) async {
         do {
-            _ = try await APIClient.shared.updateExample(exampleId: ex.id, en: ex.sentence_en, ko: ex.translation_ko)
+            _ = try await APIClient.shared.updateExample(exampleId: ex.id, en: ex.sentence_en, ko: ex.translation)
         } catch { self.error = (error as NSError).localizedDescription }
     }
 

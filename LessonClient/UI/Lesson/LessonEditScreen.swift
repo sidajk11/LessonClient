@@ -14,6 +14,7 @@ struct LessonEditScreen: View {
     var onCreated: ((Lesson) -> Void)? = nil
 
    //@State private var name = ""
+    @State private var unit = 1
     @State private var level = 1
     @State private var topic = ""
     @State private var grammar = ""
@@ -24,6 +25,7 @@ struct LessonEditScreen: View {
         Form {
             Section("기본 정보") {
                 //TextField("레슨 이름", text: $name)
+                Stepper("레벨: \(unit)", value: $unit, in: 1...100)
                 Stepper("레벨: \(level)", value: $level, in: 1...100)
                 TextField("토픽", text: $topic)
                 TextField("문법", text: $grammar)
@@ -45,6 +47,7 @@ struct LessonEditScreen: View {
         do {
             let newLesson = try await APIClient.shared.createLesson(
                 name: "",
+                unit: unit,
                 level: level,
                 topic: topic.isEmpty ? nil : topic,
                 grammar: grammar.isEmpty ? nil : grammar

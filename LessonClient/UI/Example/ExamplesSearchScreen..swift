@@ -38,7 +38,7 @@ struct ExamplesSearchScreen: View {
             List(items) { row in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(row.sentence_en)
-                    if let ko = row.translation_ko {
+                    if let ko = row.translation {
                         Text(ko).foregroundStyle(.secondary)
                     }
                     Text("단어: \(row.expression_text)")

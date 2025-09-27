@@ -15,13 +15,15 @@ struct Word: Codable, Identifiable, Hashable {
 struct ExampleItem: Codable, Identifiable {
     let id: Int
     let expression_id: Int
-    var sentence_en: String
-    var translation_ko: String?
+    let sentence_en: String
+    let translation: String?
+    let lang: String
 }
 
 struct Lesson: Codable, Identifiable {
     let id: Int
     var name: String
+    var unit: Int
     var level: Int
     var topic: String?
     var grammar_main: String?
@@ -33,4 +35,8 @@ struct Expression: Codable, Identifiable {
     let id: Int
     var text: String
     var meanings: [String]
+    // 1:N 스키마 대응 (옵셔널)
+    var lessonId: Int?
+    var level: Int?
 }
+

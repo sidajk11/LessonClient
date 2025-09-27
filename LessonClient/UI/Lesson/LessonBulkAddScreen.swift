@@ -13,6 +13,7 @@ struct LessonBulkAddScreen: View {
 
     @State private var input = """
         1
+        3
         topic
         gramma
         
@@ -57,6 +58,7 @@ struct LessonBulkAddScreen: View {
                 Section("요약") {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Level: \(p.level)")
+                        Text("Unit: \(p.unit)")
                         if let t = p.topic, !t.isEmpty { Text("Topic: \(t)") }
                         if let g = p.grammar, !g.isEmpty { Text("Main Grammar: \(g)") }
                         Text("단어 \(p.words.count)개, 표현 \(p.expressions.count)개")
@@ -107,13 +109,19 @@ struct LessonBulkAddScreen: View {
             if parsed == nil { return }
             return
         }
+        
+        guard !saving else {
+            return
+        }
+        
         saving = true
         defer { saving = false }
 
         do {
-            // 1) 레슨 생성
+            // 1) 레슨 생성 (unit 추가)
             let lesson = try await APIClient.shared.createLesson(
                 name: p.title ?? "",
+                unit: p.unit,
                 level: p.level,
                 topic: p.topic?.nilIfBlank,
                 grammar: p.grammar?.nilIfBlank
@@ -128,7 +136,7 @@ struct LessonBulkAddScreen: View {
 
             // 3) 표현 생성 & 연결 + 4) 예문 추가
             for e in p.expressions {
-                let meanings = e.meanings.isEmpty ? [e.text] : e.meanings
+                let meanings = e.meanings.isEmpty ? [""] : e.meanings
                 let expr = try await APIClient.shared.createExpression(text: e.text, meanings: meanings)
                 try await APIClient.shared.attachExpression(lessonId: lesson.id, expressionId: expr.id)
 
@@ -164,6 +172,7 @@ fileprivate struct BulkParsed {
 
     let title: String?
     let level: Int
+    let unit: Int                   // ← 추가
     let topic: String?
     let grammar: String?
     let words: [WordSpec]
@@ -173,109 +182,75 @@ fileprivate struct BulkParsed {
 fileprivate enum BulkParser {
     static func parse(_ raw: String) throws -> BulkParsed? {
         if let p = try? parseNewFormat(raw) { return p }
-        return nil//try parseOldFormats(raw) // ← 기존 구현을 이 함수로 이동
+        return nil//try parseOldFormats(raw)
     }
 
-    // MARK: - 새 포맷 파서
-    private static func parseNewFormat(_ raw: String) throws -> BulkParsed {
-        let text = raw.replacingOccurrences(of: "\r\n", with: "\n")
-        let lines = text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
-            .map { String($0).trimmed }
+    // === JSON 입력 스키마 ===
+    private struct Root: Decodable {
+        let level: Int
+        let unit: Int?
+        let topic: String?
+        let grammar: String?
+        let expressions: [String: [String: String]]?
+        let example: [String: [String: String]]?
+    }
 
-        var i = 0
-        func skipBlanks() { while i < lines.count && lines[i].isEmpty { i += 1 } }
+    // === 메인: JSON 파서 ===
+    private func parseNewJSON(_ raw: String) throws -> BulkParsed {
+        let data = Data(raw.utf8)
+        let decoder = JSONDecoder()
+        let root = try decoder.decode(Root.self, from: data)
 
-        // 1) header: level / topic / main grammar
-        skipBlanks()
-        guard i < lines.count, let level = Int(lines[i]) else {
-            throw NSError(domain: "BulkParser", code: 10,
-                          userInfo: [NSLocalizedDescriptionKey: "첫 줄에 level(정수) 을 입력해 주세요."])
-        }
-        i += 1
-        skipBlanks()
-        guard i < lines.count else { throw err("둘째 줄에 topic을 입력해 주세요.") }
-        let topic = lines[i]; i += 1
-        skipBlanks()
-        guard i < lines.count else { throw err("셋째 줄에 main grammar를 입력해 주세요.") }
-        let grammar = lines[i]; i += 1
+        // 1) 기본 필드
+        let level = root.level
+        let unit = root.unit ?? 1
+        let topic = root.topic?.nilIfBlank()
+        let grammar = root.grammar?.nilIfBlank()
 
-        // 2) 빈 줄 스킵
-        skipBlanks()
+        // 2) expressions -> ExprSpec
+        //    meanings: 다국어 값들(빈값 제거)
+        //    examples: example 섹션에서 동일 key의 en/ko만 취해 Example(en:, ko:)로 생성
+        var exprSpecs: [BulkParsed.ExprSpec] = []
 
-        // 3) expressions 라인들: "text^뜻1/뜻2" ... 빈 줄 만날 때까지
-        var exprsDict: [String: BulkParsed.ExprSpec] = [:]
-        while i < lines.count, !lines[i].isEmpty {
-            let line = lines[i]; i += 1
-            let (textRaw, meaningRaw) = line.splitOnce("^") ?? (line, "")
-            let text = textRaw.trimmed
-            let meanings = meaningRaw
-                .split(whereSeparator: { ",/".contains($0) })
-                .map { String($0).trimmed }
+        let expressions = root.expressions ?? [:]
+        let examplesMap = root.example ?? [:]
+
+        for (key, meaningsDict) in expressions {
+            // meanings: 값만 모아서 비어있는 것 제거
+            let meanings = meaningsDict.values
+                .map { $0.trimmed }
                 .filter { !$0.isEmpty }
-            exprsDict[text] = BulkParsed.ExprSpec(text: text, meanings: meanings, examples: [])
-        }
 
-        // expressions에서 미리 알 수 있는 제목 집합
-        var knownKeys = Set(exprsDict.keys)
-
-        // 4) 빈 줄 스킵
-        skipBlanks()
-
-        // 5) 예문 블록들:
-        //    "표현제목" 한 줄 → 그 아래 예문 여러 줄(EN.^KO. 또는 EN만) → 빈 줄 또는 다음 제목에서 종료
-        while i < lines.count {
-            skipBlanks()
-            guard i < lines.count else { break }
-            let key = lines[i]
-            guard !key.isEmpty else { i += 1; continue }
-            i += 1 // 제목 소비
-
-            if exprsDict[key] == nil {
-                exprsDict[key] = BulkParsed.ExprSpec(text: key, meanings: [], examples: [])
-                knownKeys.insert(key)
+            // examples: "example" 블록에서 같은 키의 en/ko 사용 (없으면 생략)
+            var examples: [BulkParsed.ExprExample] = []
+            if let ex = examplesMap[key] {
+                let en = ex["en"]?.trimmed.trimPeriods()
+                let ko = ex["ko"]?.trimmed.trimPeriods()
+                if en != nil || ko != nil {
+                    examples.append(.init(en: en ?? "", ko: ko))
+                }
             }
 
-            // 예문 수집 루프
-            while i < lines.count {
-                let line = lines[i]
-                if line.isEmpty { // 블록 종료
-                    i += 1
-                    break
-                }
-                // 다음 제목으로 판단: 미리 알던 제목이 나타났거나,
-                // '^' 없는 줄이면서 그 다음 줄이 예문(보통 '^' 포함)으로 보이는 경우
-                if knownKeys.contains(line) ||
-                   (!line.contains("^") && (i + 1 < lines.count && lines[i + 1].contains("^"))) {
-                    break
-                }
-
-                // 예문으로 처리
-                let (enRaw, koRaw) = line.splitOnce("^") ?? (line, nil)
-                let en = enRaw.trimmed.trimPeriods()
-                let ko = koRaw?.trimmed.trimPeriods()
-                exprsDict[key]!.examples.append(.init(en: en, ko: ko))
-                i += 1
-            }
+            exprSpecs.append(.init(text: key, meanings: meanings, examples: examples))
         }
 
-        // words = expressions와 동일
-        let words = exprsDict.values.map { BulkParsed.WordSpec(text: $0.text, meanings: $0.meanings) }
-        let exprs = Array(exprsDict.values)
+        // 3) words = expressions의 (text, meanings) 축약
+        let words = exprSpecs.map { BulkParsed.WordSpec(text: $0.text, meanings: $0.meanings) }
 
+        // 4) 반환
         return BulkParsed(
             title: nil,
             level: level,
-            topic: topic.nilIfBlank,
-            grammar: grammar.nilIfBlank,
+            unit: unit,
+            topic: topic,
+            grammar: grammar,
             words: words,
-            expressions: exprs
+            expressions: exprSpecs
         )
     }
 
-    // MARK: - 기존 포맷 파서 (당신이 이전에 쓰던 구현을 이 함수로 옮겨두세요)
+
     private static func parseOldFormats(_ raw: String) throws -> BulkParsed {
-        // === 기존 BulkParser.parse 내용 붙여넣기 ===
-        // (이전 답변에서 드렸던 간단/명시적 포맷 파싱 구현 전체를 이 함수에 이동)
         fatalError("parseOldFormats(_: ) not implemented. 이전 구현을 여기로 옮겨 주세요.")
     }
 
@@ -289,20 +264,10 @@ fileprivate enum BulkParser {
 
 fileprivate extension String {
     var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
-    var nilIfBlank: String? { trimmed.isEmpty ? nil : self }
+    func nilIfBlank() -> String? { trimmed.isEmpty ? nil : self.trimmed }
     func trimPeriods() -> String {
-        var s = self
+        var s = self.trimmed
         while s.hasSuffix(".") { s.removeLast() }
-        return s.trimmed
+        return s
     }
-    func splitOnce(_ sep: String) -> (lhs: String, rhs: String)? {
-        guard let r = range(of: sep) else { return nil }
-        let left = String(self[..<r.lowerBound])
-        let right = String(self[r.upperBound...])
-        return (left, right)
-    }
-}
-
-fileprivate extension Array {
-    subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
 }

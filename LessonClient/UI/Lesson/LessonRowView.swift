@@ -24,7 +24,7 @@ struct LessonRowView: View {
                 Text(lesson.name.isEmpty ? "Level \(lesson.level)" : lesson.name)
                     .font(.headline)
                 Spacer()
-                Text("Lv.\(lesson.level)")
+                Text("\(lesson.topic ?? "")")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -76,31 +76,38 @@ struct LessonRowView: View {
 
         do {
             // 레슨의 표현 목록 가져오기
-            let detailed = try await APIClient.shared.expressionsOfLesson(lessonId: lesson.id)
-            let exprs = (detailed.expressions ?? []).prefix(maxExpressions)
+            let lesson = try await APIClient.shared.lesson(id: lesson.id)
+            let exprs = (lesson.expressions ?? []).prefix(maxExpressions)
 
             // 각 표현의 첫 예문만 비동기 병렬로 가져오기
             var tmp: [ExprPreview] = []
-            try await withThrowingTaskGroup(of: ExprPreview?.self) { group in
-                for e in exprs {
+            tmp.reserveCapacity(exprs.count)
+
+            try await withThrowingTaskGroup(of: (Int, ExprPreview?).self) { group in
+                for (index, e) in exprs.enumerated() {
                     group.addTask {
                         let examples = try await APIClient.shared.examples(expressionId: e.id)
                         let first = examples.first
-                        return ExprPreview(
-                            id: e.id,
-                            text: e.text,
-                            exampleEN: first?.sentence_en,
-                            exampleKO: first?.translation_ko
+                        return (
+                            index,
+                            ExprPreview(
+                                id: e.id,
+                                text: e.text,
+                                exampleEN: first?.sentence_en,
+                                exampleKO: first?.translation
+                            )
                         )
                     }
                 }
-                for try await p in group {
-                    if let p { tmp.append(p) }
+
+                // 결과를 인덱스 위치에 채워 넣기
+                var buffer = Array<ExprPreview?>(repeating: nil, count: exprs.count)
+                for try await (index, preview) in group {
+                    buffer[index] = preview
                 }
+                tmp = buffer.compactMap { $0 }
             }
 
-            // 안정적인 순서 유지(표현 id 오름차순)
-            tmp.sort { $0.id < $1.id }
             self.previews = tmp
         } catch {
             self.rowError = (error as NSError).localizedDescription
