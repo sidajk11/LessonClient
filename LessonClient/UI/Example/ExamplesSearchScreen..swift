@@ -10,7 +10,7 @@ import SwiftUI
 struct ExamplesSearchScreen: View {
     @State private var q = ""
     @State private var levelText = ""      // ← 레벨 텍스트 입력
-    @State private var items: [APIClient.ExampleRow] = []
+    @State private var items: [Example] = []
     @State private var error: String?
 
     var body: some View {
@@ -37,11 +37,10 @@ struct ExamplesSearchScreen: View {
 
             List(items) { row in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(row.sentence_en)
-                    if let ko = row.translation {
-                        Text(ko).foregroundStyle(.secondary)
-                    }
-                    Text("단어: \(row.expression_text)")
+                    Text(row.sentence)
+                    let translations = row.translationsText()
+                    Text(translations).foregroundStyle(.secondary)
+                    Text("단어: \(row.expressionText)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

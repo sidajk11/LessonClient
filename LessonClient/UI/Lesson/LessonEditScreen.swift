@@ -25,7 +25,7 @@ struct LessonEditScreen: View {
         Form {
             Section("기본 정보") {
                 //TextField("레슨 이름", text: $name)
-                Stepper("레벨: \(unit)", value: $unit, in: 1...100)
+                Stepper("Unit: \(unit)", value: $unit, in: 1...100)
                 Stepper("레벨: \(level)", value: $level, in: 1...100)
                 TextField("토픽", text: $topic)
                 TextField("문법", text: $grammar)
@@ -45,12 +45,13 @@ struct LessonEditScreen: View {
     private func save() async {
         saving = true
         do {
-            let newLesson = try await APIClient.shared.createLesson(
-                name: "",
+            let lt = LessonTranslationIn(langCode: "ko", topic: topic)
+            
+            let newLesson = try await LessonDataSource.shared.createLesson(
                 unit: unit,
                 level: level,
-                topic: topic.isEmpty ? nil : topic,
-                grammar: grammar.isEmpty ? nil : grammar
+                grammar: grammar.isEmpty ? nil : grammar,
+                translations: [lt]
             )
             onCreated?(newLesson)
             dismiss()

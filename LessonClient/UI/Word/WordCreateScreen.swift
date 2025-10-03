@@ -1,5 +1,5 @@
 //
-//  ExpressionCreateScreen.swift
+//  WordCreateScreen.swift
 //  LessonClient
 //
 //  Created by ymj on 9/9/25.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct ExpressionCreateScreen: View {
-    var onCreated: ((Expression) -> Void)? = nil
+struct WordCreateScreen: View {
+    var onCreated: ((Word) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
     @State private var meaningsInput = ""
@@ -22,7 +22,7 @@ struct ExpressionCreateScreen: View {
                 Task {
                     do {
                         let meanings = parseMeanings(meaningsInput)
-                        let w = try await APIClient.shared.createExpression(text: text, meanings: meanings)
+                        let w = try await WordDataSource.shared.createWord(text: text, meanings: meanings)
                         onCreated?(w)
                         dismiss()
                     } catch { self.error = (error as NSError).localizedDescription }
@@ -131,7 +131,7 @@ struct BulkExpressionImportScreen: View {
         var created: [Expression] = []
         for (text, meanings) in pairs {
             do {
-                let w = try await APIClient.shared.createExpression(text: text, meanings: meanings)
+                let w = try await WordDataSource.shared.createWord(text: text, meanings: meanings)
                 created.append(w)
             } catch {
                 // 개별 실패는 스킵하고 마지막에 에러 표시

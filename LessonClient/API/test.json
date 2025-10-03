@@ -1,0 +1,55 @@
+
+{
+  "level": 1,
+  "unit": 1,
+  "topic": "소지품 소개",
+  "grammar": "and",
+  "words": {
+    "and": {
+      "ko": "그리고",
+      "es": "y"
+    },
+    "my": {
+      "ko": "나의 / 내",
+      "es": "mi"
+    },
+    "bag": {
+      "ko": "가방",
+      "es": "bolsa"
+    },
+    "phone": {
+      "ko": "전화기",
+      "es": "teléfono"
+    }
+  },
+  "examples": {
+    "bag": [
+        {
+          "en": "My bag and my phone.",
+          "ko": "내 가방과 내 휴대폰.",
+          "es": "Mi bolsa y mi teléfono."
+          "exercise": [
+              {
+                  "type": "combine",
+                  "content": "내 가방과 내 휴대폰.",
+                  "question": "문장을 완성 하세요.",
+                  "options": [
+                      "My", "bag", "and", "my", "phone"
+                  ]
+                  "answer": "My bag and my phone"
+              }
+          ]
+        },
+        {
+          "en": "My phone and my bag.",
+          "ko": "내 휴대폰과 내 가방.",
+          "es": "Mi teléfono y mi bolsa."
+        }
+    ]
+    "phone": {
+      "en": "My phone and my bag.",
+      "ko": "내 휴대폰과 내 가방.",
+      "es": "Mi teléfono y mi bolsa."
+    }
+  }
+}

@@ -1,5 +1,5 @@
 //
-//  ExpressionScreen.swift
+//  WordDetail.swift
 //  LessonClient
 //
 //  Created by ymj on 9/5/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ExpressionScreen: View {
+struct WordsScreen: View {
     @State private var items: [Expression] = []
     @State private var searchText = ""
     @State private var levelText = ""      // ← 레벨 입력
@@ -32,14 +32,14 @@ struct ExpressionScreen: View {
                 }
                 .padding(.horizontal)
 
-                List(items) { w in
+                List(items) { e in
                     NavigationLink {
-                        ExpressionDetailScreen(expressionId: w.id)
+                        WordDetailScreen(expressionId: e.id)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(w.text)
-                            if !w.meanings.isEmpty {
-                                Text(w.meanings.joined(separator: ", "))
+                            Text(e.text)
+                            if !e.translations.isEmpty {
+                                Text(e.translationsText())
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
@@ -51,7 +51,7 @@ struct ExpressionScreen: View {
 
                 NavigationLink(
                     "+ 새 표현",
-                    destination: ExpressionCreateScreen(onCreated: { w in
+                    destination: WordCreateScreen(onCreated: { w in
                         items.insert(w, at: 0)
                     })
                 )
@@ -74,7 +74,7 @@ struct ExpressionScreen: View {
 
     private func load() async {
         do {
-            items = try await APIClient.shared.expressions()
+            items = try await ExpressionDataSource.shared.expressions()
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -90,7 +90,7 @@ struct ExpressionScreen: View {
                 return
             }
 
-            items = try await APIClient.shared.searchExpressions(
+            items = try await ExpressionDataSource.shared.searchExpressions(
                 q: searchText,
                 level: levelParam,      // ← 레벨 전달
                 limit: 50

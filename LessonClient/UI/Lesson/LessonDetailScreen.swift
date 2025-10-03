@@ -10,84 +10,64 @@ import SwiftUI
 struct LessonDetailScreen: View {
     let lessonId: Int
     @State private var model: Lesson?
+
+    // 기본 필드
     @State private var name = ""
     @State private var unit = 1
     @State private var level = 1
     @State private var topic = ""
     @State private var grammar = ""
+
+    // 단어 검색 (필요 시 주석 해제해서 사용)
     @State private var q = ""
     @State private var search: [Word] = []
-    // ▼▼▼ expressions용 상태 추가 ▼▼▼
+
+    // 표현 검색/연결
     @State private var eq = ""
     @State private var esearch: [Expression] = []
-    // ▲▲▲ expressions용 상태 추가 ▲▲▲
-    @State private var error: String?
-    
+
     @State private var exprs: [Expression] = []
-    
+
+    @State private var error: String?
     @State private var showDeleteAlert: Bool = false
 
     var body: some View {
         Form {
-            // 기존 섹션 ...
+            // MARK: 기본 정보
             Section("기본 정보") {
                 TextField("이름", text: $name)
-                Stepper("Unit: \(unit)", value: $level, in: 1...100)
+                Stepper("Unit: \(unit)", value: $unit, in: 1...100)              // ✅ unit에 바인딩
                 Stepper("레벨: \(level)", value: $level, in: 1...100)
                 TextField("토픽", text: $topic)
                 TextField("문법", text: $grammar)
                 Button("수정 저장") { Task { await save() } }
-                Button(role: .destructive, action: { showDeleteAlert = true }) { Text("레슨 삭제") }
+                Button(role: .destructive, action: { showDeleteAlert = true }) {
+                    Text("레슨 삭제")
+                }
             }
 
-//            // 단어 섹션 (기존)
-//            if let words = model?.words {
-//                Section("단어 (\(words.count))") {
-//                    ForEach(words, id: \.id) { w in
-//                        HStack {
-//                            Text(w.text)
-//                            Spacer()
-//                            Button("제거") { Task { await detach(w.id) } }
-//                        }
-//                    }
-//                }
-//            }
-//
-//            // 단어 검색/연결 (기존)
-//            Section("단어 검색 & 연결") {
-//                HStack {
-//                    TextField("검색", text: $q).onSubmit { Task { await doSearch() } }
-//                    Button("검색") { Task { await doSearch() } }
-//                }
-//                ForEach(search, id: \.id) { w in
-//                    HStack {
-//                        VStack(alignment: .leading) {
-//                            Text(w.text).bold()
-//                            Text(w.meanings.joined(separator: ", ")).foregroundStyle(.secondary)
-//                        }
-//                        Spacer()
-//                        Button("연결") { Task { await attach(w.id) } }
-//                    }
-//                }
-//                NavigationLink("+ 새 단어 만들기") {
-//                    WordEditScreen(onCreated: { w in
-//                        Task { await attach(w.id) }
-//                    })
-//                }
-//            }
-            
+            // MARK: 표현 목록 (정렬 지원)
             List {
                 Section("표현 (\(exprs.count))") {
                     ForEach(exprs, id: \.id) { e in
                         NavigationLink {
-                            ExpressionDetailScreen(expressionId: e.id)
+                            WordDetailScreen(expressionId: e.id)
                         } label: {
                             HStack {
-                                VStack(alignment: .leading) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     Text(e.text).bold()
-                                    let m = e.meanings
-                                    if !m.isEmpty {
-                                        Text(m.joined(separator: ", ")).foregroundStyle(.secondary)
+
+                                    // 🔤 번역 요약 표시: "[ko, en, ja]" 혹은 첫 번역 텍스트 일부
+                                    if e.translations.isEmpty == false {
+                                        // 언어코드 요약
+                                        let langs = e.translations.map { $0.lang_code }.joined(separator: ", ")
+                                        Text("[\(langs)]")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    } else {
+                                        Text("번역 없음")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
                                     }
                                 }
                                 Spacer()
@@ -95,13 +75,13 @@ struct LessonDetailScreen: View {
                             }
                         }
                     }
-                    // ✅ 드래그-앤-드롭 정렬
-                    .onMove(perform: moveExpressions)
+                    .onMove(perform: moveExpressions) // ✅ 드래그-앤-드롭 정렬
                 }
             }
             .listStyle(.inset)
             .frame(minHeight: 300)
 
+            // MARK: 표현 검색 & 연결
             Section("표현 검색 & 연결") {
                 HStack {
                     TextField("검색", text: $eq).onSubmit { Task { await doExprSearch() } }
@@ -109,11 +89,13 @@ struct LessonDetailScreen: View {
                 }
                 ForEach(esearch, id: \.id) { e in
                     HStack {
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(e.text).bold()
-                            let m = e.meanings
-                            if !m.isEmpty {
-                                Text(m.joined(separator: ", ")).foregroundStyle(.secondary)
+                            if e.translations.isEmpty == false {
+                                let langs = e.translations.map { $0.lang_code }.joined(separator: ", ")
+                                Text("[\(langs)]")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                         Spacer()
@@ -121,97 +103,126 @@ struct LessonDetailScreen: View {
                     }
                 }
                 NavigationLink("+ 새 표현 만들기") {
-                    ExpressionCreateScreen(onCreated: { e in
+                    WordCreateScreen(onCreated: { e in
                         Task { await attachExpression(e.id) }
                     })
                 }
             }
-            // ▲▲▲ 표현(Expressions) 섹션 추가 ▲▲▲
+
+            // === 단어 관련 섹션은 필요 시 복구 ===
         }
         .navigationTitle(model?.name ?? "상세")
         .task { await load() }
         .alert("오류", isPresented: .constant(error != nil)) {
             Button("확인") { error = nil }
-        } message: { Text(error ?? "") }
+        } message: {
+            Text(error ?? "")
+        }
         .alert("레슨 삭제?", isPresented: $showDeleteAlert) {
-            Button("삭제", role: .destructive) {
-                print("Lesson deleted")
-                Task { await remove() }
-            }
+            Button("삭제", role: .destructive) { Task { await remove() } }
             Button("취소", role: .cancel) { }
         }
     }
 
+    // MARK: - Intent
     private func load() async {
         do {
-            let l = try await APIClient.shared.lesson(id: lessonId)
-            print("lession: \(l)")
+            let l = try await LessonDataSource.shared.lesson(id: lessonId)
             model = l
-            name = l.name; unit = unit; level = l.level
-            topic = l.topic ?? ""; grammar = l.grammar_main ?? ""
+            name = l.name
+            unit = l.unit          // ✅ 로딩 시 unit 올바르게 설정
+            level = l.level
+            topic = l.topic ?? ""
+            grammar = l.grammar_main ?? ""
             exprs = l.expressions ?? []
-        } catch { self.error = (error as NSError).localizedDescription }
-    }
-    private func save() async {
-        guard var l = model else { return }
-        l.name = name; l.unit = unit; l.level = level; l.topic = topic; l.grammar_main = grammar
-        do { model = try await APIClient.shared.updateLesson(id: lessonId, payload: l) }
-        catch { self.error = (error as NSError).localizedDescription }
-    }
-    private func remove() async {
-        do { try await APIClient.shared.deleteLesson(id: lessonId) }
-        catch { self.error = (error as NSError).localizedDescription }
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
     }
 
-    // 단어 검색/연결/제거 (기존)
+    private func save() async {
+        guard var l = model else { return }
+        l.name = name
+        l.unit = unit
+        l.level = level
+        l.topic = topic
+        l.grammar_main = grammar
+        do {
+            model = try await LessonDataSource.shared.updateLesson(id: lessonId, payload: l)
+            // 서버가 expressions를 함께 돌려준다면 exprs도 갱신
+            exprs = model?.expressions ?? exprs
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
+    }
+
+    private func remove() async {
+        do {
+            try await LessonDataSource.shared.deleteLesson(id: lessonId)
+            // 상위에서 pop 처리 권장
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
+    }
+
+    // MARK: 단어 검색/연결/제거 (필요 시 사용)
     private func doSearch() async {
         do { search = try await APIClient.shared.searchWords(q: q) }
         catch { self.error = (error as NSError).localizedDescription }
     }
     private func attach(_ wordId: Int) async {
         do {
-            try await APIClient.shared.attachWord(lessonId: lessonId, wordId: wordId)
+            _ = try await LessonDataSource.shared.attachWord(lessonId: lessonId, wordId: wordId)
             await load()
         } catch { self.error = (error as NSError).localizedDescription }
     }
     private func detach(_ wordId: Int) async {
         do {
-            try await APIClient.shared.detachWord(lessonId: lessonId, wordId: wordId)
+            _ = try await LessonDataSource.shared.detachWord(lessonId: lessonId, wordId: wordId)
             await load()
         } catch { self.error = (error as NSError).localizedDescription }
     }
 
-    // ▼▼▼ 표현 검색/연결/제거 추가 ▼▼▼
+    // MARK: 표현 검색/연결/제거
     private func doExprSearch() async {
-        do { esearch = try await APIClient.shared.unassignedExpressions(q: eq) }
-        catch { self.error = (error as NSError).localizedDescription }
+        do {
+            // 필요 시 특정 언어 제한을 걸고 싶으면 langs 전달: ["ko","en"]
+            esearch = try await ExpressionDataSource.shared.unassignedExpressions(q: eq, limit: 20, langs: nil)
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
     }
+
     private func attachExpression(_ expressionId: Int) async {
         do {
-            try await APIClient.shared.attachExpression(lessonId: lessonId, expressionId: expressionId)
+            _ = try await LessonDataSource.shared.attachExpression(lessonId: lessonId, expressionId: expressionId)
             await load()
-        } catch { self.error = (error as NSError).localizedDescription }
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
     }
+
     private func detachExpression(_ expressionId: Int) async {
         do {
-            try await APIClient.shared.detachExpression(lessonId: lessonId, expressionId: expressionId)
+            _ = try await LessonDataSource.shared.detachExpression(lessonId: lessonId, expressionId: expressionId)
             await load()
-        } catch { self.error = (error as NSError).localizedDescription }
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
     }
-    // ✅ 드래그 이동 처리 + 서버 반영
+
+    // MARK: 순서 변경
     private func moveExpressions(from source: IndexSet, to destination: Int) {
         exprs.move(fromOffsets: source, toOffset: destination)
         Task { await persistExprOrder() }
     }
 
-    // ✅ 서버에 순서 저장 (예시 API)
     private func persistExprOrder() async {
         do {
             let ids = exprs.map { $0.id }
-            try await APIClient.shared.reorderExpressions(lessonId: lessonId, expressionIds: ids)
+            _ = try await LessonDataSource.shared.reorderExpressions(lessonId: lessonId, expressionIds: ids)
         } catch {
             self.error = (error as NSError).localizedDescription
-            // 에러 시 서버 상태와 불일치가 생길 수 있으므로 새로고침 권장
         }
     }
 }

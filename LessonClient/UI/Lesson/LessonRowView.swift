@@ -14,17 +14,17 @@ struct LessonRowView: View {
     @State private var isLoading = false
     @State private var rowError: String?
 
-    // 한 레슨당 최대 몇 개의 표현/예문을 미리 보여줄지
-    private let maxExpressions = 10
+    // 한 레슨당 최대 몇 개의 단어/예문을 미리 보여줄지
+    private let maxWords = 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             // 제목줄
             HStack(alignment: .firstTextBaseline) {
-                Text(lesson.name.isEmpty ? "Level \(lesson.level)" : lesson.name)
+                Text("Unit \(lesson.unit)")
                     .font(.headline)
                 Spacer()
-                Text("\(lesson.topic ?? "")")
+                Text("\(lesson.koTopic)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -75,33 +75,33 @@ struct LessonRowView: View {
         defer { isLoading = false }
 
         do {
-            // 레슨의 표현 목록 가져오기
-            let lesson = try await APIClient.shared.lesson(id: lesson.id)
-            let exprs = (lesson.expressions ?? []).prefix(maxExpressions)
+            // 레슨의 단어 목록 가져오기
+            let lesson = try await LessonDataSource.shared.lesson(id: lesson.id)
+            let words = (lesson.words).prefix(maxWords)
 
             // 각 표현의 첫 예문만 비동기 병렬로 가져오기
-            var tmp: [ExprPreview] = []
-            tmp.reserveCapacity(exprs.count)
+            var tmp: [WordPreview] = []
+            tmp.reserveCapacity(words.count)
 
-            try await withThrowingTaskGroup(of: (Int, ExprPreview?).self) { group in
-                for (index, e) in exprs.enumerated() {
+            try await withThrowingTaskGroup(of: (Int, WordPreview?).self) { group in
+                for (index, word) in words.enumerated() {
                     group.addTask {
-                        let examples = try await APIClient.shared.examples(expressionId: e.id)
+                        let examples = word.examples
                         let first = examples.first
                         return (
                             index,
-                            ExprPreview(
-                                id: e.id,
-                                text: e.text,
-                                exampleEN: first?.sentence_en,
-                                exampleKO: first?.translation
+                            WordPreview(
+                                id: word.id,
+                                text: word.text,
+                                exampleEN: first?.translations,
+                                exampleKO: first?.translations.first(where: { $0.lang_code == "ko" })?.text
                             )
                         )
                     }
                 }
 
                 // 결과를 인덱스 위치에 채워 넣기
-                var buffer = Array<ExprPreview?>(repeating: nil, count: exprs.count)
+                var buffer = Array<ExprPreview?>(repeating: nil, count: words.count)
                 for try await (index, preview) in group {
                     buffer[index] = preview
                 }
@@ -115,7 +115,7 @@ struct LessonRowView: View {
     }
 
     // 미리보기 전용 경량 모델
-    private struct ExprPreview: Identifiable {
+    private struct WordPreview: Identifiable {
         let id: Int
         let text: String
         let exampleEN: String?

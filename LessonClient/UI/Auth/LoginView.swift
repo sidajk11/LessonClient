@@ -22,10 +22,10 @@ struct LoginView: View {
                     Task {
                         do {
                             if isRegister {
-                                _ = try await APIClient.shared.register(email: email, password: password)
+                                _ = try await UserDataSource.shared.register(email: email, password: password)
                             }
-                            try await APIClient.shared.login(email: email, password: password)
-                            app.user = try await APIClient.shared.me()
+                            try await UserDataSource.shared.login(email: email, password: password)
+                            app.user = try await UserDataSource.shared.me()
                         } catch {
                             self.self.error = (error as NSError).localizedDescription
                         }

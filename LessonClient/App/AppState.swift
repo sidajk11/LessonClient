@@ -11,7 +11,7 @@ final class AppState: ObservableObject {
         guard APIClient.shared.accessToken != nil else { return }
         do {
             loading = true
-            user = try await APIClient.shared.me()
+            user = try await UserDataSource.shared.me()
         } catch {
             APIClient.shared.accessToken = nil
         }
