@@ -41,8 +41,8 @@ struct WordCreateScreen: View {
     }
 }
 
-struct BulkExpressionImportScreen: View {
-    var onImported: (([Expression]) -> Void)? = nil
+struct BulkWordImportScreen: View {
+    var onImported: (([Word]) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var input = ""
     @State private var isImporting = false
@@ -128,7 +128,7 @@ struct BulkExpressionImportScreen: View {
         defer { isImporting = false }
 
         let pairs = previewPairs() ?? []
-        var created: [Expression] = []
+        var created: [Word] = []
         for (text, meanings) in pairs {
             do {
                 let w = try await WordDataSource.shared.createWord(text: text, meanings: meanings)

@@ -40,7 +40,7 @@ struct ExamplesSearchScreen: View {
                     Text(row.sentence)
                     let translations = row.translationsText()
                     Text(translations).foregroundStyle(.secondary)
-                    Text("단어: \(row.expressionText)")
+                    Text("단어: \(row.wordText)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

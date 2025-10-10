@@ -8,9 +8,9 @@ private struct EditableTranslation: Identifiable, Hashable {
 }
 
 struct WordDetailScreen: View {
-    let expressionId: Int
+    let wordId: Int
 
-    @State private var expression: Expression?
+    @State private var word: Word?
     @State private var examples: [Example] = []
 
     // 새 예문 입력
@@ -33,7 +33,7 @@ struct WordDetailScreen: View {
             examplesSection
             addExampleSection
         }
-        .navigationTitle(expression?.text ?? "표현")
+        .navigationTitle(word?.text ?? "표현")
         .task { await load() }
         .alert("오류", isPresented: .constant(error != nil)) {
             Button("확인") { error = nil }
@@ -55,18 +55,18 @@ struct WordDetailScreen: View {
 
     @ViewBuilder
     private var headerSection: some View {
-        if let e = expression {
+        if let e = word {
             Section("표현") {
-                TextField("기본 텍스트 (Expression.text)", text: Binding(
+                TextField("기본 텍스트 (Word.text)", text: Binding(
                     get: { e.text },
-                    set: { expression?.text = $0 }
+                    set: { word?.text = $0 }
                 ))
 
                 HStack {
                     Button("기본 텍스트 저장") { Task { await saveBaseText() } }
                         .buttonStyle(.borderedProminent)
                     Spacer()
-                    Button(role: .destructive) { Task { await removeExpression() } } label: {
+                    Button(role: .destructive) { Task { await removeWord() } } label: {
                         Text("표현 삭제")
                     }
                 }
@@ -132,31 +132,31 @@ struct WordDetailScreen: View {
 
     private func load() async {
         do {
-            let e = try await ExpressionDataSource.shared.expression(id: expressionId, langs: nil)
-            expression = e
-            examples = try await ExpressionDataSource.shared.examples(expressionId: expressionId, langs: nil)
+            let e = try await WordDataSource.shared.word(id: wordId, langs: nil)
+            word = e
+            examples = try await WordDataSource.shared.examples(wordId: wordId, langs: nil)
         } catch {
             self.error = (error as NSError).localizedDescription
         }
     }
 
     private func saveBaseText() async {
-        guard let e = expression else { return }
+        guard let e = word else { return }
         do {
-            let updated = try await ExpressionDataSource.shared.updateExpression(
+            let updated = try await WordDataSource.shared.updateWord(
                 id: e.id, text: e.text, meanings: [], langs: nil
             )
-            expression = updated
+            word = updated
             info = "기본 텍스트 저장 완료"
         } catch {
             self.error = (error as NSError).localizedDescription
         }
     }
 
-    private func removeExpression() async {
-        guard let e = expression else { return }
+    private func removeWord() async {
+        guard let e = word else { return }
         do {
-            try await ExpressionDataSource.shared.deleteExpression(id: e.id)
+            try await WordDataSource.shared.deleteWord(id: e.id)
             info = "표현이 삭제되었습니다."
         } catch {
             self.error = (error as NSError).localizedDescription
@@ -164,14 +164,14 @@ struct WordDetailScreen: View {
     }
 
     private func addExample() async {
-        guard let e = expression else { return }
+        guard let e = word else { return }
         do {
             let payload: [ExampleTranslation] = newTranslations
                 .filter { !$0.lang_code.trimmed.isEmpty && !$0.text.trimmed.isEmpty }
                 .map { ExampleTranslation(id: 0, text: $0.text.trimmed, lang_code: $0.lang_code.trimmed) }
 
-            let created = try await ExpressionDataSource.shared.createExample(
-                expressionId: e.id,
+            let created = try await WordDataSource.shared.createExample(
+                wordId: e.id,
                 sentence: newSentence.trimmed,
                 translations: payload
             )
@@ -199,7 +199,7 @@ struct WordDetailScreen: View {
                 .filter { !$0.lang_code.trimmed.isEmpty && !$0.text.trimmed.isEmpty }
                 .map { ExampleTranslation(id: 0, text: $0.text.trimmed, lang_code: $0.lang_code.trimmed) }
 
-            let updated = try await ExpressionDataSource.shared.updateExample(
+            let updated = try await WordDataSource.shared.updateExample(
                 exampleId: ex.id,
                 sentence: editSentence.trimmed,
                 translations: payload,
@@ -217,7 +217,7 @@ struct WordDetailScreen: View {
 
     private func deleteExample(_ id: Int) async {
         do {
-            try await ExpressionDataSource.shared.deleteExample(exampleId: id)
+            try await WordDataSource.shared.deleteExample(exampleId: id)
             examples.removeAll { $0.id == id }
             info = "예문이 삭제되었습니다."
         } catch {

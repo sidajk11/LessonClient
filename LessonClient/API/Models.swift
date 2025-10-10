@@ -161,6 +161,7 @@ struct Example: Codable, Identifiable {
         case id
         case wordId = "word_id"
         case wordText = "word_text"
+        case text
         case translations
     }
 }

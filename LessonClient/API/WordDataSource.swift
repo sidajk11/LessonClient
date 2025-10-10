@@ -28,6 +28,18 @@ final class WordDataSource {
         try await api.request("GET", "/words/\(id)?lang=\(lang)", as: WordOut.self)
     }
 
+    // MARK: - Search Words
+    func searchWords(q: String, limit: Int = 20, langs: [String]? = nil) async throws -> [WordOut] {
+        // Build query string: /words/search?q=...&limit=...&langs=ko,en
+        let encodedQ = q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q
+        var path = "/words/search?q=\(encodedQ)&limit=\(limit)"
+        if let langs, langs.isEmpty == false {
+            let langsParam = langs.joined(separator: ",")
+            path += "&langs=\(langsParam)"
+        }
+        return try await api.request("GET", path, as: [WordOut].self)
+    }
+
     // MARK: - Update Word
     @discardableResult
     func updateWord(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [WordTranslationIn]? = nil) async throws -> WordOut {
@@ -52,4 +64,3 @@ final class WordDataSource {
         _ = try await api.request("DELETE", "/words/\(id)", as: Empty.self)
     }
 }
-

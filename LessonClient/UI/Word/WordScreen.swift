@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct WordsScreen: View {
-    @State private var items: [Expression] = []
+    @State private var items: [Word] = []
     @State private var searchText = ""
     @State private var levelText = ""      // ← 레벨 입력
     @State private var error: String?
@@ -34,7 +34,7 @@ struct WordsScreen: View {
 
                 List(items) { e in
                     NavigationLink {
-                        WordDetailScreen(expressionId: e.id)
+                        WordDetailScreen(wordId: e.id)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(e.text)
@@ -59,7 +59,7 @@ struct WordsScreen: View {
 
                 NavigationLink(
                     "+ 여러 개 추가",
-                    destination: BulkExpressionImportScreen(onImported: { list in
+                    destination: BulkWordImportScreen(onImported: { list in
                         items.insert(contentsOf: list, at: 0)
                     })
                 )
@@ -74,7 +74,7 @@ struct WordsScreen: View {
 
     private func load() async {
         do {
-            items = try await ExpressionDataSource.shared.expressions()
+            items = try await WordDataSource.shared.words()
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -90,7 +90,7 @@ struct WordsScreen: View {
                 return
             }
 
-            items = try await ExpressionDataSource.shared.searchExpressions(
+            items = try await WordDataSource.shared.searchWords(
                 q: searchText,
                 level: levelParam,      // ← 레벨 전달
                 limit: 50
