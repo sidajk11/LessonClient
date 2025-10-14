@@ -13,6 +13,11 @@ struct ExampleDetailView: View {
 
     var body: some View {
         Form {
+            Section(header: Text("연습문제")) {
+                NavigationLink("연습문제들") {
+                    ExerciseListView(exampleId: exampleId)
+                }
+            }
             Section("문장") {
                 TextField("영어 문장", text: $vm.sentence)
                     .autocorrectionDisabled()
