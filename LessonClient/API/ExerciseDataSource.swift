@@ -129,6 +129,38 @@ final class ExerciseDataSource {
         let body = TranslationsReplaceRequest(translations: translations)
         return try await api.request("PUT", "/exercises/\(exerciseId)/translations", jsonBody: body, as: Exercise.self)
     }
+    
+    /// 연습문제 검색 (GET /exercises/search)
+    /// - Parameters:
+    ///   - q: 부분검색어 (연습문제/예문/번역/선택지)
+    ///   - level: Lesson.level 정확 일치
+    ///   - unit: Lesson.unit 정확 일치
+    ///   - limit: 1...200
+    /// - Returns: Exercise 배열 (서버의 ExerciseOut과 동일 구조 가정)
+    func search(
+        q: String = "",
+        level: Int? = nil,
+        unit: Int? = nil,
+        limit: Int = 50
+    ) async throws -> [Exercise] {
+        let trimmedQ = q.trimmingCharacters(in: .whitespacesAndNewlines)
+        let clampedLimit = min(max(limit, 1), 200)
+
+        var query: [URLQueryItem] = [
+            .init(name: "q", value: trimmedQ),
+            .init(name: "limit", value: String(clampedLimit))
+        ]
+        if let level { query.append(.init(name: "level", value: String(level))) }
+        if let unit  { query.append(.init(name: "unit",  value: String(unit))) }
+
+        return try await api.request(
+            "GET",
+            "/exercises/search",
+            query: query,
+            as: [Exercise].self
+        )
+    }
+
 }
 
 

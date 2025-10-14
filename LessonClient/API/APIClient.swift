@@ -47,21 +47,25 @@ final class APIClient {
 
         var req = URLRequest(url: url)
         req.httpMethod = method
+        
+        print("request: \(req)")
 
         if let form = formBody {
             req.setValue("application/x-www-form-urlencoded; charset=utf-8", forHTTPHeaderField: "Content-Type")
             let body = form.map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")" }
                            .joined(separator: "&")
             req.httpBody = body.data(using: .utf8)
+            print("body: \(body)")
         } else if let body = jsonBody {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONEncoder().encode(AnyEncodable(body))
+            print("body: \(body)")
         }
 
         if authorized, let token = accessToken {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-
+        
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw APIError.unknown }
         if !(200...299).contains(http.statusCode) {

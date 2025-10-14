@@ -7,22 +7,9 @@
 
 import SwiftUI
 
-extension Word {
-    func translationsText() -> String {
-        let text = translations.map { "\($0.langCode): \($0.firstMeaning)" }.joined(separator: "\n")
-        return text
-    }
-}
-
-extension WordTranslation {
-    var firstMeaning: String {
-        meanings.first?.text ?? ""
-    }
-}
-
 extension Example {
     func translationsText() -> String {
-        let text = translations.map { "\($0.langCode): \($0.text)" }.joined(separator: "\n")
+        let text = translations.map { "\($0.langCode): \($0.text.trimmed)" }.joined(separator: "\n")
         return text
     }
 }

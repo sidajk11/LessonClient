@@ -67,42 +67,11 @@ struct Word: Codable, Identifiable {
 // 별도 id / text 컬럼 없음 → Identifiable 제거
 struct WordTranslation: Codable {
     let langCode: String
-    let meanings: [WordMeaning]
+    let text: String
 
     enum CodingKeys: String, CodingKey {
         case langCode = "lang_code"
-        case meanings
-    }
-}
-
-struct WordMeaning: Codable {
-    let text: String
-    let partOfSpeech: String?
-
-    enum CodingKeys: String, CodingKey {
         case text
-        case partOfSpeech = "part_of_speech"
-    }
-}
-
-// 요청용: 번역(언어별) + 의미 리스트 (※ WordTranslation.text 없음)
-struct WordTranslationIn: Codable {
-    let langCode: String
-    let meanings: [WordMeaningIn]?
-
-    enum CodingKeys: String, CodingKey {
-        case langCode = "lang_code"
-        case meanings
-    }
-}
-
-struct WordMeaningIn: Codable {
-    let text: String
-    let partOfSpeech: String?
-
-    enum CodingKeys: String, CodingKey {
-        case text
-        case partOfSpeech = "part_of_speech"
     }
 }
 
@@ -117,7 +86,7 @@ struct WordRow: Codable, Identifiable {
     }
 }
 
-struct WordListOut: Codable {
+struct WordList: Codable {
     let total: Int
     let items: [WordRow]
 }
@@ -125,25 +94,11 @@ struct WordListOut: Codable {
 struct WordCreate: Codable {
     let text: String
     let lessonId: Int?           // ✅ lesson_id 선택적
-    let translations: [WordTranslationIn]?
+    let translations: [WordTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case text
         case lessonId = "lesson_id"
-        case translations
-    }
-}
-
-struct WordOut: Codable, Identifiable {
-    let id: Int
-    let lessonId: Int?
-    let text: String
-    let translations: [WordTranslation]
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case lessonId = "lesson_id"
-        case text
         case translations
     }
 }
@@ -174,36 +129,6 @@ struct ExampleTranslation: Codable {
     enum CodingKeys: String, CodingKey {
         case langCode = "lang_code"
         case text
-    }
-}
-
-// 업서트/생성용
-struct ExampleTranslationIn: Codable {
-    let langCode: String
-    let text: String
-
-    enum CodingKeys: String, CodingKey {
-        case langCode = "lang_code"
-        case text
-    }
-}
-
-/// 검색 전용 행 (서버 ExampleSearchOut)
-struct ExampleSearchRow: Codable, Identifiable {
-    let id: Int
-    let wordId: Int
-    let wordText: String
-    let sentenceEn: String?
-    let translation: String?
-    let lang: String
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case wordId = "word_id"
-        case wordText = "word_text"
-        case sentenceEn = "sentence_en"
-        case translation
-        case lang
     }
 }
 

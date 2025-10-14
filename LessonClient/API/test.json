@@ -14,6 +14,7 @@
       "es": "mi"
     },
     "bag": {
+        "pos"
       "ko": "가방",
       "es": "bolsa"
     },
@@ -53,3 +54,102 @@
     }
   }
 }
+
+
+{
+    "level": 1,
+    "unit": 1,
+    "topic": "소지품 소개",
+    "grammar": "and",
+    "expressions": {
+        "and": [
+            {
+                "ko": {
+                    "pos": "conj",
+                    "text": "그리고"
+                },
+                "es": {
+                    "pos": "conj",
+                    "text": "y"
+                }
+            }
+        ],
+        "my": {
+            "ko": "나의 / 내",
+            "es": "mi"
+        },
+        "bag": {
+            "ko": "가방",
+            "es": "bolsa"
+        },
+        "phone": {
+            "ko": "전화기",
+            "es": "teléfono"
+        }
+    },
+    "example": {
+        "bag": {
+            "en": "My bag and my phone.",
+            "ko": "내 가방과 내 휴대폰.",
+            "es": "Mi bolsa y mi teléfono."
+        },
+        "phone": {
+            "en": "My phone and my bag.",
+            "ko": "내 휴대폰과 내 가방.",
+            "es": "Mi teléfono y mi bolsa."
+        }
+    }
+}
+
+1
+1
+소지품 소개
+and
+
+and
+ko: 그리고
+es: y
+
+my
+ko: 나의 / 내
+es: mi
+
+bag
+ko: 가방
+es: bolsa
+
+phone
+ko: 핸드폰
+es: teléfono
+
+bag
+My bag and my phone.
+ko: 내 가방과 내 휴대폰.
+es: Mi bolsa y mi teléfono.
+
+phone
+My phone and my bag.
+ko: 내 휴대폰과 내 가방.
+es: Mi teléfono y mi bolsa.
+
+
+| 품사   | 영어 명칭                | 줄임말(약어)                | 예시                   |
+| ---- | -------------------- | ---------------------- | -------------------- |
+| 명사   | Noun                 | **n.**                 | book, cat, happiness |
+| 대명사  | Pronoun              | **pron.**              | he, she, it, they    |
+| 동사   | Verb                 | **v.**                 | run, eat, is         |
+| 형용사  | Adjective            | **adj.**               | beautiful, tall, red |
+| 부사   | Adverb               | **adv.**               | quickly, very, well  |
+| 전치사  | Preposition          | **prep.**              | in, on, at, by       |
+| 접속사  | Conjunction          | **conj.**              | and, but, because    |
+| 감탄사  | Interjection         | **interj.**            | wow, oh, hey         |
+| 관사   | Article              | **art.** (또는 **det.**) | a, an, the           |
+| 한정사  | Determiner           | **det.**               | this, some, my       |
+| 조동사  | Auxiliary Verb       | **aux.**               | can, will, must      |
+| 분사   | Participle           | **part.**              | doing, done          |
+| 전치사구 | Prepositional Phrase | **prep. phr.**         | in the room, on time |
+
+
+
+작게 끊어서 말해보면 자연스럽죠:
+Can I / add something?

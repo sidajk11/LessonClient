@@ -17,9 +17,11 @@ final class ExampleDataSource {
     /// POST /examples
     private struct ExampleCreateRequest: Codable {
         let wordId: Int
-        let translations: [ExampleTranslationIn]?
+        let text: String
+        let translations: [ExampleTranslation]?
 
         enum CodingKeys: String, CodingKey {
+            case text
             case wordId = "word_id"
             case translations
         }
@@ -28,7 +30,7 @@ final class ExampleDataSource {
     /// PUT /examples/{id}
     private struct ExampleUpdateRequest: Codable {
         let wordId: Int?
-        let translations: [ExampleTranslationIn]?
+        let translations: [ExampleTranslation]?
 
         enum CodingKeys: String, CodingKey {
             case wordId = "word_id"
@@ -38,7 +40,7 @@ final class ExampleDataSource {
 
     /// PUT /examples/{id}/translations
     struct ExampleTranslationsReplaceRequest: Codable {
-        let translations: [ExampleTranslationIn]
+        let translations: [ExampleTranslation]
     }
 
     // MARK: - Public API
@@ -51,9 +53,10 @@ final class ExampleDataSource {
     @discardableResult
     func createExample(
         wordId: Int,
-        translations: [ExampleTranslationIn]? = nil
+        text: String,
+        translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
-        let body = ExampleCreateRequest(wordId: wordId, translations: translations)
+        let body = ExampleCreateRequest(wordId: wordId, text: text, translations: translations)
         return try await api.request("POST", "/examples", jsonBody: body, as: Example.self)
     }
 
@@ -71,7 +74,7 @@ final class ExampleDataSource {
     func updateExample(
         id: Int,
         wordId: Int? = nil,
-        translations: [ExampleTranslationIn]? = nil
+        translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleUpdateRequest(wordId: wordId, translations: translations)
         return try await api.request("PUT", "/examples/\(id)", jsonBody: body, as: Example.self)
@@ -86,7 +89,7 @@ final class ExampleDataSource {
     @discardableResult
     func replaceTranslations(
         exampleId: Int,
-        translations: [ExampleTranslationIn]
+        translations: [ExampleTranslation]
     ) async throws -> Example {
         let body = ExampleTranslationsReplaceRequest(translations: translations)
         return try await api.request("PUT", "/examples/\(exampleId)/translations", jsonBody: body, as: Example.self)
@@ -107,7 +110,7 @@ final class ExampleDataSource {
         unitNumber: Int? = nil,
         lang: String = "ko",
         limit: Int = 30
-    ) async throws -> [ExampleSearchRow] {
+    ) async throws -> [Example] {
         var query: [URLQueryItem] = [
             .init(name: "q", value: q),
             .init(name: "lang", value: lang),
@@ -120,11 +123,11 @@ final class ExampleDataSource {
             "GET",
             "/examples/search",
             query: query,
-            as: [ExampleSearchRow].self
+            as: [Example].self
         )
     }
 
-    // MARK: - Optional: word 하위 예문 목록 (서버에 별도 목록 라우트가 없다면 search로 대체)
-    /// wordId로만 필터링하고 싶다면 q="", level/unit 미사용으로 search를 활용하거나,
-    /// 서버에 GET /examples?word_id= 추가 후 아래 메서드를 구현하세요.
+    func examples(wordId: Int) async throws -> [Example] {
+        try await api.request("GET", "/examples/by-word/\(wordId)", as: [Example].self)
+    }
 }

@@ -30,13 +30,13 @@ struct LessonRowView: View {
                     .foregroundStyle(.secondary)
             }
 
-            // 미리보기(표현 + 예문)
+            // 미리보기(단어 + 예문)
             Group {
                 if isLoading && previews.isEmpty {
                     HStack(spacing: 8) {
                         ProgressView()
                             .controlSize(.mini)
-                        Text("표현 불러오는 중…")
+                        Text("단어 불러오는 중…")
                             .foregroundStyle(.secondary)
                             .font(.footnote)
                     }
@@ -45,11 +45,11 @@ struct LessonRowView: View {
                         .foregroundStyle(.red)
                         .font(.footnote)
                 } else if previews.isEmpty {
-                    Text("표현 없음")
+                    Text("단어 없음")
                         .foregroundStyle(.secondary)
                         .font(.footnote)
                 } else {
-                    // 표현 1~2개, 각 표현의 첫 예문 1개까지 출력
+                    // 단어 1~2개, 각 단어의 첫 예문 1개까지 출력
                     ForEach(previews) { p in
                         HStack(spacing: 2) {
                             Text("• \(p.text): ")
@@ -80,7 +80,7 @@ struct LessonRowView: View {
             let loadedLesson = try await LessonDataSource.shared.lesson(id: lesson.id)
             let words = loadedLesson.words.prefix(maxWords)
 
-            // 각 표현의 첫 예문만 비동기 병렬로 가져오기
+            // 각 단어의 첫 예문만 비동기 병렬로 가져오기
             var tmp: [WordPreview] = []
             tmp.reserveCapacity(words.count)
 
@@ -94,8 +94,8 @@ struct LessonRowView: View {
                             WordPreview(
                                 id: word.id,
                                 text: word.text,
-                                exampleEN: first?.translations.first(where: { $0.lang_code == "en" })?.text,
-                                exampleKO: first?.translations.first(where: { $0.lang_code == "ko" })?.text
+                                exampleEN: first?.translations.first(where: { $0.langCode == "en" })?.text,
+                                exampleKO: first?.translations.first(where: { $0.langCode == "ko" })?.text
                             )
                         )
                     }

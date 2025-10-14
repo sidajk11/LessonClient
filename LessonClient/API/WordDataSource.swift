@@ -14,39 +14,81 @@ final class WordDataSource {
 
     // MARK: - Create Word
     @discardableResult
-    func createWord(text: String, lessonId: Int? = nil, translations: [WordTranslationIn]? = nil) async throws -> WordOut {
+    func createWord(text: String, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
         let body = WordCreate(text: text, lessonId: lessonId, translations: translations)
-        return try await api.request("POST", "/words", jsonBody: body, as: WordOut.self)
+        return try await api.request("POST", "/words", jsonBody: body, as: Word.self)
     }
 
     // MARK: - Fetch Words
-    func words(lang: String = "ko") async throws -> [WordOut] {
-        try await api.request("GET", "/words?lang=\(lang)", as: [WordOut].self)
-    }
+    /// 단어 목록 조회 (서버: GET /words)
+    /// - Parameters:
+    ///   - level: Lesson.level 정확 일치
+    ///   - unit: Lesson.unit 정확 일치
+    ///   - lessonId: 특정 레슨에 속한 단어만
+    ///   - limit: 1...200 (기본 30)
+    ///   - offset: 0 이상 (기본 0)
+    func words(
+        level: Int? = nil,
+        unit: Int? = nil,
+        lessonId: Int? = nil,
+        limit: Int = 30,
+        offset: Int = 0
+    ) async throws -> [Word] {
+        var query: [URLQueryItem] = [
+            .init(name: "limit", value: String(min(max(limit, 1), 200))),
+            .init(name: "offset", value: String(max(offset, 0)))
+        ]
+        if let level { query.append(.init(name: "level", value: String(level))) }
+        if let unit { query.append(.init(name: "unit", value: String(unit))) }
+        if let lessonId { query.append(.init(name: "lesson_id", value: String(lessonId))) }
 
-    func word(id: Int, lang: String = "ko") async throws -> WordOut {
-        try await api.request("GET", "/words/\(id)?lang=\(lang)", as: WordOut.self)
+        return try await api.request(
+            "GET",
+            "/words",
+            query: query,
+            as: [Word].self
+        )
+    }
+    
+    func word(id: Int, lang: String = "ko") async throws -> Word {
+        try await api.request("GET", "/words/\(id)", as: Word.self)
     }
 
     // MARK: - Search Words
-    func searchWords(q: String, limit: Int = 20, langs: [String]? = nil) async throws -> [WordOut] {
-        // Build query string: /words/search?q=...&limit=...&langs=ko,en
-        let encodedQ = q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q
-        var path = "/words/search?q=\(encodedQ)&limit=\(limit)"
-        if let langs, langs.isEmpty == false {
-            let langsParam = langs.joined(separator: ",")
-            path += "&langs=\(langsParam)"
+    func searchWords(
+        q: String? = nil,
+        level: Int? = nil,
+        unit: Int? = nil,
+        limit: Int = 30,
+        langs: [String]? = nil
+    ) async throws -> [Word] {
+        var items: [URLQueryItem] = []
+        // 서버 기본값이 "" 이므로 nil이어도 q 파라미터는 넣어줍니다.
+        if let q {
+            let trimmed = q.trimmingCharacters(in: .whitespacesAndNewlines)
+            items.append(URLQueryItem(name: "q", value: trimmed))
         }
-        return try await api.request("GET", path, as: [WordOut].self)
+        items.append(URLQueryItem(name: "limit", value: String(limit)))
+
+        if let level { items.append(URLQueryItem(name: "level", value: String(level))) }
+        if let unit  { items.append(URLQueryItem(name: "unit",  value: String(unit))) }
+
+        if let langs, !langs.isEmpty {
+            // 서버는 comma-separated 수신: "ko,en"
+            items.append(URLQueryItem(name: "langs", value: langs.joined(separator: ",")))
+        }
+
+        return try await api.request("GET", "/words/search", query: items, as: [Word].self)
     }
+
 
     // MARK: - Update Word
     @discardableResult
-    func updateWord(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [WordTranslationIn]? = nil) async throws -> WordOut {
+    func updateWord(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
         struct WordUpdate: Codable {
             let text: String?
             let lessonId: Int?
-            let translations: [WordTranslationIn]?
+            let translations: [WordTranslation]?
 
             enum CodingKeys: String, CodingKey {
                 case text
@@ -56,7 +98,7 @@ final class WordDataSource {
         }
 
         let body = WordUpdate(text: text, lessonId: lessonId, translations: translations)
-        return try await api.request("PUT", "/words/\(id)", jsonBody: body, as: WordOut.self)
+        return try await api.request("PUT", "/words/\(id)", jsonBody: body, as: Word.self)
     }
 
     // MARK: - Delete Word
