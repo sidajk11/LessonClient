@@ -51,7 +51,7 @@ struct ExerciseListView: View {
                                 .padding(.vertical, 2)
                                 .overlay(RoundedRectangle(cornerRadius: 4).stroke(.quaternary))
                         }
-                        Text(ex.answer)
+                        Text(ex.words)
                             .font(.body)
                             .lineLimit(2)
                     }
@@ -74,7 +74,7 @@ struct ExerciseListView: View {
         }
         .sheet(isPresented: $showingCreate) {
             NavigationStack { // keep navigation chrome consistent
-                ExerciseCreateView(exampleId: exampleId)
+                ExerciseCreateView(exampleId: exampleId, sentence: "", wordText: "")
                     .padding()
                     .frame(minWidth: 520, minHeight: 460)
             }

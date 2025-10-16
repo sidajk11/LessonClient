@@ -8,7 +8,7 @@ final class ExampleDetailViewModel: ObservableObject {
 
     @Published var example: Example?
     @Published var sentence: String = ""           // en
-    @Published var translationsText: String = ""   // excluding en
+    @Published var translationText: String = ""   // excluding en
     @Published var isSaving = false
     @Published var error: String?
     @Published var info: String?
@@ -20,12 +20,12 @@ final class ExampleDetailViewModel: ObservableObject {
             let ex = try await ExampleDataSource.shared.example(id: exampleId)
             example = ex
             sentence = ex.text
-            let lines = ex.translations
+            let lines = ex.translation
                 .filter { $0.langCode.lowercased() != "en" }
                 .sorted { $0.langCode < $1.langCode }
                 .map { "\($0.langCode): \($0.text)" }
                 .joined(separator: "\n")
-            translationsText = lines
+            translationText = lines
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -40,13 +40,13 @@ final class ExampleDetailViewModel: ObservableObject {
             isSaving = true
             defer { isSaving = false }
 
-            var payload: [ExampleTranslation] = [ExampleTranslation(langCode: "en", text: sentence.trimmingCharacters(in: .whitespacesAndNewlines))]
-            let extras = [ExampleTranslation].parse(from: translationsText).filter { $0.langCode.lowercased() != "en" }
+            var payload: [LocalizedText] = [LocalizedText(langCode: "en", text: sentence.trimmingCharacters(in: .whitespacesAndNewlines))]
+            let extras = [LocalizedText].parse(from: translationText).filter { $0.langCode.lowercased() != "en" }
             payload.append(contentsOf: extras)
 
-            let updated = try await ExampleDataSource.shared.replaceTranslations(
-                exampleId: exampleId,
-                translations: payload
+            let updated = try await ExampleDataSource.shared.updateExample(
+                id: exampleId,
+                translation: payload
             )
             example = updated
             info = "저장되었습니다."

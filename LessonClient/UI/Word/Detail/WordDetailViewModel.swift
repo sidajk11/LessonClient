@@ -3,7 +3,7 @@
 //  LessonClient
 //
 //  Created by ymj on 10/13/25.
-//  Refactor: bulk example translations via multiline text input
+//  Refactor: bulk example translation via multiline text input
 //
 
 import Foundation
@@ -14,17 +14,17 @@ final class WordDetailViewModel: ObservableObject {
 
     // Data
     @Published var word: Word?
-    @Published var translationsText: String = ""
+    @Published var translationText: String = ""
     @Published var examples: [Example] = []
 
-    // New example input (bulk translations as text)
+    // New example input (bulk translation as text)
     @Published var newSentence: String = ""
-    @Published var newSentenceTranslationsText: String = ""   // e.g., "ko: 번역\nes: texto"
+    @Published var newSentencetranslationText: String = ""   // e.g., "ko: 번역\nes: texto"
 
     // Edit example (bulk)
     @Published var editingExample: Example?
     @Published var editSentence: String = ""
-    @Published var editSentenceTranslationsText: String = ""   // exclude "en"; en comes from editSentence
+    @Published var editSentencetranslationText: String = ""   // exclude "en"; en comes from editSentence
 
     // Attach to lesson by unit (optional UX)
     @Published var unitText: String = ""    // user types unit; we resolve to a lesson and attach
@@ -36,7 +36,7 @@ final class WordDetailViewModel: ObservableObject {
     // Derived
     var isCreateDisabled: Bool {
         let sentenceOK = !newSentence.trimmed.isEmpty
-        let hasAnyTr = !newSentenceTranslationsText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasAnyTr = !newSentencetranslationText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         return !(sentenceOK || hasAnyTr)
     }
 
@@ -50,7 +50,7 @@ final class WordDetailViewModel: ObservableObject {
         do {
             let w = try await WordDataSource.shared.word(id: wordId)
             word = w
-            translationsText = w.translations.toString()
+            translationText = w.translation.toString()
             examples = try await ExampleDataSource.shared.examples(wordId: wordId)
         } catch {
             self.error = (error as NSError).localizedDescription
@@ -64,7 +64,7 @@ final class WordDetailViewModel: ObservableObject {
                 id: e.id,
                 text: e.text,
                 lessonId: e.lessonId,
-                translations: [WordTranslation].parse(from: translationsText)
+                translation: [LocalizedText].parse(from: translationText)
             )
             word = updated
             info = "기본 텍스트 저장 완료"
@@ -107,20 +107,20 @@ final class WordDetailViewModel: ObservableObject {
     func addExample() async {
         guard word != nil else { return }
         do {
-            let payload: [ExampleTranslation] = [ExampleTranslation].parse(from: newSentenceTranslationsText)
+            let payload: [LocalizedText] = [LocalizedText].parse(from: newSentencetranslationText)
 
             // 3) Create
             guard let wid = word?.id else { return }
             let created = try await ExampleDataSource.shared.createExample(
                 wordId: wid,
                 text: newSentence.trimmed,
-                translations: payload
+                translation: payload
             )
             examples.insert(created, at: 0)
 
             // reset
             newSentence = ""
-            newSentenceTranslationsText = ""
+            newSentencetranslationText = ""
             info = "예문이 추가되었습니다."
         } catch {
             self.error = (error as NSError).localizedDescription
@@ -131,24 +131,24 @@ final class WordDetailViewModel: ObservableObject {
         editingExample = example
         editSentence = example.text
         // build bulk text excluding en
-        let lines = example.translations
+        let lines = example.translation
             .filter { $0.langCode.lowercased() != "en" }
             .sorted { $0.langCode < $1.langCode }
             .map { "\($0.langCode): \($0.text)" }
-        editSentenceTranslationsText = lines.joined(separator: "\n")
+        editSentencetranslationText = lines.joined(separator: "\n")
     }
 
     func applyEditExample() async {
         guard let ex = editingExample else { return }
         do {
-            var payload: [ExampleTranslation] = [ExampleTranslation(langCode: "en", text: editSentence.trimmed)]
-            let extras = [ExampleTranslation].parse(from: editSentenceTranslationsText)
+            var payload: [LocalizedText] = [LocalizedText(langCode: "en", text: editSentence.trimmed)]
+            let extras = [LocalizedText].parse(from: editSentencetranslationText)
                 .filter { $0.langCode.lowercased() != "en" }
             payload.append(contentsOf: extras)
 
-            let updated = try await ExampleDataSource.shared.replaceTranslations(
-                exampleId: ex.id,
-                translations: payload
+            let updated = try await ExampleDataSource.shared.updateExample(
+                id: ex.id,
+                translation: payload
             )
             if let idx = examples.firstIndex(where: { $0.id == ex.id }) {
                 examples[idx] = updated

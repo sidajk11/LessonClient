@@ -3,7 +3,7 @@
 //  LessonClient
 //
 //  Created by ymj on 10/13/25.
-//  UI updated to use bulk translations text editors for examples
+//  UI updated to use bulk translation text editors for examples
 //
 
 import SwiftUI
@@ -61,7 +61,7 @@ struct WordDetailView: View {
             }
             
             Section("번역들") {
-                TextEditor(text: $vm.translationsText)
+                TextEditor(text: $vm.translationText)
                     .frame(minHeight: 80)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
                 Text("예)\nko: 나의 / 내\nes: mi")
@@ -133,7 +133,7 @@ struct WordDetailView: View {
                 Text("번역들 (한 줄에 하나)\n예)\nko: 내 가방과 내 휴대폰.\nes: Mi bolsa y mi teléfono.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                TextEditor(text: $vm.newSentenceTranslationsText)
+                TextEditor(text: $vm.newSentencetranslationText)
                     .frame(minHeight: 90)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
             }

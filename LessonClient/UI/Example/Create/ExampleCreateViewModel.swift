@@ -6,7 +6,7 @@ import Foundation
 final class ExampleCreateViewModel: ObservableObject {
     let wordId: Int
     @Published var sentence: String = ""
-    @Published var translationsText: String = "" // "ko: ...\nes: ..."
+    @Published var translationText: String = "" // "ko: ...\nes: ..."
     @Published var isSaving = false
     @Published var error: String?
 
@@ -19,12 +19,12 @@ final class ExampleCreateViewModel: ObservableObject {
         isSaving = true
         defer { isSaving = false }
 
-        let payload = [ExampleTranslation].parse(from: translationsText)
+        let payload = [LocalizedText].parse(from: translationText)
 
         return try await ExampleDataSource.shared.createExample(
             wordId: wordId,
             text: sentence.trimmed,
-            translations: payload
+            translation: payload
         )
     }
 }

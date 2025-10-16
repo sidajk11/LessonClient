@@ -46,13 +46,13 @@ struct ExerciseSearchView: View {
                         Text(ex.type)
                             .font(.headline)
                         Spacer()
-                        Text("정답: \(ex.answer)")
+                        Text("Words: \(ex.words)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
 
                     // 2) 번역 요약
-                    let summary = ex.translationsSummary()
+                    let summary = ex.translationSummary()
                     if !summary.isEmpty {
                         Text(summary)
                             .font(.footnote)

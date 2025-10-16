@@ -40,8 +40,8 @@ struct WordListView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(e.text)
-                            if !e.translations.isEmpty {
-                                Text(e.translations.toString())
+                            if !e.translation.isEmpty {
+                                Text(e.translation.toString())
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)

@@ -60,12 +60,12 @@ final class ExerciseSearchViewModel: ObservableObject {
 // MARK: - Presentational helpers
 extension Exercise {
     /// 번역 요약(있으면 question/content 우선, 없으면 빈 문자열)
-    func translationsSummary() -> String {
-        guard !translations.isEmpty else { return "" }
+    func translationSummary() -> String {
+        guard !info.isEmpty else { return "" }
         // question 우선 → 없으면 content → 둘 다 없으면 빈칸
-        let parts = translations.compactMap { tr -> String? in
-            if let q = tr.question, !q.isEmpty { return "[\(tr.langCode)] \(q)" }
-            if let c = tr.content,  !c.isEmpty { return "[\(tr.langCode)] \(c)" }
+        let parts = info.compactMap { tr -> String? in
+            let contentText = tr.content
+            if !contentText.isEmpty { return "[\(tr.langCode)] \(contentText)" }
             return nil
         }
         return parts.joined(separator: "  ·  ")

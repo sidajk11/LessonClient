@@ -94,8 +94,8 @@ struct LessonRowView: View {
                             WordPreview(
                                 id: word.id,
                                 text: word.text,
-                                exampleEN: first?.translations.first(where: { $0.langCode == "en" })?.text,
-                                exampleKO: first?.translations.first(where: { $0.langCode == "ko" })?.text
+                                exampleEN: first?.translation.first(where: { $0.langCode == "en" })?.text,
+                                exampleKO: first?.translation.first(where: { $0.langCode == "ko" })?.text
                             )
                         )
                     }

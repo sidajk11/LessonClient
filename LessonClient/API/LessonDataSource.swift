@@ -12,42 +12,6 @@ final class LessonDataSource {
     private let api = APIClient.shared
     private init() {}
 
-    // MARK: - Request DTOs (server payloads)
-
-    /// POST /lessons
-    private struct LessonCreateBody: Codable {
-        let unit: Int
-        let level: Int
-        let grammar: String?
-        let translations: [LessonTranslationIn]?
-        let wordIds: [Int]?
-
-        enum CodingKeys: String, CodingKey {
-            case unit
-            case level
-            case grammar
-            case translations
-            case wordIds = "word_ids"
-        }
-    }
-
-    /// PUT /lessons/{id}
-    private struct LessonUpdateBody: Codable {
-        let unit: Int?
-        let level: Int?
-        let grammar: String?
-        let translations: [LessonTranslationIn]?
-        let wordIds: [Int]?
-
-        enum CodingKeys: String, CodingKey {
-            case unit
-            case level
-            case grammar
-            case translations
-            case wordIds = "word_ids"
-        }
-    }
-
     /// POST /lessons/{lesson_id}/words
     private struct AttachWordBody: Codable {
         let wordId: Int
@@ -62,14 +26,14 @@ final class LessonDataSource {
         unit: Int,
         level: Int,
         grammar: String? = nil,
-        translations: [LessonTranslationIn]? = nil,
+        topic: [LocalizedText]? = nil,
         wordIds: [Int]? = nil
     ) async throws -> Lesson {
-        let body = LessonCreateBody(
+        let body = LessonUpdate(
             unit: unit,
             level: level,
             grammar: grammar,
-            translations: translations,
+            topic: topic,
             wordIds: wordIds
         )
         return try await api.request("POST", "/lessons", jsonBody: body, as: Lesson.self)
@@ -90,21 +54,21 @@ final class LessonDataSource {
         try await api.request("GET", "/lessons/\(id)", as: Lesson.self)
     }
 
-    /// 레슨 수정 (전달한 필드만 갱신, translations/wordIds는 전체 치환 정책)
+    /// 레슨 수정 (전달한 필드만 갱신, translation/wordIds는 전체 치환 정책)
     @discardableResult
     func updateLesson(
         id: Int,
         unit: Int? = nil,
         level: Int? = nil,
         grammar: String? = nil,
-        translations: [LessonTranslationIn]? = nil,
+        topic: [LocalizedText]? = nil,
         wordIds: [Int]? = nil
     ) async throws -> Lesson {
-        let body = LessonUpdateBody(
+        let body = LessonUpdate(
             unit: unit,
             level: level,
             grammar: grammar,
-            translations: translations,
+            topic: topic,
             wordIds: wordIds
         )
         return try await api.request("PUT", "/lessons/\(id)", jsonBody: body, as: Lesson.self)

@@ -25,7 +25,7 @@ struct ExampleCreateView: View {
                 Text("한 줄에 하나씩 입력하세요.\n예)\nko: 내 가방과 내 휴대폰.\nes: Mi bolsa y mi teléfono.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                TextEditor(text: $vm.translationsText)
+                TextEditor(text: $vm.translationText)
                     .frame(minHeight: 120)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
             }

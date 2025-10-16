@@ -16,7 +16,7 @@ struct WordCreateView: View {
             }
 
             Section("번역들") {
-                TextEditor(text: $vm.translationsText)
+                TextEditor(text: $vm.translationText)
                     .frame(minHeight: 120)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
                 Text("예)\nko: 나의 / 내\nes: mi")

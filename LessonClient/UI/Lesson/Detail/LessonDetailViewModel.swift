@@ -51,7 +51,7 @@ final class LessonDetailViewModel: ObservableObject {
                 unit: unit,
                 level: level,
                 grammar: grammar,
-                translations: nil,
+                topic: nil,
                 wordIds: nil
             )
             model = updated

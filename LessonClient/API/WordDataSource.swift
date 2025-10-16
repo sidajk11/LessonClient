@@ -14,8 +14,8 @@ final class WordDataSource {
 
     // MARK: - Create Word
     @discardableResult
-    func createWord(text: String, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
-        let body = WordCreate(text: text, lessonId: lessonId, translations: translations)
+    func createWord(text: String, lessonId: Int? = nil, translation: [LocalizedText]? = nil) async throws -> Word {
+        let body = WordUpdate(text: text, lessonId: lessonId, translation: translation)
         return try await api.request("POST", "/words", jsonBody: body, as: Word.self)
     }
 
@@ -84,20 +84,8 @@ final class WordDataSource {
 
     // MARK: - Update Word
     @discardableResult
-    func updateWord(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
-        struct WordUpdate: Codable {
-            let text: String?
-            let lessonId: Int?
-            let translations: [WordTranslation]?
-
-            enum CodingKeys: String, CodingKey {
-                case text
-                case lessonId = "lesson_id"
-                case translations
-            }
-        }
-
-        let body = WordUpdate(text: text, lessonId: lessonId, translations: translations)
+    func updateWord(id: Int, text: String? = nil, lessonId: Int? = nil, translation: [LocalizedText]? = nil) async throws -> Word {
+        let body = WordUpdate(text: text, lessonId: lessonId, translation: translation)
         return try await api.request("PUT", "/words/\(id)", jsonBody: body, as: Word.self)
     }
 

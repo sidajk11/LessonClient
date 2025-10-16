@@ -12,51 +12,20 @@ final class ExampleDataSource {
     private let api = APIClient.shared
     private init() {}
 
-    // MARK: - Request DTOs (server payloads)
-
-    /// POST /examples
-    private struct ExampleCreateRequest: Codable {
-        let wordId: Int
-        let text: String
-        let translations: [ExampleTranslation]?
-
-        enum CodingKeys: String, CodingKey {
-            case text
-            case wordId = "word_id"
-            case translations
-        }
-    }
-
-    /// PUT /examples/{id}
-    private struct ExampleUpdateRequest: Codable {
-        let wordId: Int?
-        let translations: [ExampleTranslation]?
-
-        enum CodingKeys: String, CodingKey {
-            case wordId = "word_id"
-            case translations
-        }
-    }
-
-    /// PUT /examples/{id}/translations
-    struct ExampleTranslationsReplaceRequest: Codable {
-        let translations: [ExampleTranslation]
-    }
-
     // MARK: - Public API
 
     /// 예문 생성
     /// - Parameters:
     ///   - wordId: 상위 단어 ID
-    ///   - translations: 예문 번역(전체 치환 정책). en/ko 등 언어별 텍스트
+    ///   - translation: 예문 번역(전체 치환 정책). en/ko 등 언어별 텍스트
     /// - Returns: 생성된 Example
     @discardableResult
     func createExample(
         wordId: Int,
         text: String,
-        translations: [ExampleTranslation]? = nil
+        translation: [LocalizedText]? = nil
     ) async throws -> Example {
-        let body = ExampleCreateRequest(wordId: wordId, text: text, translations: translations)
+        let body = ExampleUpdate(wordId: wordId, text: text, translation: translation)
         return try await api.request("POST", "/examples", jsonBody: body, as: Example.self)
     }
 
@@ -69,30 +38,20 @@ final class ExampleDataSource {
     /// - Parameters:
     ///   - id: 예문 ID
     ///   - wordId: 변경할 단어 ID(옵션)
-    ///   - translations: 전달 시 해당 예문의 번역을 전체 치환
+    ///   - translation: 전달 시 해당 예문의 번역을 전체 치환
     @discardableResult
     func updateExample(
         id: Int,
         wordId: Int? = nil,
-        translations: [ExampleTranslation]? = nil
+        translation: [LocalizedText]? = nil
     ) async throws -> Example {
-        let body = ExampleUpdateRequest(wordId: wordId, translations: translations)
+        let body = ExampleUpdate(wordId: wordId, translation: translation)
         return try await api.request("PUT", "/examples/\(id)", jsonBody: body, as: Example.self)
     }
 
     /// 예문 삭제
     func deleteExample(id: Int) async throws {
         _ = try await api.request("DELETE", "/examples/\(id)", as: Empty.self)
-    }
-
-    /// 번역만 교체 (전체 치환)
-    @discardableResult
-    func replaceTranslations(
-        exampleId: Int,
-        translations: [ExampleTranslation]
-    ) async throws -> Example {
-        let body = ExampleTranslationsReplaceRequest(translations: translations)
-        return try await api.request("PUT", "/examples/\(exampleId)/translations", jsonBody: body, as: Example.self)
     }
 
     // MARK: - Search

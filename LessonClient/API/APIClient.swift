@@ -6,7 +6,7 @@ final class APIClient {
     private init() {}
 
     //var baseURL: URL = URL(string: "http://34.64.239.171:8000")!
-    var baseURL: URL = URL(string: "http://127.0.0.1:8000")!
+    var baseURL: URL = URL(string: "http://127.0.0.1:8000/app/v1")!
 
     var accessToken: String? {
         get { UserDefaults.standard.string(forKey: "access_token") }

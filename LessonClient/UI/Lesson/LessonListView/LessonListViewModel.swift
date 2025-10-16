@@ -73,8 +73,8 @@ final class LessonListViewModel: ObservableObject {
 
     // MARK: - Helpers
 
-    /// Lesson.translations에서 ko 토픽을 추출
+    /// Lesson.translation에서 ko 토픽을 추출
     private func koTopic(of lesson: Lesson) -> String? {
-        lesson.translations.first(where: { $0.langCode.lowercased() == "ko" })?.topic
+        lesson.topic.first(where: { $0.langCode == LangCode.koKR.rawValue })?.text
     }
 }

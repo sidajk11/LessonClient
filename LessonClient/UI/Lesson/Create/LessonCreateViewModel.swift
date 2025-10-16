@@ -33,12 +33,12 @@ final class LessonCreateViewModel: ObservableObject {
         isSaving = true
         defer { isSaving = false }
 
-        let lt = LessonTranslationIn(langCode: "ko", topic: topic)
+        let lt = LocalizedText(langCode: "ko", text: topic)
         let lesson = try await LessonDataSource.shared.createLesson(
             unit: unit,
             level: level,
             grammar: grammar.isEmpty ? nil : grammar,
-            translations: [lt]
+            topic: [lt]
         )
         return lesson
     }
