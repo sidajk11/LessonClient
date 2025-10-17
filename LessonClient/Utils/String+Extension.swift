@@ -18,3 +18,9 @@ extension String {
 extension Substring {
     var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
 }
+
+extension String {
+    var isName: Bool {
+        return false
+    }
+}

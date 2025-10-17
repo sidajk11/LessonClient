@@ -10,13 +10,11 @@ import Combine
 
 // MARK: - Exercise List View
 struct ExerciseListView: View {
-    let exampleId: Int
     @StateObject private var vm: ExerciseListViewModel
     @State private var showingCreate: Bool = false
 
-    init(exampleId: Int) {
-        self.exampleId = exampleId
-        _vm = StateObject(wrappedValue: ExerciseListViewModel(exampleId: exampleId))
+    init(example: Example) {
+        _vm = StateObject(wrappedValue: ExerciseListViewModel(example: example))
     }
 
     var body: some View {
@@ -74,7 +72,10 @@ struct ExerciseListView: View {
         }
         .sheet(isPresented: $showingCreate) {
             NavigationStack { // keep navigation chrome consistent
-                ExerciseCreateView(exampleId: exampleId, sentence: "", wordText: "")
+                ExerciseCreateView(example: vm.example) { _ in
+                        // 선택: 생성 후 리스트 새로고침
+                        Task { await vm.load() }
+                    }
                     .padding()
                     .frame(minWidth: 520, minHeight: 460)
             }

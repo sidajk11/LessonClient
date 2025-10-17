@@ -52,6 +52,11 @@ final class WordDetailViewModel: ObservableObject {
             word = w
             translationText = w.translation.toString()
             examples = try await ExampleDataSource.shared.examples(wordId: wordId)
+            if let lessonId = w.lessonId {
+                let unit = try await LessonDataSource.shared.lesson(id: lessonId).unit
+                unitText = "\(unit)"
+            }
+            
         } catch {
             self.error = (error as NSError).localizedDescription
         }

@@ -2,17 +2,14 @@ import SwiftUI
 import Combine
 
 struct ExerciseCreateView: View {
-    let exampleId: Int
-    let sentence: String
-    let wordText: String
+    @Environment(\.dismiss) private var dismiss
+    let onCreated: ((Exercise) -> Void)?
+    
     @StateObject private var vm: ExerciseCreateViewModel
-    @State private var content: String = ""
-
-    init(exampleId: Int, sentence: String, wordText: String) {
-        self.exampleId = exampleId
-        self.sentence = sentence
-        self.wordText = wordText
-        let vm = ExerciseCreateViewModel(exampleId: exampleId, sentence: sentence, wordText: wordText)
+    
+    init(example: Example, onCreated: ((Exercise) -> Void)? = nil) {
+        self.onCreated = onCreated
+        let vm = ExerciseCreateViewModel(example: example)
         _vm = StateObject(wrappedValue: vm)
     }
 
@@ -21,6 +18,11 @@ struct ExerciseCreateView: View {
     // MARK: - View
     var body: some View {
         Form {
+            
+            Section {
+                Text(vm.example.text)
+            }
+            
             // 공통 섹션
             Section(header: Text("Exercise Info")) {
                 Picker("Type", selection: $vm.type) {
@@ -85,5 +87,19 @@ struct ExerciseCreateView: View {
             }
         }
         .navigationTitle("New Exercise")
+        .toolbar {
+            // macOS: 툴바에 X 아이콘 + ⌘W
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .help("닫기")
+                .keyboardShortcut("w", modifiers: [.command]) // ⌘W로 닫기
+            }
+        }
+        // 제출 중에는 실수로 닫히지 않게(원하면)
+        .interactiveDismissDisabled(vm.isSubmitting)
     }
 }

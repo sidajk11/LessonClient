@@ -6,9 +6,7 @@ import Combine
 @MainActor
 final class ExerciseCreateViewModel: ObservableObject {
     // Inputs
-    let exampleId: Int
-    let sentence: String
-    let wordText: String
+    let example: Example
     
     @Published var type: ExerciseType = .select // change as needed
     @Published var words: [String] = []
@@ -27,10 +25,9 @@ final class ExerciseCreateViewModel: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
 
-    init(exampleId: Int, sentence: String, wordText: String) {
-        self.exampleId = exampleId
-        self.sentence = sentence
-        self.wordText = wordText
+    init(example: Example) {
+        self.example = example
+        bind()
     }
 
     func submit() async {
@@ -40,7 +37,7 @@ final class ExerciseCreateViewModel: ObservableObject {
         defer { isSubmitting = false }
         do {
             let exerciseCrate = ExerciseUpdate(
-                exampleId: exampleId,
+                exampleId: example.id,
                 info: nil,
                 type: type.rawValue,
                 words: words.joined(separator: ","),
@@ -66,8 +63,8 @@ extension ExerciseCreateViewModel {
             .sink { [weak self] newType in
                 guard let self else { return }
                 if newType == .combine {
-                    let contentText = content(from: sentence)
-                    words = words(from: sentence)
+                    let contentText = content(from: example.text)
+                    words = words(from: example.text)
                     let contentTranslation = LocalizedText(langCode: LangCode.enUS.rawValue, text: contentText)
                     content = [contentTranslation]
                 }
@@ -86,6 +83,8 @@ extension ExerciseCreateViewModel {
                     return "a.m."
                 } else if $0 == "p.m" {
                     return "p.m."
+                } else if !$0.isName {
+                    return $0.lowercased()
                 } else {
                     return $0
                 }

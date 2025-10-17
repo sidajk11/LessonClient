@@ -75,7 +75,24 @@ final class APIClient {
         if T.self == Empty.self { return Empty() as! T }
         do {
             return try JSONDecoder().decode(T.self, from: data)
+        } catch let DecodingError.dataCorrupted(context) {
+            print("Data corrupted:", context.debugDescription)
+            print("CodingPath:", context.codingPath)
+            throw APIError.decoding
+        } catch let DecodingError.keyNotFound(key, context) {
+            print("Missing key '\(key.stringValue)' –", context.debugDescription)
+            print("CodingPath:", context.codingPath)
+            throw APIError.decoding
+        } catch let DecodingError.typeMismatch(type, context) {
+            print("Type mismatch for \(type) –", context.debugDescription)
+            print("CodingPath:", context.codingPath)
+            throw APIError.decoding
+        } catch let DecodingError.valueNotFound(value, context) {
+            print("Missing value for \(value) –", context.debugDescription)
+            print("CodingPath:", context.codingPath)
+            throw APIError.decoding
         } catch {
+            print("Unexpected error:", error)
             throw APIError.decoding
         }
     }

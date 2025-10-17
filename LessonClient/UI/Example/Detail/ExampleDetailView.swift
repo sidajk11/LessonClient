@@ -3,11 +3,9 @@
 import SwiftUI
 
 struct ExampleDetailView: View {
-    let exampleId: Int
     @StateObject private var vm: ExampleDetailViewModel
 
     init(exampleId: Int) {
-        self.exampleId = exampleId
         _vm = StateObject(wrappedValue: ExampleDetailViewModel(exampleId: exampleId))
     }
 
@@ -15,7 +13,9 @@ struct ExampleDetailView: View {
         Form {
             Section(header: Text("연습문제")) {
                 NavigationLink("연습문제들") {
-                    ExerciseListView(exampleId: exampleId)
+                    if let example = vm.example {
+                        ExerciseListView(example: example)
+                    }
                 }
             }
             Section("문장") {

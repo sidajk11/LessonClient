@@ -9,11 +9,9 @@
 import SwiftUI
 
 struct WordDetailView: View {
-    let wordId: Int
     @StateObject private var vm: WordDetailViewModel
 
     init(wordId: Int) {
-        self.wordId = wordId
         _vm = StateObject(wrappedValue: WordDetailViewModel(wordId: wordId))
     }
 
@@ -112,7 +110,7 @@ struct WordDetailView: View {
 
             // + 새 예문 추가 네비게이션 (필요 시 유지)
             NavigationLink {
-                ExampleCreateView(wordId: wordId) { created in
+                ExampleCreateView(wordId: vm.wordId) { created in
                     vm.examples.insert(created, at: 0)
                 }
             } label: {
