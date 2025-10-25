@@ -5,8 +5,8 @@ import SwiftUI
 struct ExampleDetailView: View {
     @StateObject private var vm: ExampleDetailViewModel
 
-    init(exampleId: Int) {
-        _vm = StateObject(wrappedValue: ExampleDetailViewModel(exampleId: exampleId))
+    init(exampleId: Int, lesson: Lesson?, word: Word?) {
+        _vm = StateObject(wrappedValue: ExampleDetailViewModel(exampleId: exampleId, lesson: lesson, word: word))
     }
 
     var body: some View {

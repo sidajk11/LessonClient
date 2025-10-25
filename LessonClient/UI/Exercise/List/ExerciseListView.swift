@@ -37,23 +37,27 @@ struct ExerciseListView: View {
                         .foregroundStyle(.secondary)
                 }
                 ForEach(vm.exercises, id: \.id) { ex in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("#\(ex.id)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(ex.type)
-                                .font(.caption)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .overlay(RoundedRectangle(cornerRadius: 4).stroke(.quaternary))
+                    NavigationLink {
+                        ExerciseDetailView(exercise: ex)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("#\(ex.id)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(ex.type)
+                                    .font(.caption)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(.quaternary))
+                            }
+                            Text(ex.wordOptions.enText())
+                                .font(.body)
+                                .lineLimit(2)
                         }
-                        Text(ex.words)
-                            .font(.body)
-                            .lineLimit(2)
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
                 }
             }
         }
@@ -72,7 +76,7 @@ struct ExerciseListView: View {
         }
         .sheet(isPresented: $showingCreate) {
             NavigationStack { // keep navigation chrome consistent
-                ExerciseCreateView(example: vm.example) { _ in
+                ExerciseCreateView(example: vm.example, lesson: nil, word: vm.word) { _ in
                         // 선택: 생성 후 리스트 새로고침
                         Task { await vm.load() }
                     }

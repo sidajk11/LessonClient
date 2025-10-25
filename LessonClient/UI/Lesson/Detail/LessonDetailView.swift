@@ -41,14 +41,14 @@ struct LessonDetailView: View {
                 Section("단어 (\(vm.words.count))") {
                     ForEach(vm.words, id: \.id) { w in
                         NavigationLink {
-                            WordDetailView(wordId: w.id)
+                            WordDetailView(wordId: w.id, lesson: vm.model)
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(w.text).bold()
 
-                                    if !w.translation.isEmpty {
-                                        let langs = w.translation.map { $0.langCode }.joined(separator: ", ")
+                                    if !w.translations.isEmpty {
+                                        let langs = w.translations.map { $0.langCode.rawValue }.joined(separator: ", ")
                                         Text("[\(langs)]")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
@@ -81,8 +81,8 @@ struct LessonDetailView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(w.text).bold()
-                            if !w.translation.isEmpty {
-                                let langs = w.translation.map { $0.langCode }.joined(separator: ", ")
+                            if !w.translations.isEmpty {
+                                let langs = w.translations.map { $0.langCode.rawValue }.joined(separator: ", ")
                                 Text("[\(langs)]")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)

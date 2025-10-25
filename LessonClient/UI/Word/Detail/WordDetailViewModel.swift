@@ -11,7 +11,11 @@ import Foundation
 @MainActor
 final class WordDetailViewModel: ObservableObject {
     let wordId: Int
-
+    var lesson: Lesson? {
+        didSet {
+            unitText = "\(lesson?.unit ?? 0)"
+        }
+    }
     // Data
     @Published var word: Word?
     @Published var translationText: String = ""
@@ -40,8 +44,10 @@ final class WordDetailViewModel: ObservableObject {
         return !(sentenceOK || hasAnyTr)
     }
 
-    init(wordId: Int) {
+    init(wordId: Int, lesson: Lesson?) {
         self.wordId = wordId
+        self.lesson = lesson
+        unitText = "\(lesson?.unit ?? 0)"
     }
 
     // MARK: - Intents
@@ -50,11 +56,11 @@ final class WordDetailViewModel: ObservableObject {
         do {
             let w = try await WordDataSource.shared.word(id: wordId)
             word = w
-            translationText = w.translation.toString()
+            translationText = w.translations.toString()
             examples = try await ExampleDataSource.shared.examples(wordId: wordId)
-            if let lessonId = w.lessonId {
-                let unit = try await LessonDataSource.shared.lesson(id: lessonId).unit
-                unitText = "\(unit)"
+            
+            if lesson == nil, let lessonId = w.lessonId {
+                lesson = try await LessonDataSource.shared.lesson(id: lessonId)
             }
             
         } catch {
@@ -65,11 +71,12 @@ final class WordDetailViewModel: ObservableObject {
     func saveWord() async {
         guard let e = word else { return }
         do {
+            var translations = [WordTranslation].parse(from: translationText)
+            translations.append(WordTranslation(langCode: .enUS, text: e.text))
             let updated = try await WordDataSource.shared.updateWord(
                 id: e.id,
-                text: e.text,
                 lessonId: e.lessonId,
-                translation: [LocalizedText].parse(from: translationText)
+                translations: [WordTranslation].parse(from: translationText)
             )
             word = updated
             info = "기본 텍스트 저장 완료"
@@ -112,14 +119,14 @@ final class WordDetailViewModel: ObservableObject {
     func addExample() async {
         guard word != nil else { return }
         do {
-            let payload: [LocalizedText] = [LocalizedText].parse(from: newSentencetranslationText)
+            let payload: [ExampleTranslation] = [ExampleTranslation].parse(from: newSentencetranslationText)
 
             // 3) Create
             guard let wid = word?.id else { return }
             let created = try await ExampleDataSource.shared.createExample(
-                wordId: wid,
                 text: newSentence.trimmed,
-                translation: payload
+                wordId: wid,
+                translations: payload
             )
             examples.insert(created, at: 0)
 
@@ -136,9 +143,9 @@ final class WordDetailViewModel: ObservableObject {
         editingExample = example
         editSentence = example.text
         // build bulk text excluding en
-        let lines = example.translation
-            .filter { $0.langCode.lowercased() != "en" }
-            .sorted { $0.langCode < $1.langCode }
+        let lines = example.translations
+            .filter { $0.langCode != .enUS }
+            .sorted { $0.langCode.rawValue < $1.langCode.rawValue }
             .map { "\($0.langCode): \($0.text)" }
         editSentencetranslationText = lines.joined(separator: "\n")
     }
@@ -146,14 +153,12 @@ final class WordDetailViewModel: ObservableObject {
     func applyEditExample() async {
         guard let ex = editingExample else { return }
         do {
-            var payload: [LocalizedText] = [LocalizedText(langCode: "en", text: editSentence.trimmed)]
-            let extras = [LocalizedText].parse(from: editSentencetranslationText)
-                .filter { $0.langCode.lowercased() != "en" }
-            payload.append(contentsOf: extras)
+            let payload = [ExampleTranslation].parse(from: editSentencetranslationText)
 
             let updated = try await ExampleDataSource.shared.updateExample(
                 id: ex.id,
-                translation: payload
+                text: editSentence.trimmed,
+                translations: payload
             )
             if let idx = examples.firstIndex(where: { $0.id == ex.id }) {
                 examples[idx] = updated

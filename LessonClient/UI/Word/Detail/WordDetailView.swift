@@ -11,8 +11,8 @@ import SwiftUI
 struct WordDetailView: View {
     @StateObject private var vm: WordDetailViewModel
 
-    init(wordId: Int) {
-        _vm = StateObject(wrappedValue: WordDetailViewModel(wordId: wordId))
+    init(wordId: Int, lesson: Lesson?) {
+        _vm = StateObject(wrappedValue: WordDetailViewModel(wordId: wordId, lesson: lesson))
     }
 
     var body: some View {
@@ -80,13 +80,13 @@ struct WordDetailView: View {
                     .foregroundStyle(.secondary)
             } else {
                 List {
-                    ForEach(vm.examples) { ex in
+                    ForEach(vm.examples) { example in
                         HStack {
                             // 상세로 이동
                             NavigationLink {
-                                ExampleDetailView(exampleId: ex.id)
+                                ExampleDetailView(exampleId: example.id, lesson: vm.lesson, word: vm.word)
                             } label: {
-                                Text(ex.text)
+                                Text(example.text)
                                     .lineLimit(1)
                             }
                             .buttonStyle(.plain) // macOS에서 과한 버튼 스타일 제거
@@ -95,7 +95,7 @@ struct WordDetailView: View {
 
                             // 항상 보이는 삭제 버튼
                             Button(role: .destructive) {
-                                Task { await vm.deleteExample(ex.id) }
+                                Task { await vm.deleteExample(example.id) }
                             } label: {
                                 Label("삭제", systemImage: "trash")
                                     .labelStyle(.titleAndIcon)

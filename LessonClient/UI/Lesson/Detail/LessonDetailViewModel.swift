@@ -16,10 +16,10 @@ final class LessonDetailViewModel: ObservableObject {
     @Published var unit: Int = 1
     @Published var level: Int = 1
     @Published var grammar: String = ""
+    @Published var wq: String = ""
 
     // Words
     @Published var words: [Word] = []
-    @Published var wq: String = ""
     @Published var wsearch: [Word] = []
 
     // UI state
@@ -51,8 +51,8 @@ final class LessonDetailViewModel: ObservableObject {
                 unit: unit,
                 level: level,
                 grammar: grammar,
-                topic: nil,
-                wordIds: nil
+                wordIds: nil,
+                translations: nil
             )
             model = updated
             words = updated.words
@@ -92,7 +92,11 @@ final class LessonDetailViewModel: ObservableObject {
 
     func doWordSearch() async {
         do {
-            wsearch = try await WordDataSource.shared.searchWords(q: wq)
+            if wq.isEmpty {
+                wsearch = try await WordDataSource.shared.listUnassigned()
+            } else {
+                wsearch = try await WordDataSource.shared.searchWords(q: wq)
+            }
         } catch {
             self.error = (error as NSError).localizedDescription
         }

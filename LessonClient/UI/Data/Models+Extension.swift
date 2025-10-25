@@ -7,16 +7,119 @@
 
 import SwiftUI
 
-extension Example {
-    func translationText() -> String {
-        let text = translation.map { "\($0.langCode): \($0.text.trimmed)" }.joined(separator: "\n")
-        return text
+extension String {
+    func parseLocalizedString() -> (langCode: String, text: String)? {
+        let parts = trimmed.split(separator: ":", maxSplits: 1).map { $0.trimmed }
+        guard parts.count == 2 else { return nil }
+        return (langCode: parts[0], text: parts[1])
     }
 }
 
-extension Lesson {
-    var koTopic: String {
-        topic.first(where: { $0.langCode == "ko" })?.text ?? ""
+extension LessonTranslation {
+    func toString() -> String? {
+        let text = topic.trimmed
+        if text.isEmpty {
+            return nil
+        }
+        return "\(langCode): \(text)"
     }
 }
 
+extension WordTranslation {
+    func toString() -> String? {
+        let text = text.trimmed
+        if text.isEmpty {
+            return nil
+        }
+        return "\(langCode): \(text)"
+    }
+}
+
+extension ExampleTranslation {
+    func toString() -> String? {
+        let text = text.trimmed
+        if text.isEmpty {
+            return nil
+        }
+        return "\(langCode): \(text)"
+    }
+}
+
+extension Array where Element == WordTranslation {
+    /// Parse multiline text like: "ko: 번역1\nes: texto"
+    static func parse(from text: String) -> [Element] {
+        text
+            .split(separator: "\n")
+            .map { String($0) }
+            .compactMap { $0.parseLocalizedString() }
+            .map { Element(langCode: LangCode(rawValue: $0) ?? .ko, text: $1) }
+    }
+
+    /// Render to sorted lines "lang: text"
+    func toString() -> String {
+        self.filter { $0.langCode != .enUS }
+            .sorted { $0.langCode.rawValue < $1.langCode.rawValue }
+            .compactMap { $0.toString() }
+            .joined(separator: "\n")
+    }
+    
+    func koText() -> String {
+        self.first(where: { $0.langCode == .ko })?.text ?? ""
+    }
+}
+
+
+extension Array where Element == ExampleTranslation {
+    /// Parse multiline text like: "ko: 번역1\nes: texto"
+    static func parse(from text: String) -> [Element] {
+        text
+            .split(separator: "\n")
+            .map { String($0) }
+            .compactMap { $0.parseLocalizedString() }
+            .map { Element(langCode: LangCode(rawValue: $0) ?? .ko, text: $1) }
+    }
+
+    /// Render to sorted lines "lang: text"
+    func toString() -> String {
+        self.filter { $0.langCode != .enUS }
+            .sorted { $0.langCode.rawValue < $1.langCode.rawValue }
+            .compactMap { $0.toString() }
+            .joined(separator: "\n")
+    }
+    
+    func koText() -> String {
+        self.first(where: { $0.langCode == .ko })?.text ?? ""
+    }
+}
+
+extension Array where Element == LessonTranslation {
+    /// Parse multiline text like: "ko: 번역1\nes: texto"
+    static func parse(from text: String) -> [Element] {
+        text
+            .split(separator: "\n")
+            .map { String($0) }
+            .compactMap { $0.parseLocalizedString() }
+            .map { Element(langCode: LangCode(rawValue: $0) ?? .ko, topic: $1) }
+    }
+
+    /// Render to sorted lines "lang: text"
+    func toString() -> String {
+        self.filter { $0.langCode != .enUS }
+            .sorted { $0.langCode.rawValue < $1.langCode.rawValue }
+            .compactMap { $0.toString() }
+            .joined(separator: "\n")
+    }
+    
+    func koText() -> String {
+        self.first(where: { $0.langCode == .ko })?.topic ?? ""
+    }
+}
+
+extension Array where Element == ExerciseWordOption {
+    func enText() ->String {
+        self.map {
+            $0.translations.first(where: { $0.langCode == .enUS })?.text ?? ""
+        }
+        .joined(separator: ",")
+    }
+}

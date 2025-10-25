@@ -8,8 +8,10 @@
 import Foundation
 
 enum ExerciseType: String, CaseIterable {
-    // 단어 선택
+    // 영어 단어 선택
     case select
+    // 번역 단어 선택
+    case selectTrans = "select_trans"
     // 단어 조합
     case combine
     // 단어 입력
@@ -21,6 +23,8 @@ enum ExerciseType: String, CaseIterable {
         switch self {
         case .select:
             "단어 선택"
+        case .selectTrans:
+            "번역 단어 선택"
         case .combine:
             "단어 조합"
         case .input:
@@ -34,6 +38,8 @@ enum ExerciseType: String, CaseIterable {
         switch self {
         case .select:
             "단어를 선택하세요."
+        case .selectTrans:
+            "단어를 선택하세요."
         case .combine:
             "단어를 조합하세요."
         case .input:
@@ -45,22 +51,22 @@ enum ExerciseType: String, CaseIterable {
 }
 
 
-enum LangCode: String, CaseIterable {
+enum LangCode: String, CaseIterable, Codable {
     case enGB = "en-GB"
     case enUS = "en-US"     // English (United States)
-    case koKR = "ko-KR"     // Korean (South Korea)
-    case jaJP = "ja-JP"     // Japanese (Japan)
+    case ko = "ko"     // Korean (South Korea)
+    case ja = "ja"     // Japanese (Japan)
     case zhCN = "zh-CN"     // Chinese (Simplified, China)
     case zhTW = "zh-TW"     // Chinese (Traditional, Taiwan)
-    case frFR = "fr-FR"     // French (France)
-    case deDE = "de-DE"     // German (Germany)
-    case esES = "es-ES"     // Spanish (Spain)
-    case ptBR = "pt-BR"     // Portuguese (Brazil)
-    case ruRU = "ru-RU"     // Russian (Russia)
-    case itIT = "it-IT"     // Italian (Italy)
-    case arSA = "ar-SA"     // Arabic (Saudi Arabia)
-    case hiIN = "hi-IN"     // Hindi (India)
-    case thTH = "th-TH"     // Thai (Thailand)
-    case viVN = "vi-VN"     // Vietnamese (Vietnam)
-    case idID = "id-ID"     // Indonesian (Indonesia)
+    case fr = "fr"     // French (France)
+    case de = "de"     // German (Germany)
+    case es = "es"     // Spanish (Spain)
+    case pt = "pt"     // Portuguese (Brazil)
+    case ru = "ru"     // Russian (Russia)
+    case it = "it"     // Italian (Italy)
+    case ar = "ar"     // Arabic (Saudi Arabia)
+    case hi = "hi"     // Hindi (India)
+    case th = "th"     // Thai (Thailand)
+    case vi = "vi"     // Vietnamese (Vietnam)
+    case id = "id"     // Indonesian (Indonesia)
 }

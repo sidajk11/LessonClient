@@ -28,8 +28,8 @@ final class WordCreateViewModel: ObservableObject {
     // Output
     var canSubmit: Bool {
         let wordOK = !text.trimmed.isEmpty
-        let translation = [LocalizedText].parse(from: translationText)
-        let hasAnyValid = translation.isEmpty == false
+        let translations = [WordTranslation].parse(from: translationText)
+        let hasAnyValid = translations.isEmpty == false
         return wordOK && hasAnyValid && !isSaving
     }
 
@@ -39,12 +39,12 @@ final class WordCreateViewModel: ObservableObject {
         isSaving = true
         defer { isSaving = false }
 
-        let translation = [LocalizedText].parse(from: translationText)
+        let translations = [WordTranslation].parse(from: translationText)
 
         return try await WordDataSource.shared.createWord(
             text: text.trimmed,
             lessonId: lessonId,
-            translation: translation
+            translations: translations
         )
     }
 }

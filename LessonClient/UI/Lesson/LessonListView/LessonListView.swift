@@ -52,7 +52,7 @@ struct LessonListView: View {
                         } label: {
                             LessonRowView(lesson: l)
                         }
-                        .badge("\(l.koTopic)")
+                        .badge("\(l.translations.koText())")
                     }
                     .task { await vm.load() }
 

@@ -36,12 +36,12 @@ struct WordListView: View {
 
                 List(vm.items) { e in
                     NavigationLink {
-                        WordDetailView(wordId: e.id)
+                        WordDetailView(wordId: e.id, lesson: nil)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(e.text)
-                            if !e.translation.isEmpty {
-                                Text(e.translation.toString())
+                            if !e.translations.isEmpty {
+                                Text(e.translations.toString())
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)

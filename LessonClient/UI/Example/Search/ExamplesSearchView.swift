@@ -50,7 +50,7 @@ struct ExamplesSearchView: View {
                     Text(row.text)
                         .font(.body)
 
-                    Text(row.translationText())
+                    Text(row.translations.toString())
 
                     Text("단어: \(row.wordText ?? "")")
                         .font(.caption)

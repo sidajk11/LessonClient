@@ -46,18 +46,9 @@ struct ExerciseSearchView: View {
                         Text(ex.type)
                             .font(.headline)
                         Spacer()
-                        Text("Words: \(ex.words)")
+                        Text("Words: \(ex.wordOptions)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                    }
-
-                    // 2) 번역 요약
-                    let summary = ex.translationSummary()
-                    if !summary.isEmpty {
-                        Text(summary)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
                     }
 
                     // 3) 예문 정보

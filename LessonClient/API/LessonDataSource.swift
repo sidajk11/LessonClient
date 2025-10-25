@@ -26,15 +26,15 @@ final class LessonDataSource {
         unit: Int,
         level: Int,
         grammar: String? = nil,
-        topic: [LocalizedText]? = nil,
+        translations: [LessonTranslation]? = nil,
         wordIds: [Int]? = nil
     ) async throws -> Lesson {
         let body = LessonUpdate(
             unit: unit,
             level: level,
             grammar: grammar,
-            topic: topic,
-            wordIds: wordIds
+            wordIds: wordIds,
+            translations: translations
         )
         return try await api.request("POST", "/lessons", jsonBody: body, as: Lesson.self)
     }
@@ -61,15 +61,15 @@ final class LessonDataSource {
         unit: Int? = nil,
         level: Int? = nil,
         grammar: String? = nil,
-        topic: [LocalizedText]? = nil,
-        wordIds: [Int]? = nil
+        wordIds: [Int]? = nil,
+        translations: [LessonTranslation]? = nil
     ) async throws -> Lesson {
         let body = LessonUpdate(
             unit: unit,
             level: level,
             grammar: grammar,
-            topic: topic,
-            wordIds: wordIds
+            wordIds: wordIds,
+            translations: translations
         )
         return try await api.request("PUT", "/lessons/\(id)", jsonBody: body, as: Lesson.self)
     }

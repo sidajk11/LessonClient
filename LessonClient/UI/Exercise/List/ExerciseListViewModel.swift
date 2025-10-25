@@ -6,6 +6,7 @@ import Combine
 @MainActor
 final class ExerciseListViewModel: ObservableObject {
     let example: Example
+    @Published var word: Word?
     @Published var exercises: [Exercise] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
@@ -21,9 +22,14 @@ final class ExerciseListViewModel: ObservableObject {
         do {
             // Assumes your data source exposes a list method by example
             let result = try await ExerciseDataSource.shared.list(exampleId: example.id)
+            word = try await WordDataSource.shared.word(id: example.wordId)
             exercises = result
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+    
+    func delete() async {
+        
     }
 }

@@ -19,12 +19,12 @@ final class ExampleCreateViewModel: ObservableObject {
         isSaving = true
         defer { isSaving = false }
 
-        let payload = [LocalizedText].parse(from: translationText)
+        let translations = [ExampleTranslation].parse(from: translationText)
 
         return try await ExampleDataSource.shared.createExample(
-            wordId: wordId,
             text: sentence.trimmed,
-            translation: payload
+            wordId: wordId,
+            translations: translations
         )
     }
 }

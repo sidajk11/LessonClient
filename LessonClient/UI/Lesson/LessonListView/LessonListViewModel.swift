@@ -54,7 +54,7 @@ final class LessonListViewModel: ObservableObject {
         // TSV header
         var lines: [String] = ["level\tunit\ttopic(ko)\tgrammar"]
         for l in items {
-            let topic = koTopic(of: l) ?? ""
+            let topic = l.translations.koText()
             let grammar = l.grammar ?? ""
             lines.append("\(l.level)\t\(l.unit)\t\(topic)\t\(grammar)")
         }
@@ -69,12 +69,5 @@ final class LessonListViewModel: ObservableObject {
         #endif
 
         copyInfo = "\(items.count)개 레슨을 클립보드로 복사했습니다."
-    }
-
-    // MARK: - Helpers
-
-    /// Lesson.translation에서 ko 토픽을 추출
-    private func koTopic(of lesson: Lesson) -> String? {
-        lesson.topic.first(where: { $0.langCode == LangCode.koKR.rawValue })?.text
     }
 }

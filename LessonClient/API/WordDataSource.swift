@@ -14,8 +14,8 @@ final class WordDataSource {
 
     // MARK: - Create Word
     @discardableResult
-    func createWord(text: String, lessonId: Int? = nil, translation: [LocalizedText]? = nil) async throws -> Word {
-        let body = WordUpdate(text: text, lessonId: lessonId, translation: translation)
+    func createWord(text: String, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
+        let body = WordUpdate(text: text, lessonId: lessonId, translations: translations)
         return try await api.request("POST", "/words", jsonBody: body, as: Word.self)
     }
 
@@ -81,11 +81,14 @@ final class WordDataSource {
         return try await api.request("GET", "/words/search", query: items, as: [Word].self)
     }
 
+    func listUnassigned() async throws -> [Word] {
+        return try await api.request("GET", "/words/list/unassigned", as: [Word].self)
+    }
 
     // MARK: - Update Word
     @discardableResult
-    func updateWord(id: Int, text: String? = nil, lessonId: Int? = nil, translation: [LocalizedText]? = nil) async throws -> Word {
-        let body = WordUpdate(text: text, lessonId: lessonId, translation: translation)
+    func updateWord(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
+        let body = WordUpdate(text: text, lessonId: lessonId, translations: translations)
         return try await api.request("PUT", "/words/\(id)", jsonBody: body, as: Word.self)
     }
 
