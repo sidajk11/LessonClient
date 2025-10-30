@@ -12,9 +12,11 @@ struct LessonDetailView: View {
     let lessonId: Int
     @StateObject private var vm: LessonDetailViewModel
     @State private var showDeleteAlert: Bool = false
+    var onDismiss: (() -> Void)? = nil
 
-    init(lessonId: Int) {
+    init(lessonId: Int, onDismiss: (() -> Void)? = nil) {
         self.lessonId = lessonId
+        self.onDismiss = onDismiss
         _vm = StateObject(wrappedValue: LessonDetailViewModel(lessonId: lessonId))
     }
 
@@ -22,8 +24,8 @@ struct LessonDetailView: View {
         Form {
             // MARK: 기본 정보
             Section("기본 정보") {
-                Stepper("Unit: \(vm.unit)", value: $vm.unit, in: 1...100)
-                Stepper("레벨: \(vm.level)", value: $vm.level, in: 1...100)
+                TextField("Unit:", text: $vm.unitText)
+                TextField("토픽", text: $vm.topic)
                 TextField("문법", text: $vm.grammar)
 
                 HStack {
@@ -113,6 +115,9 @@ struct LessonDetailView: View {
         .alert("레슨 삭제?", isPresented: $showDeleteAlert) {
             Button("삭제", role: .destructive) { Task { await vm.remove() } }
             Button("취소", role: .cancel) { }
+        }
+        .onDisappear {
+            onDismiss?()
         }
     }
 }

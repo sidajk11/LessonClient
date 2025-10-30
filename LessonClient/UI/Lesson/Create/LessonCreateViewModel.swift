@@ -11,8 +11,8 @@ import Foundation
 @MainActor
 final class LessonCreateViewModel: ObservableObject {
     // Inputs
-    @Published var unit: Int = 1
-    @Published var level: Int = 1
+    @Published var unitText: String = "1"
+    @Published var levelText: String = "1"
     @Published var topic: String = ""
     @Published var grammar: String = ""
 
@@ -22,12 +22,14 @@ final class LessonCreateViewModel: ObservableObject {
 
     // Derived
     var canSave: Bool {
-        unit >= 1 && level >= 1 && !isSaving
+        guard let unit = Int(unitText), let level = Int(levelText) else { return false }
+        
+        return unit >= 1 && level >= 1 && !isSaving
     }
 
     /// Create lesson on server and return it
     func createLesson() async throws -> Lesson {
-        guard canSave else {
+        guard let unit = Int(unitText), let level = Int(levelText) else {
             throw NSError(domain: "form.invalid", code: -1, userInfo: [NSLocalizedDescriptionKey: "입력을 확인해 주세요."])
         }
         isSaving = true

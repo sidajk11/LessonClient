@@ -18,10 +18,10 @@ struct LessonListView: View {
 
                 // ===== 필터/액션 줄 =====
                 HStack(spacing: 8) {
-                    TextField("레벨", text: $vm.levelText)
+                    TextField("유닛", text: $vm.unitText)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 120)
-                        .onChange(of: vm.levelText) { vm.levelText = $0.filter(\.isNumber) }
+                        .onChange(of: vm.unitText) { vm.unitText = $0.filter(\.isNumber) }
                         .onSubmit { Task { await vm.search() } }
 
                     Button("검색") { Task { await vm.search() } }
@@ -48,13 +48,18 @@ struct LessonListView: View {
                 ZStack(alignment: .bottomTrailing) {
                     List(vm.items) { l in
                         NavigationLink {
-                            LessonDetailView(lessonId: l.id)
+                            LessonDetailView(lessonId: l.id) {
+                                Task { await vm.load() }
+                            }
                         } label: {
                             LessonRowView(lesson: l)
                         }
                         .badge("\(l.translations.koText())")
                     }
                     .task { await vm.load() }
+                    .onAppear {
+                        print("Lesson list onAppear")
+                    }
 
                     // ===== 플로팅 버튼들 =====
                     VStack(spacing: 12) {

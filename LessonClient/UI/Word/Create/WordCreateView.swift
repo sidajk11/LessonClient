@@ -8,15 +8,8 @@ struct WordCreateView: View {
 
     var body: some View {
         Form {
-            Section("단어") {
-                TextField("단어 (예: my)", text: $vm.text)
-                    .autocorrectionDisabled()
-                // 필요 시 레슨 연결
-                // TextField("레슨 ID (선택)", value: $vm.lessonId, format: .number)
-            }
-
-            Section("번역들") {
-                TextEditor(text: $vm.translationText)
+            Section("단어&번역들") {
+                TextEditor(text: $vm.text)
                     .frame(minHeight: 120)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
                 Text("예)\nko: 나의 / 내\nes: mi")

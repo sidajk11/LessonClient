@@ -17,8 +17,7 @@ struct LessonCreateView: View {
     var body: some View {
         Form {
             Section("기본 정보") {
-                Stepper("Unit: \(vm.unit)", value: $vm.unit, in: 1...100)
-                Stepper("레벨: \(vm.level)", value: $vm.level, in: 1...100)
+                TextField("Unit", text: $vm.unitText)
                 TextField("토픽", text: $vm.topic)
                 TextField("문법", text: $vm.grammar)
             }

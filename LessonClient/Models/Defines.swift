@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum ExerciseType: String, CaseIterable {
+enum ExerciseType: String, CaseIterable, Codable {
     // 영어 단어 선택
     case select
     // 번역 단어 선택

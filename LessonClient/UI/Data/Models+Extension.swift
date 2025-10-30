@@ -45,12 +45,27 @@ extension ExampleTranslation {
     }
 }
 
+extension ExerciseWordOptionTranslation {
+    func toString() -> String? {
+        let text = text.trimmed
+        if text.isEmpty {
+            return nil
+        }
+        return "\(langCode): \(text)"
+    }
+}
+
 extension Array where Element == WordTranslation {
     /// Parse multiline text like: "ko: 번역1\nes: texto"
     static func parse(from text: String) -> [Element] {
-        text
-            .split(separator: "\n")
+        let lines = text
+            .components(separatedBy: .newlines)
             .map { String($0) }
+        return parse(from: lines)
+    }
+    
+    static func parse(from lines: [String]) -> [Element] {
+        lines
             .compactMap { $0.parseLocalizedString() }
             .map { Element(langCode: LangCode(rawValue: $0) ?? .ko, text: $1) }
     }
@@ -72,9 +87,14 @@ extension Array where Element == WordTranslation {
 extension Array where Element == ExampleTranslation {
     /// Parse multiline text like: "ko: 번역1\nes: texto"
     static func parse(from text: String) -> [Element] {
-        text
-            .split(separator: "\n")
+        let lines = text
+            .components(separatedBy: .newlines)
             .map { String($0) }
+        return parse(from: lines)
+    }
+    
+    static func parse(from lines: [String]) -> [Element] {
+        lines
             .compactMap { $0.parseLocalizedString() }
             .map { Element(langCode: LangCode(rawValue: $0) ?? .ko, text: $1) }
     }
@@ -88,7 +108,11 @@ extension Array where Element == ExampleTranslation {
     }
     
     func koText() -> String {
-        self.first(where: { $0.langCode == .ko })?.text ?? ""
+        text(langCode: .ko)
+    }
+    
+    func text(langCode: LangCode) -> String {
+        self.first(where: { $0.langCode == langCode })?.text ?? ""
     }
 }
 
@@ -96,7 +120,7 @@ extension Array where Element == LessonTranslation {
     /// Parse multiline text like: "ko: 번역1\nes: texto"
     static func parse(from text: String) -> [Element] {
         text
-            .split(separator: "\n")
+            .components(separatedBy: .newlines)
             .map { String($0) }
             .compactMap { $0.parseLocalizedString() }
             .map { Element(langCode: LangCode(rawValue: $0) ?? .ko, topic: $1) }
@@ -115,10 +139,20 @@ extension Array where Element == LessonTranslation {
     }
 }
 
+extension Array where Element == ExerciseTranslation {
+    func content(langCode: LangCode) -> String {
+        first(where: { $0.langCode == langCode })?.content ?? ""
+    }
+}
+
 extension Array where Element == ExerciseWordOption {
-    func enText() ->String {
+    func enText() -> String {
+        text(langCode: .enUS)
+    }
+    
+    func text(langCode: LangCode) -> String {
         self.map {
-            $0.translations.first(where: { $0.langCode == .enUS })?.text ?? ""
+            $0.translations.first(where: { $0.langCode == langCode })?.text ?? ""
         }
         .joined(separator: ",")
     }

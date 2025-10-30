@@ -80,6 +80,12 @@ final class WordDataSource {
 
         return try await api.request("GET", "/words/search", query: items, as: [Word].self)
     }
+    
+    func wordsLessThan(unit: Int) async throws -> [Word] {
+        var items: [URLQueryItem] = []
+        items.append(URLQueryItem(name: "unit_lt",  value: String(unit)))
+        return try await api.request("GET", "/words/list/unit-lt", query: items, as: [Word].self)
+    }
 
     func listUnassigned() async throws -> [Word] {
         return try await api.request("GET", "/words/list/unassigned", as: [Word].self)

@@ -11,12 +11,11 @@ struct ExerciseDetailView: View {
     @StateObject private var vm: ExerciseDetailViewModel
     @Environment(\.dismiss) private var dismiss
 
-    /// 삭제 완료 시 상위에서 새로고침하도록 콜백
     var onDeleted: (() -> Void)?
 
-    init(exercise: Exercise,
+    init(example: Example, exercise: Exercise,
          onDeleted: (() -> Void)? = nil) {
-        _vm = StateObject(wrappedValue: ExerciseDetailViewModel(exercise: exercise))
+        _vm = StateObject(wrappedValue: ExerciseDetailViewModel(example: example, exercise: exercise))
         self.onDeleted = onDeleted
     }
 
@@ -30,19 +29,106 @@ struct ExerciseDetailView: View {
 
             Section("기본 정보") {
                 infoRow(title: "ID", value: "#\(vm.exercise.id)")
-                infoRow(title: "유형", value: vm.exercise.type)
+                infoRow(title: "유형", value: vm.exercise.type.rawValue)
             }
-            
+
+            Section("문장") {
+                Text(vm.sentence)
+                    .font(.body)
+                    .textSelection(.enabled)
+            }
+
             Section("내용") {
-                Text(vm.exercise.translations.first(where: { $0.langCode == .ko })?.content ?? "")
+                Text(vm.content)
                     .font(.body)
                     .textSelection(.enabled)
             }
 
             Section("단어") {
-                Text(vm.exercise.wordOptions.enText())
+                Text(vm.optionsText)
                     .font(.body)
                     .textSelection(.enabled)
+            }
+
+            // ✅ select 타입일 때: 더미 단어 관리 UI
+            if vm.exercise.type == .select {
+                Section("더미 단어 관리") {
+                    if vm.isLoadingWords {
+                        ProgressView("불러오는 중…")
+                    } else {
+                        // 현재 보기(토글로 제거 가능)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("현재 보기")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            let cols = [GridItem(.adaptive(minimum: 80), spacing: 8)]
+                            LazyVGrid(columns: cols, alignment: .leading, spacing: 8) {
+                                ForEach(vm.currentOptions, id: \.self) { w in
+                                    Button {
+                                        vm.toggle(word: w)
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                            Text(w)
+                                                .lineLimit(1)
+                                                .truncationMode(.tail)
+                                        }
+                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 10)
+                                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.accentColor.opacity(0.15)))
+                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.accentColor, lineWidth: 1))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .help("‘\(w)’ 제거")
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+
+                        // 추가 가능한 단어(토글로 추가 가능)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("추가 가능")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            let cols = [GridItem(.adaptive(minimum: 80), spacing: 8)]
+                            LazyVGrid(columns: cols, alignment: .leading, spacing: 8) {
+                                ForEach(vm.extraWords, id: \.self) { w in
+                                    Button {
+                                        vm.toggle(word: w)
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Text(w)
+                                                .lineLimit(1)
+                                                .truncationMode(.tail)
+                                        }
+                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 10)
+                                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.clear))
+                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.35), lineWidth: 1))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .help("‘\(w)’ 추가")
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+
+                        // 저장 버튼
+                        Button {
+                            Task { await vm.saveOptions() }
+                        } label: {
+                            if vm.isSaving {
+                                ProgressView()
+                            } else {
+                                Text("변경사항 저장").frame(maxWidth: .infinity)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(vm.isSaving || !vm.hasChanges)
+                    }
+                }
             }
         }
         .navigationTitle("연습문제 #\(vm.exercise.id)")
@@ -81,7 +167,6 @@ struct ExerciseDetailView: View {
         }
     }
 
-    // MARK: - UI helpers
     private func infoRow(title: String, value: String) -> some View {
         HStack {
             Text(title)
@@ -90,4 +175,5 @@ struct ExerciseDetailView: View {
         }
     }
 }
+
 

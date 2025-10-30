@@ -8,7 +8,7 @@
 struct Exercise: Codable, Identifiable {
     let id: Int
     let exampleId: Int
-    var type: String
+    var type: ExerciseType
     var wordOptions: [ExerciseWordOption]
     var correctOptionId: Int?
     var options: [ExerciseOption]
@@ -27,7 +27,7 @@ struct Exercise: Codable, Identifiable {
 
 struct ExerciseUpdate: Codable {
     let exampleId: Int
-    var type: String?
+    var type: ExerciseType?
     var wordOptions: [ExerciseWordOption]?
     var correctOptionId: Int?
     var options: [ExerciseOptionUpdate]?

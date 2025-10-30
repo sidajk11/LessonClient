@@ -10,8 +10,12 @@ import Foundation
 final class LessonDataSource {
     static let shared = LessonDataSource()
     private let api = APIClient.shared
+    
+    
     private init() {}
+}
 
+extension LessonDataSource {
     /// POST /lessons/{lesson_id}/words
     private struct AttachWordBody: Codable {
         let wordId: Int

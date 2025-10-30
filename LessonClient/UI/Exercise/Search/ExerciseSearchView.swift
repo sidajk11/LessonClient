@@ -43,7 +43,7 @@ struct ExerciseSearchView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     // 1) 상단: 타입 / 정답
                     HStack {
-                        Text(ex.type)
+                        Text(ex.type.rawValue)
                             .font(.headline)
                         Spacer()
                         Text("Words: \(ex.wordOptions)")

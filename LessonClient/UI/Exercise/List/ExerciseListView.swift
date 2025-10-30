@@ -38,7 +38,12 @@ struct ExerciseListView: View {
                 }
                 ForEach(vm.exercises, id: \.id) { ex in
                     NavigationLink {
-                        ExerciseDetailView(exercise: ex)
+                        ExerciseDetailView(example: vm.example, exercise: ex)
+                            .onDisappear {
+                                Task {
+                                    await vm.load()
+                                }
+                            }
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
@@ -46,7 +51,11 @@ struct ExerciseListView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Text(ex.type)
+                                Text(vm.example.text)
+                                Spacer()
+                                Text(ex.translations.content(langCode: .enUS))
+                                Spacer()
+                                Text(ex.type.rawValue)
                                     .font(.caption)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
@@ -74,7 +83,9 @@ struct ExerciseListView: View {
                 .keyboardShortcut("n", modifiers: [.command])
             }
         }
-        .sheet(isPresented: $showingCreate) {
+        .sheet(isPresented: $showingCreate, onDismiss: {
+            Task { await vm.load() }
+        }) {
             NavigationStack { // keep navigation chrome consistent
                 ExerciseCreateView(example: vm.example, lesson: nil, word: vm.word) { _ in
                         // 선택: 생성 후 리스트 새로고침

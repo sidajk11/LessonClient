@@ -17,15 +17,11 @@ struct ExampleCreateView: View {
 
     var body: some View {
         Form {
-            Section("문장") {
-                TextField("영어 문장", text: $vm.sentence)
-                    .autocorrectionDisabled()
-            }
-            Section("번역들") {
+            Section("문장&번역들") {
                 Text("한 줄에 하나씩 입력하세요.\n예)\nko: 내 가방과 내 휴대폰.\nes: Mi bolsa y mi teléfono.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                TextEditor(text: $vm.translationText)
+                TextEditor(text: $vm.text)
                     .frame(minHeight: 120)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
             }
@@ -44,7 +40,7 @@ struct ExampleCreateView: View {
                 if vm.isSaving { ProgressView() } else { Text("생성") }
             }
             .buttonStyle(.borderedProminent)
-            .disabled(vm.isSaving || vm.sentence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .disabled(vm.isSaving || vm.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             if let e = vm.error { Text(e).foregroundStyle(.red) }
         }

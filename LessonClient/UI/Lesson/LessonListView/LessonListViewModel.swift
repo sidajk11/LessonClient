@@ -13,7 +13,7 @@ final class LessonListViewModel: ObservableObject {
     @Published var items: [Lesson] = []
 
     // UI State
-    @Published var levelText: String = ""
+    @Published var unitText: String = ""
     @Published var isCopying: Bool = false
     @Published var copyInfo: String?
     @Published var error: String?
@@ -30,17 +30,17 @@ final class LessonListViewModel: ObservableObject {
 
     func search() async {
         do {
-            let trimmed = levelText.trimmingCharacters(in: .whitespaces)
-            let level = Int(trimmed)
+            let trimmed = unitText.trimmingCharacters(in: .whitespaces)
+            let unit = Int(trimmed)
             // 서버: GET /lessons?level=...
-            items = try await LessonDataSource.shared.lessons(level: level)
+            items = try await LessonDataSource.shared.lessons(unit: unit)
         } catch {
             self.error = (error as NSError).localizedDescription
         }
     }
 
     func reset() async {
-        levelText = ""
+        unitText = ""
         await load()
     }
 
@@ -50,24 +50,47 @@ final class LessonListViewModel: ObservableObject {
         guard isCopying == false else { return }
         isCopying = true
         defer { isCopying = false }
-
-        // TSV header
-        var lines: [String] = ["level\tunit\ttopic(ko)\tgrammar"]
+        
+        var lessonTextList: [String] = []
+        
         for l in items {
-            let topic = l.translations.koText()
-            let grammar = l.grammar ?? ""
-            lines.append("\(l.level)\t\(l.unit)\t\(topic)\t\(grammar)")
+            lessonTextList.append(copyLesson(lesson: l))
         }
-        let tsv = lines.joined(separator: "\n")
-
-        // Clipboard (macOS / iOS 모두 지원)
-        #if canImport(AppKit)
+        
+        let text = lessonTextList.joined(separator: "\n")
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(tsv, forType: .string)
-        #elseif canImport(UIKit)
-        UIPasteboard.general.string = tsv
-        #endif
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+}
 
-        copyInfo = "\(items.count)개 레슨을 클립보드로 복사했습니다."
+extension LessonListViewModel {
+    private func copyLesson(lesson: Lesson) -> String {
+        var lines: [String] = []
+        lines.append("\(lesson.unit)")
+        lines.append("\n")
+        lines.append(lesson.translations.koText())
+        lines.append("\n")
+        lines.append(lesson.grammar ?? "_")
+        lines.append("\n\n")
+        for word in lesson.words {
+            lines.append(word.text)
+            lines.append("\n")
+            lines.append(word.translations.toString())
+            lines.append("\n\n")
+        }
+        for word in lesson.words {
+            if word.examples.count == 0 {
+                continue
+            }
+            lines.append(word.text)
+            lines.append("\n")
+            for example in word.examples {
+                lines.append(example.text)
+                lines.append("\n")
+                lines.append(example.translations.toString())
+                lines.append("\n\n")
+            }
+        }
+        return lines.joined(separator: "")
     }
 }

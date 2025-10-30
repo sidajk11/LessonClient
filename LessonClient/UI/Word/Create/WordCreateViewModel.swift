@@ -10,15 +10,13 @@ import Combine
 
 @MainActor
 final class WordCreateViewModel: ObservableObject {
-    // Input
-    @Published var text: String = ""
     /**
      예)
      my
      ko: 나의 / 내
      es: mi
      */
-    @Published var translationText: String = ""
+    @Published var text: String = ""
     @Published var lessonId: Int? = nil
 
     // State
@@ -27,10 +25,7 @@ final class WordCreateViewModel: ObservableObject {
 
     // Output
     var canSubmit: Bool {
-        let wordOK = !text.trimmed.isEmpty
-        let translations = [WordTranslation].parse(from: translationText)
-        let hasAnyValid = translations.isEmpty == false
-        return wordOK && hasAnyValid && !isSaving
+        return !text.isEmpty
     }
 
     // Action
@@ -39,7 +34,9 @@ final class WordCreateViewModel: ObservableObject {
         isSaving = true
         defer { isSaving = false }
 
-        let translations = [WordTranslation].parse(from: translationText)
+        var components = text.components(separatedBy: .newlines)
+        let text = components.removeFirst().trimmed
+        let translations = [WordTranslation].parse(from: components)
 
         return try await WordDataSource.shared.createWord(
             text: text.trimmed,

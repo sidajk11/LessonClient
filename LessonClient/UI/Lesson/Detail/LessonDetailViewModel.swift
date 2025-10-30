@@ -13,8 +13,9 @@ final class LessonDetailViewModel: ObservableObject {
 
     // Lesson
     @Published var model: Lesson?
-    @Published var unit: Int = 1
-    @Published var level: Int = 1
+    @Published var unitText: String = "1"
+    @Published var levelText: String = "1"
+    @Published var topic: String = ""
     @Published var grammar: String = ""
     @Published var wq: String = ""
 
@@ -35,9 +36,10 @@ final class LessonDetailViewModel: ObservableObject {
         do {
             let l = try await LessonDataSource.shared.lesson(id: lessonId)
             model = l
-            unit = l.unit
-            level = l.level
+            unitText = "\(l.unit)"
+            levelText = "\(l.level)"
             grammar = l.grammar ?? ""
+            topic = l.translations.koText()
             words = l.words
         } catch {
             self.error = (error as NSError).localizedDescription
@@ -46,13 +48,16 @@ final class LessonDetailViewModel: ObservableObject {
 
     func save() async {
         do {
+            guard let unit = Int(unitText), let level = Int(levelText) else {
+                throw NSError(domain: "form.invalid", code: -1, userInfo: [NSLocalizedDescriptionKey: "입력을 확인해 주세요."])
+            }
             let updated = try await LessonDataSource.shared.updateLesson(
                 id: lessonId,
                 unit: unit,
                 level: level,
                 grammar: grammar,
                 wordIds: nil,
-                translations: nil
+                translations: [LessonTranslation(langCode: .ko, topic: topic)]
             )
             model = updated
             words = updated.words

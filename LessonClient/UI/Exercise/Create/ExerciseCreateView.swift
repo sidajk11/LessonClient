@@ -56,7 +56,10 @@ struct ExerciseCreateView: View {
                 Section(header: Text("Created")) {
                     Text("ID: \(created.id)")
                     Text("Type: \(created.type)")
-                    Text("Words: \(created.wordOptions)")
+                    if created.type == .combine {
+                        Text("Words: \(created.wordOptions.text(langCode: .enUS))")
+                    }
+                    
                 }
             }
 
@@ -95,10 +98,14 @@ extension ExerciseCreateView {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
                     ForEach(allWords, id: \.self) { word in
                         Button {
-                            vm.selectedWord = word
+                            if vm.selectedWords.contains(word) {
+                                vm.selectedWords.removeAll(where: { $0 == word })
+                            } else {
+                                vm.selectedWords.append(word)
+                            }
                         } label: {
                             HStack(spacing: 6) {
-                                if vm.selectedWord == word {
+                                if vm.selectedWords.contains(word) {
                                     Image(systemName: "checkmark.circle.fill")
                                 }
                                 Text(word)
@@ -109,11 +116,11 @@ extension ExerciseCreateView {
                             .padding(.horizontal, 10)
                             .background(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(vm.selectedWord == word ? Color.accentColor.opacity(0.15) : Color.clear)
+                                    .fill(vm.selectedWords.contains(word) ? Color.accentColor.opacity(0.15) : Color.clear)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(vm.selectedWord == word ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
+                                    .stroke(vm.selectedWords.contains(word) ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
@@ -123,25 +130,21 @@ extension ExerciseCreateView {
             }
 
             // 선택 상태 표시
-            if let selected = vm.selectedWord {
-                Text("선택된 단어: \(selected)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text("선택된 단어: \(vm.selectedWords.joined(separator: ", "))")
+                .font(.caption)
+                .foregroundStyle(.secondary)
             
-            let extra = vm.wordsLearned.map { $0.text }.filter { $0 != vm.selectedWord }
+            Spacer()
+            
+            let extra = vm.wordsLearned.map { $0.text }
             let columns = [GridItem(.adaptive(minimum: 80), spacing: 8)]
             LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
                 ForEach(extra, id: \.self) { word in
                     Button {
-                        if vm.dummyWords.contains(word) {
-                            vm.dummyWords.removeAll(where: { $0 == word })
-                        } else {
-                            vm.dummyWords.append(word)
-                        }
+                        vm.selectDummyWord(word: word)
                     } label: {
                         HStack(spacing: 6) {
-                            if vm.dummyWords.contains(word) {
+                            if vm.isDummyWordSelected(word: word) {
                                 Image(systemName: "checkmark.circle.fill")
                             }
                             Text(word)
@@ -188,10 +191,14 @@ extension ExerciseCreateView {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
                     ForEach(allWords, id: \.self) { word in
                         Button {
-                            vm.selectedWord = word
+                            if vm.selectableWords.contains(word) {
+                                vm.selectedWords.removeAll(where: { $0 == word })
+                            } else {
+                                vm.selectedWords.append(word)
+                            }
                         } label: {
                             HStack(spacing: 6) {
-                                if vm.selectedWord == word {
+                                if vm.selectedWords.contains(word) {
                                     Image(systemName: "checkmark.circle.fill")
                                 }
                                 Text(word)
@@ -202,11 +209,11 @@ extension ExerciseCreateView {
                             .padding(.horizontal, 10)
                             .background(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(vm.selectedWord == word ? Color.accentColor.opacity(0.15) : Color.clear)
+                                    .fill(vm.selectedWords.contains(word) ? Color.accentColor.opacity(0.15) : Color.clear)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(vm.selectedWord == word ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
+                                    .stroke(vm.selectedWords.contains(word) ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
@@ -216,13 +223,11 @@ extension ExerciseCreateView {
             }
 
             // 선택 상태 표시
-            if let selected = vm.selectedWord {
-                Text("선택된 단어: \(selected)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text("선택된 단어: \(vm.selectedWords.joined(separator: ", "))")
+                .font(.caption)
+                .foregroundStyle(.secondary)
             
-            let extra = vm.wordsLearned.map { $0.text }.filter { $0 != vm.selectedWord }
+            let extra = vm.wordsLearned.map { $0.text }
             let columns = [GridItem(.adaptive(minimum: 80), spacing: 8)]
             LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
                 ForEach(extra, id: \.self) { word in
