@@ -11,17 +11,16 @@ final class ExerciseCreateViewModel: ObservableObject {
     var word: Word?
     
     @Published var type: ExerciseType = .select // change as needed
-    @Published var selectedWords: [String] = []
+    @Published var selectedTestWords: [String] = []
     // 영어문장에서 추출한 단어들
-    @Published var allWords: [String] = []
+    @Published var allWordsInSentence: [String] = []
     // 번역에서 추출한 단어들
     @Published var allTransWords: [LangCode: [ExerciseOptionTranslation]] = [:]
     
-    @Published var wordsLearned: [Word] = []
-    @Published var selectableWords: [String] = []
-    @Published var dummyWords: [String] = []
+    @Published private var dummyWords: [String] = []
+    @Published private var selectedDummyWords: [String] = []
     
-    @Published var words: [String] = []
+    @Published var wordOptionTextList: [String] = []
     @Published var correctionOptionId: Int = 0
     @Published var options: [ExerciseOptionUpdate] = []      // 보기
 
@@ -50,7 +49,7 @@ final class ExerciseCreateViewModel: ObservableObject {
                     if let lessonId = word.lessonId {
                         self.lesson = try await LessonDataSource.shared.lesson(id: lessonId)
                         if let lesson = self.lesson {
-                            self.wordsLearned = try await WordDataSource.shared.wordsLessThan(unit: lesson.unit)
+                            self.dummyWords = try await WordDataSource.shared.wordsLessThan(unit: lesson.unit).map { $0.text }
                         }
                     }
                 } catch {
@@ -60,7 +59,7 @@ final class ExerciseCreateViewModel: ObservableObject {
         }
         
         translation = example.translations.koText()
-        allWords = words(from: example.text).filter { !punctuationSet.contains($0) }
+        allWordsInSentence = words(from: example.text).filter { !punctuationSet.contains($0) }
         allTransWords = transWords(from: example.translations)
         
         bind()
@@ -68,30 +67,63 @@ final class ExerciseCreateViewModel: ObservableObject {
 }
 
 extension ExerciseCreateViewModel {
-    func autoGenerate() async {
-        do {
-            let exercises = try await ExerciseDataSource.shared.list(exampleId: example.id)
-            if exercises.contains(where: { $0.type == .combine }) {
-                return
-            }
-            type = .combine
-            await submit()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+    func selectableDummyWords() -> [String] {
+        return dummyWords
     }
     func selectDummyWord(word: String) {
-        if dummyWords.contains(word) {
-            dummyWords.removeAll(where: { $0 == word })
+        if selectedDummyWords.contains(word) {
+            selectedDummyWords.removeAll(where: { $0 == word })
         } else {
-            dummyWords.append(word)
+            selectedDummyWords.append(word)
         }
     }
     
     func isDummyWordSelected(word: String) -> Bool {
-        dummyWords.contains(word)
+        selectedDummyWords.contains(word)
     }
+}
 
+extension ExerciseCreateViewModel {
+    func selectTestWord(word: String) {
+        if selectedTestWords.contains(word) {
+            selectedTestWords.removeAll(where: { $0 == word })
+        } else {
+            selectedTestWords.append(word)
+        }
+    }
+    
+    func isTestWordSelected(word: String) -> Bool {
+        selectedTestWords.contains(word)
+    }
+}
+
+extension ExerciseCreateViewModel {
+    func autoGenerate() async {
+        do {
+            let exercises = try await ExerciseDataSource.shared.list(exampleId: example.id)
+            if !exercises.contains(where: { $0.type == .combine }) {
+                type = .combine
+                await submit()
+            }
+            
+            if !exercises.contains(where: { $0.type == .select }), let word {
+                type = .select
+                selectedTestWords = [word.text]
+                let dummyWords = dummyWords
+                    .filter { dummyWord in
+                        !allWordsInSentence.contains(where: {
+                            $0.lowercased() == dummyWord.lowercased()
+                        })
+                    }
+                let index = Int.random(in: 0 ..< dummyWords.count)
+                selectedDummyWords = [dummyWords[index]]
+                await submit()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
     func submit() async {
         errorMessage = nil
         createdExercise = nil
@@ -104,8 +136,8 @@ extension ExerciseCreateViewModel {
             transList.append(trans)
         }
         var wordsOptions: [ExerciseWordOption] = []
-        if type == .combine || type == .select, words.count > 0 {
-            wordsOptions = words.map {
+        if type == .combine || type == .select, wordOptionTextList.count > 0 {
+            wordsOptions = wordOptionTextList.map {
                 let text = NL.lowercaseAvailable(sentence: example.text, word: $0) ? $0.lowercased() : $0
                 let translation = ExerciseOptionTranslation(langCode: .enUS, text: text)
                 return ExerciseWordOption(translations: [translation])
@@ -142,20 +174,20 @@ extension ExerciseCreateViewModel {
                 guard let self else { return }
                 sentence = example.translations.text(langCode: .ko)
                 content = content(from: example.text)
-                words = allWords
+                wordOptionTextList = allWordsInSentence
             }
             .store(in: &cancellables)
         
         $type
             .removeDuplicates()
             .filter { $0 == .select }
-            .combineLatest($selectedWords.compactMap { $0 })
-            .sink { [weak self] (type, selectedWords) in
+            .combineLatest($selectedTestWords.compactMap { $0 })
+            .sink { [weak self] (type, selectedTestWords) in
                 guard let self else { return }
                 sentence = example.text
                 var tokens = sentence.tokenize(word: word?.text)
                 tokens = tokens.map { word in
-                    if selectedWords.contains(where: { $0.lowercased() == word.lowercased() }) {
+                    if selectedTestWords.contains(where: { $0.lowercased() == word.lowercased() }) {
                         "_"
                     } else {
                         word
@@ -169,32 +201,15 @@ extension ExerciseCreateViewModel {
         
         $type
             .filter { $0 == .select }
-            .combineLatest($selectedWords) { $1 }
+            .combineLatest($selectedTestWords) { $1 }
             .compactMap { $0 }
-            .combineLatest($dummyWords)
-            .map { [weak self] selectedWords, dummyWords in
-                guard let self else { return [] }
-                var words = dummyWords
-                let selected = selectedWords.map { word in
-                    if NL.lowercaseAvailable(sentence: self.sentence, word: word) {
-                        return word.lowercased()
-                    } else {
-                        return word
-                    }
-                }
-                words.insert(contentsOf: selectedWords, at: 0)
+            .combineLatest($selectedDummyWords)
+            .map { selectedTestWords, selectedDummyWords in
+                var words = selectedDummyWords
+                words.insert(contentsOf: selectedTestWords, at: 0)
                 return words
             }
-            .assign(to: &$words)
-        
-        $wordsLearned
-            .map { $0.map { $0.text } }
-            .combineLatest($selectedWords) { words, selectedWords in
-                words.filter { word in
-                    !selectedWords.contains(where: { $0.lowercased() == word.lowercased() })
-                }
-            }
-            .assign(to: &$selectableWords)
+            .assign(to: &$wordOptionTextList)
     }
     
     private func content(from sentence: String) -> String {
