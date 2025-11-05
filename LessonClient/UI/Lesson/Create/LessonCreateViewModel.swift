@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Combine
 
 @MainActor
 final class LessonCreateViewModel: ObservableObject {
@@ -19,6 +20,27 @@ final class LessonCreateViewModel: ObservableObject {
     // UI State
     @Published var isSaving: Bool = false
     @Published var error: String?
+    
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        $unitText
+            .sink { [weak self] unitText in
+                guard let self else { return }
+                guard let unit = Int(unitText) else { return }
+                Task {
+                    do {
+                        let preUnit = max(unit - 1, 1)
+                        let preLesson = try await LessonDataSource.shared.lessons(unit: preUnit).first
+                        self.topic = preLesson?.translations.koText() ?? ""
+                        self.grammar = preLesson?.grammar ?? ""
+                    } catch {
+                        self.error = error.localizedDescription
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
 
     // Derived
     var canSave: Bool {

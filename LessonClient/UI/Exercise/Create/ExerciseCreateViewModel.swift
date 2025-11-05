@@ -111,6 +111,9 @@ extension ExerciseCreateViewModel {
                 selectedTestWords = [word.text]
                 let dummyWords = dummyWords
                     .filter { dummyWord in
+                        !dummyWord.contains(" ")
+                    }
+                    .filter { dummyWord in
                         !allWordsInSentence.contains(where: {
                             $0.lowercased() == dummyWord.lowercased()
                         })
@@ -213,22 +216,7 @@ extension ExerciseCreateViewModel {
     }
     
     private func content(from sentence: String) -> String {
-        // 단어 수만큼 "_" 생성, 마지막 문장부호는 그대로 붙여줌
-        let tokens = sentence.tokenize()
-        
-        var content: String = ""
-        for token in tokens {
-            if punctuationSet.contains(token) {
-                content.append(token)
-            } else {
-                if !content.isEmpty {
-                    content.append(" ")
-                }
-                content.append("_")
-            }
-        }
-        
-        return content
+        return sentence.underlinesText
     }
 
     private func words(from sentence: String) -> [String] {

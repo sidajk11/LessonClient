@@ -4,12 +4,12 @@ import SwiftUI
 
 struct ExampleCreateView: View {
     let wordId: Int
-    var onCreated: ((Example) -> Void)? = nil
+    var onCreated: (([Example]) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: ExampleCreateViewModel
 
-    init(wordId: Int, onCreated: ((Example) -> Void)? = nil) {
+    init(wordId: Int, onCreated: (([Example]) -> Void)? = nil) {
         self.wordId = wordId
         self.onCreated = onCreated
         _vm = StateObject(wrappedValue: ExampleCreateViewModel(wordId: wordId))
@@ -29,11 +29,11 @@ struct ExampleCreateView: View {
             Button {
                 Task {
                     do {
-                        let created = try await vm.create()
-                        onCreated?(created)
+                        let examples = try await vm.create()
+                        onCreated?(examples)
                         dismiss()
                     } catch {
-                        vm.error = (error as NSError).localizedDescription
+                        vm.errorMessage = (error as NSError).localizedDescription
                     }
                 }
             } label: {
@@ -42,7 +42,7 @@ struct ExampleCreateView: View {
             .buttonStyle(.borderedProminent)
             .disabled(vm.isSaving || vm.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-            if let e = vm.error { Text(e).foregroundStyle(.red) }
+            if let e = vm.errorMessage { Text(e).foregroundStyle(.red) }
         }
         .navigationTitle("새 예문")
     }

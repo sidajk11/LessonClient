@@ -52,6 +52,25 @@ extension String {
         let tokens = tokenize()
         return tokens.lastPunctuation
     }
+    
+    var underlinesText: String {
+        // 단어 수만큼 "_" 생성, 마지막 문장부호는 그대로 붙여줌
+        let tokens = tokenize()
+        
+        var content: String = ""
+        for token in tokens {
+            if punctuationSet.contains(token) {
+                content.append(token)
+            } else {
+                if !content.isEmpty {
+                    content.append(" ")
+                }
+                content.append("_")
+            }
+        }
+        
+        return content
+    }
 }
 
 extension Array where Element == String {

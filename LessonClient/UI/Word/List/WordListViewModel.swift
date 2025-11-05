@@ -46,8 +46,8 @@ final class WordListViewModel: ObservableObject {
     }
 
     // Callbacks from child screens
-    func didCreate(_ word: Word) {
-        items.insert(word, at: 0)
+    func didCreate(_ words: [Word]) {
+        items.insert(contentsOf: words, at: 0)
     }
     func didImport(_ list: [Word]) {
         items.insert(contentsOf: list, at: 0)

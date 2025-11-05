@@ -29,20 +29,27 @@ final class WordCreateViewModel: ObservableObject {
     }
 
     // Action
-    func createWord() async throws -> Word {
+    func createWord() async throws -> [Word] {
         guard canSubmit else { throw NSError(domain: "invalid.form", code: 0, userInfo: [NSLocalizedDescriptionKey: "입력을 확인해 주세요."]) }
         isSaving = true
         defer { isSaving = false }
+        
+        var words: [Word] = []
+        let paras = text.components(separatedBy: "\n\n")
+        for para in paras {
+            var components = para.components(separatedBy: .newlines)
+            let text = components.removeFirst().trimmed
+            let translations = [WordTranslation].parse(from: components)
 
-        var components = text.components(separatedBy: .newlines)
-        let text = components.removeFirst().trimmed
-        let translations = [WordTranslation].parse(from: components)
+            let word = try await WordDataSource.shared.createWord(
+                text: text.trimmed,
+                lessonId: lessonId,
+                translations: translations
+            )
+            words.append(word)
+        }
 
-        return try await WordDataSource.shared.createWord(
-            text: text.trimmed,
-            lessonId: lessonId,
-            translations: translations
-        )
+        return words
     }
 }
 

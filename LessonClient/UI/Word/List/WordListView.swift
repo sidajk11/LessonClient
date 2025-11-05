@@ -53,8 +53,8 @@ struct WordListView: View {
 
                 NavigationLink(
                     "+ 새 단어",
-                    destination: WordCreateView(onCreated: { w in
-                        vm.didCreate(w)
+                    destination: WordCreateView(onCreated: { words in
+                        vm.didCreate(words)
                     })
                 )
                 .padding(.vertical)

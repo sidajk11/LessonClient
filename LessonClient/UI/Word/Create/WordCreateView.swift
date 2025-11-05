@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct WordCreateView: View {
-    var onCreated: ((Word) -> Void)? = nil
+    var onCreated: (([Word]) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm = WordCreateViewModel()
 

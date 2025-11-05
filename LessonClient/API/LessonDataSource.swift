@@ -46,11 +46,13 @@ extension LessonDataSource {
     /// 레슨 목록
     func lessons(
         level: Int? = nil,
-        unit: Int? = nil
+        unit: Int? = nil,
+        limit: Int = 10
     ) async throws -> [Lesson] {
         var query: [URLQueryItem] = []
         if let level { query.append(.init(name: "level", value: "\(level)")) }
         if let unit { query.append(.init(name: "unit", value: "\(unit)")) }
+        query.append(URLQueryItem(name: "limit", value: String(limit)))
         return try await api.request("GET", "/lessons", query: query.isEmpty ? nil : query, as: [Lesson].self)
     }
 

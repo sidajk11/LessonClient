@@ -101,8 +101,10 @@ struct LessonDetailView: View {
                 }
 
                 NavigationLink("+ 새 단어 만들기") {
-                    WordCreateView(onCreated: { w in
-                        Task { await vm.attach(w.id) }
+                    WordCreateView(onCreated: { words in
+                        for word in words {
+                            Task { await vm.attach(word.id) }
+                        }
                     })
                 }
             }
