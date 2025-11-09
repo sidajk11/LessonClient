@@ -34,6 +34,8 @@ final class WordCreateViewModel: ObservableObject {
         isSaving = true
         defer { isSaving = false }
         
+        text = text.replacingOccurrences(of: "’", with: "'")
+        
         var words: [Word] = []
         let paras = text.components(separatedBy: "\n\n")
         for para in paras {

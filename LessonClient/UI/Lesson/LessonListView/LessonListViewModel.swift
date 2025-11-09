@@ -22,7 +22,11 @@ final class LessonListViewModel: ObservableObject {
 
     func load() async {
         do {
-            items = try await LessonDataSource.shared.lessons()
+            let lesson = try await LessonDataSource.shared.lessons().first
+            if let lesson {
+                items = [lesson]
+            }
+            
         } catch {
             self.error = (error as NSError).localizedDescription
         }

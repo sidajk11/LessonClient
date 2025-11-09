@@ -8,6 +8,10 @@
 import NaturalLanguage
 
 struct NL {
+    static let uppercaseWords = [
+        "I", "I'm", "I’m", "ID", "TV"
+    ]
+    
     static func words(text: String) -> [String] {
         let tokenizer = NLTokenizer(unit: .word)
         tokenizer.string = text
@@ -34,17 +38,25 @@ struct NL {
                              unit: .word,
                              scheme: .nameType,
                              options: options) { tag, range in
-            if tag == .personalName {
+            if tag == .personalName || tag == .placeName || tag == .organizationName {
                 print("Person name →", sentence[range])
                 names.append(String(sentence[range]))
             }
             return true
         }
-        return names.contains(word)
+        if names.contains(word) {
+            return true
+        }
+        
+        if names.contains(word.components(separatedBy: "'").first ?? "") {
+            return true
+        }
+        
+        return false
     }
     
     static func lowercaseAvailable(sentence: String, word: String) -> Bool {
-        if word == "I" {
+        if uppercaseWords.contains(word) {
             return false
         }
         if isName(sentence: sentence, word: word) {

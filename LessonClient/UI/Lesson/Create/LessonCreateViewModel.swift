@@ -40,6 +40,18 @@ final class LessonCreateViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        
+        Task {
+            do {
+                let lesson = try await LessonDataSource.shared.lessons().first
+                if let lesson {
+                    unitText = "\(lesson.unit + 1)"
+                }
+                
+            } catch {
+                self.error = (error as NSError).localizedDescription
+            }
+        }
     }
 
     // Derived

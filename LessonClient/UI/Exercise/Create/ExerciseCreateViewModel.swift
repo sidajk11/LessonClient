@@ -108,7 +108,17 @@ extension ExerciseCreateViewModel {
             
             if !exercises.contains(where: { $0.type == .select }), let word {
                 type = .select
-                selectedTestWords = [word.text]
+                
+                selectedTestWords = []
+                if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() }) {
+                    selectedTestWords.append(word.text)
+                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "s" }) {
+                    selectedTestWords.append(word.text + "s")
+                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "es" }) {
+                    selectedTestWords.append(word.text + "es")
+                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "ed" }) {
+                    selectedTestWords.append(word.text + "ed")
+                }
                 let dummyWords = dummyWords
                     .filter { dummyWord in
                         !dummyWord.contains(" ")
@@ -120,6 +130,11 @@ extension ExerciseCreateViewModel {
                     }
                 let index = Int.random(in: 0 ..< dummyWords.count)
                 selectedDummyWords = [dummyWords[index]]
+                
+                if !content.contains("_") || selectedTestWords.count == 0 {
+                    errorMessage = "Generate select exercise failed!"
+                    return
+                }
                 await submit()
             }
         } catch {

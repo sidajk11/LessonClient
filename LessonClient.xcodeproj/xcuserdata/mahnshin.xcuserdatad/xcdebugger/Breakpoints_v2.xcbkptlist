@@ -3,4 +3,68 @@
    uuid = "30CD9ACD-78A9-466E-A981-9D310E9748F0"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "AFF41F7D-DEC0-4095-8BD8-18DCE0676EC0"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "LessonClient/UI/Exercise/Create/ExerciseCreateViewModel.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "135"
+            endingLineNumber = "135"
+            landmarkName = "autoGenerate()"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "AFF41F7D-DEC0-4095-8BD8-18DCE0676EC0 - 6e369edc07035672"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for LessonClient.ExerciseCreateViewModel.autoGenerate() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/mahnshin/Desktop/ym_work/projects/iOS/Samples/LessonClient/LessonClient/UI/Exercise/Create/ExerciseCreateViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "135"
+                  endingLineNumber = "135">
+               </Location>
+               <Location
+                  uuid = "AFF41F7D-DEC0-4095-8BD8-18DCE0676EC0 - a37f8cecb4982970"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(5) suspend resume partial function for LessonClient.ExerciseCreateViewModel.autoGenerate() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/mahnshin/Desktop/ym_work/projects/iOS/Samples/LessonClient/LessonClient/UI/Exercise/Create/ExerciseCreateViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "135"
+                  endingLineNumber = "135">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "19516BB6-BA8F-4B7F-BDF8-4FFF05610D7B"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "LessonClient/UI/Example/Create/ExampleCreateViewModel.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "106"
+            endingLineNumber = "106"
+            landmarkName = "autoGenerateSelect(example:word:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

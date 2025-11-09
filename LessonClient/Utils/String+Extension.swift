@@ -28,14 +28,15 @@ extension String {
     func tokenize(word: String? = nil) -> [String] {
         var parts: [String] = []
 
-        if let w = word, !w.isEmpty {
+        if let w = word, !w.isEmpty, w.contains(" ") {
             let escaped = NSRegularExpression.escapedPattern(for: w)
             // custom word: 대소문자 무시(i), 공백 무시 끄기(-x)
             parts.append("(?i-x:\(escaped))")
         }
 
         parts.append("(?:a\\.m\\.|p\\.m\\.)")
-        parts.append("[A-Za-z]+(?:'[A-Za-z]+)?")
+        //parts.append("[A-Za-z]+(?:['’][A-Za-z]+)?")
+        parts.append("[\\p{L}\\p{M}]+(?:['’][\\p{L}\\p{M}]+)?")
         parts.append("\\d+(?:\\.\\d+)?")
         parts.append("[.,!?;:()\\[\\]{}\"']")
 

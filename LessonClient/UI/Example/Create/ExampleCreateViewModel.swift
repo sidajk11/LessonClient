@@ -4,6 +4,7 @@ import Foundation
 
 @MainActor
 final class ExampleCreateViewModel: ObservableObject {
+    
     let wordId: Int
     @Published var text: String = ""
     @Published var isSaving = false
@@ -15,6 +16,9 @@ final class ExampleCreateViewModel: ObservableObject {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw NSError(domain: "invalid.form", code: 0, userInfo: [NSLocalizedDescriptionKey: "문장을 입력해 주세요."])
         }
+        
+        text = text.replacingOccurrences(of: "’", with: "'")
+        
         isSaving = true
         defer { isSaving = false }
 
@@ -64,7 +68,18 @@ final class ExampleCreateViewModel: ObservableObject {
             let lesson = try await LessonDataSource.shared.lesson(id: lessonId)
             if !exercises.contains(where: { $0.type == .select }) {
                 let allWordsInSentence = example.text.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
-                var selectedTestWords = [word.text]
+                
+                var selectedTestWords: [String] = []
+                if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() }) {
+                    selectedTestWords.append(word.text)
+                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "s" }) {
+                    selectedTestWords.append(word.text + "s")
+                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "es" }) {
+                    selectedTestWords.append(word.text + "es")
+                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "ed" }) {
+                    selectedTestWords.append(word.text + "ed")
+                }
+                
                 let wordsLearned = try await WordDataSource.shared.wordsLessThan(unit: lesson.unit).map { $0.text }
                 let dummyWords = wordsLearned
                     .filter { dummyWord in
@@ -85,6 +100,11 @@ final class ExampleCreateViewModel: ObservableObject {
                     } else {
                         word
                     }
+                }
+                
+                if !tokens.contains("_") || selectedTestWords.count <= 1 {
+                    errorMessage = "Generate select exercise failed!"
+                    return
                 }
                 
                 let content = tokens.joinTokens()
