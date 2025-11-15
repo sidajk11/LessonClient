@@ -62,11 +62,11 @@ final class ExerciseDetailViewModel: ObservableObject {
 
     private func recomputeExtraWords() {
         // learned - currentOptions (대소문자 무시)
-        let learned = Set(wordsLearned.map { $0.text.lowercased() })
-        let current = Set(currentOptions.map { $0.lowercased() })
-        let extra = learned.subtracting(current)
+        let learned = Set(wordsLearned.map { NL.lowercaseAvailable(sentence: "", word: $0.text) ? $0.text.lowercased() : $0.text })
+        let current = Set(currentOptions.map { NL.lowercaseAvailable(sentence: "", word: $0) ? $0.lowercased() : $0 })
+        let extra = Array(learned).subtractingWords(Array(current))
         // 보기 좋게 알파벳 정렬 (원하면 제거)
-        self.extraWords = Array(extra).sorted()
+        self.extraWords = extra.sorted()
         // 변경 여부
         self.hasChanges = !equalsCI(lhs: currentOptions, rhs: originalOptions)
         // 표시용 텍스트 업데이트

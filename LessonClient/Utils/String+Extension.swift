@@ -8,7 +8,7 @@
 import Foundation
 
 let punctuationSet: [String] = [",", ".", "!", "?"]
-let names: [String] = ["Tom", "Mia"]
+
 
 extension String {
     var int: Int? {
@@ -36,7 +36,8 @@ extension String {
 
         parts.append("(?:a\\.m\\.|p\\.m\\.)")
         //parts.append("[A-Za-z]+(?:['’][A-Za-z]+)?")
-        parts.append("[\\p{L}\\p{M}]+(?:['’][\\p{L}\\p{M}]+)?")
+        //parts.append("[\\p{L}\\p{M}]+(?:['’][\\p{L}\\p{M}]+)?")
+        parts.append("[\\p{L}\\p{M}]+(?:[\\p{Pd}'’][\\p{L}\\p{M}]+)*")
         parts.append("\\d+(?:\\.\\d+)?")
         parts.append("[.,!?;:()\\[\\]{}\"']")
 
@@ -74,6 +75,18 @@ extension String {
     }
 }
 
+extension String {
+    func isSameWord(word: String) -> Bool {
+        let result = NL.getLemma(of: self).lowercased() == NL.getLemma(of: word).lowercased()
+        if !result, word.contains(self) {
+            if word == self + "s" {
+                return true
+            }
+        }
+        return result
+    }
+}
+
 extension Array where Element == String {
     func joinTokens() -> String {
         let noSpaceBefore = punctuationSet  // 앞에 공백이 필요 없는 토큰
@@ -94,5 +107,17 @@ extension Array where Element == String {
     
     var lastPunctuation: String {
         return reversed().first { punctuationSet.contains($0) } ?? ""
+    }
+    
+    func subtractingWords(_ other: [String]) -> [String] {
+        
+        var list: [String] = []
+        list = self
+        list.removeAll(where: { word in
+            other.contains(where: {
+                $0.isSameWord(word: word)
+            })
+        } )
+        return list
     }
 }

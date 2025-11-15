@@ -37,6 +37,14 @@ struct LessonDetailView: View {
                     }
                 }
             }
+            
+            NavigationLink("+ 새 단어 만들기") {
+                WordCreateView(onCreated: { words in
+                    for word in words {
+                        Task { await vm.attach(word.id) }
+                    }
+                })
+            }
 
             // MARK: 단어 목록
             List {
@@ -98,14 +106,6 @@ struct LessonDetailView: View {
                         Button("연결") { Task { await vm.attach(w.id) } }
                             .buttonStyle(.borderedProminent)
                     }
-                }
-
-                NavigationLink("+ 새 단어 만들기") {
-                    WordCreateView(onCreated: { words in
-                        for word in words {
-                            Task { await vm.attach(word.id) }
-                        }
-                    })
                 }
             }
         }

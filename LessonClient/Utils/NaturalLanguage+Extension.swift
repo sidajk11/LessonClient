@@ -9,7 +9,19 @@ import NaturalLanguage
 
 struct NL {
     static let uppercaseWords = [
-        "I", "I'm", "I’m", "ID", "TV"
+        "I", "I'm", "I’m", "I will", "I'll"
+    ]
+    
+    static let abbr = [
+        "ID", "TV", "T-shirt"
+    ]
+    
+    static let weekDays = [
+        "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"
+    ]
+    
+    static let names: [String] = [
+        "Tom", "Mia"
     ]
     
     static func words(text: String) -> [String] {
@@ -28,22 +40,39 @@ struct NL {
     }
     
     static func isName(sentence: String, word: String) -> Bool {
-        let tagger = NLTagger(tagSchemes: [.nameType])
+        let tagger = NLTagger(tagSchemes: [.nameTypeOrLexicalClass])
         tagger.string = sentence
 
         let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation]
-
+        var currentName = ""
         var names: [String] = []
         tagger.enumerateTags(in: sentence.startIndex..<sentence.endIndex,
                              unit: .word,
-                             scheme: .nameType,
+                             scheme: .nameTypeOrLexicalClass,
                              options: options) { tag, range in
             if tag == .personalName || tag == .placeName || tag == .organizationName {
                 print("Person name →", sentence[range])
-                names.append(String(sentence[range]))
+                let token = String(sentence[range])
+                if currentName.isEmpty {
+                    currentName = token
+                } else {
+                    currentName += " " + token
+                }
+                names.append(token)
+            } else {
+                if !currentName.isEmpty {
+                    names.append(currentName)
+                    currentName = ""
+                }
             }
             return true
         }
+        
+        if !currentName.isEmpty {
+            names.append(currentName)
+            currentName = ""
+        }
+        
         if names.contains(word) {
             return true
         }
@@ -63,7 +92,26 @@ struct NL {
             return false
         }
         
+        if names.contains(where: { $0.isSameWord(word: word) }) {
+            return false
+        }
+        
+        if weekDays.contains(where: { $0.isSameWord(word: word) }) {
+            return false
+        }
+        if abbr.contains(where: { $0.isSameWord(word: word) }) {
+            return false
+        }
+        
         return true
+    }
+    
+    static func getLemma(of word: String) -> String {
+        let tagger = NLTagger(tagSchemes: [.lemma])
+        tagger.string = word
+        let range = word.startIndex..<word.endIndex
+        let (lemma, _) = tagger.tag(at: range.lowerBound, unit: .word, scheme: .lemma)
+        return lemma?.rawValue ?? word
     }
 }
 

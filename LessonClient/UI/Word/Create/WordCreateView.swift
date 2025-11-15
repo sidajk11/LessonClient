@@ -8,15 +8,6 @@ struct WordCreateView: View {
 
     var body: some View {
         Form {
-            Section("단어&번역들") {
-                TextEditor(text: $vm.text)
-                    .frame(minHeight: 120)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
-                Text("예)\nko: 나의 / 내\nes: mi")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
             Button {
                 Task {
                     do {
@@ -32,6 +23,15 @@ struct WordCreateView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(!vm.canSubmit)
+            
+            Section("단어&번역들") {
+                TextEditor(text: $vm.text)
+                    .frame(minHeight: 120)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
+                Text("예)\nko: 나의 / 내\nes: mi")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
 
             if let e = vm.error {
                 Text(e).foregroundStyle(.red)

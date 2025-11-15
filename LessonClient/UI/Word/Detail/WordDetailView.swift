@@ -58,6 +58,15 @@ struct WordDetailView: View {
                 }
             }
             
+            // + 새 예문 추가 네비게이션 (필요 시 유지)
+            NavigationLink {
+                ExampleCreateView(wordId: vm.wordId) { examples in
+                    vm.examples.insert(contentsOf: examples, at: 0)
+                }
+            } label: {
+                Label("새 예문 추가", systemImage: "plus.circle")
+            }
+            
             Section("번역들") {
                 TextEditor(text: $vm.translationText)
                     .frame(minHeight: 80)
@@ -106,15 +115,6 @@ struct WordDetailView: View {
                         .padding(.vertical, 2)
                     }
                 }
-            }
-
-            // + 새 예문 추가 네비게이션 (필요 시 유지)
-            NavigationLink {
-                ExampleCreateView(wordId: vm.wordId) { examples in
-                    vm.examples.insert(contentsOf: examples, at: 0)
-                }
-            } label: {
-                Label("새 예문 추가", systemImage: "plus.circle")
             }
         }
     }
