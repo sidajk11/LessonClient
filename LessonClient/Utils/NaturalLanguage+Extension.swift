@@ -9,19 +9,27 @@ import NaturalLanguage
 
 struct NL {
     static let uppercaseWords = [
-        "I", "I'm", "I’m", "I will", "I'll"
+        "I", "I'm", "I’m", "I will", "I'll", "I'd", "I've"
     ]
     
     static let abbr = [
-        "ID", "TV", "T-shirt"
+        "ID", "TV", "T-shirt", "Wi-Fi"
     ]
     
     static let weekDays = [
         "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"
     ]
     
+    static let months = [
+        "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
+    ]
+    
     static let names: [String] = [
         "Tom", "Mia"
+    ]
+    
+    static let holidays: [String] = [
+        "Christmas", "Eve", "Christmas Day", "New Year's Eve", "Christmas Eve", "New Year's Day"
     ]
     
     static func words(text: String) -> [String] {
@@ -99,7 +107,16 @@ struct NL {
         if weekDays.contains(where: { $0.isSameWord(word: word) }) {
             return false
         }
+        
+        if months.contains(where: { $0.isSameWord(word: word) }) {
+            return false
+        }
+        
         if abbr.contains(where: { $0.isSameWord(word: word) }) {
+            return false
+        }
+        
+        if holidays.contains(where: { $0.isSameWord(word: word) }) {
             return false
         }
         

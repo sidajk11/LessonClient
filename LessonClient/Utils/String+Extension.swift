@@ -9,6 +9,9 @@ import Foundation
 
 let punctuationSet: [String] = [",", ".", "!", "?"]
 
+let expressions = [
+    "Christmas Day", "New Year's Eve", "Christmas Eve", "New Year's Day"
+]
 
 extension String {
     var int: Int? {
@@ -28,7 +31,13 @@ extension String {
     func tokenize(word: String? = nil) -> [String] {
         var parts: [String] = []
 
-        if let w = word, !w.isEmpty, w.contains(" ") {
+        var words: [String] = []
+        if let word {
+            words.append(word)
+        }
+        words.append(contentsOf: expressions)
+        
+        for w in words where !w.isEmpty && w.contains(" ") {
             let escaped = NSRegularExpression.escapedPattern(for: w)
             // custom word: 대소문자 무시(i), 공백 무시 끄기(-x)
             parts.append("(?i-x:\(escaped))")

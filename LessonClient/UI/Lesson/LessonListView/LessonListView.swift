@@ -41,6 +41,25 @@ struct LessonListView: View {
                         }
                     }
                     .disabled(vm.isCopying)
+                    
+                    // ===== 플로팅 버튼들 =====
+                    VStack(spacing: 12) {
+                        NavigationLink {
+                            LessonCreateView { newLesson in
+                                // Insert at top after create
+                                vm.items.insert(newLesson, at: 0)
+                            }
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.title)
+                                .padding()
+                                .background(Color.accentColor)
+                                .foregroundColor(.white)
+                                .clipShape(Circle())
+                                .shadow(radius: 4)
+                        }
+                    }
+                    .padding()
                 }
                 .padding(.horizontal)
 
@@ -60,25 +79,6 @@ struct LessonListView: View {
                     .onAppear {
                         print("Lesson list onAppear")
                     }
-
-                    // ===== 플로팅 버튼들 =====
-                    VStack(spacing: 12) {
-                        NavigationLink {
-                            LessonCreateView { newLesson in
-                                // Insert at top after create
-                                vm.items.insert(newLesson, at: 0)
-                            }
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.title)
-                                .padding()
-                                .background(Color.accentColor)
-                                .foregroundColor(.white)
-                                .clipShape(Circle())
-                                .shadow(radius: 4)
-                        }
-                    }
-                    .padding()
                 }
             }
             .navigationTitle("레슨")
