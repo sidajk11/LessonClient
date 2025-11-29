@@ -113,12 +113,13 @@ extension ExerciseCreateView {
                 // 칩 레이아웃
                 let columns = [GridItem(.adaptive(minimum: 80), spacing: 8)]
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-                    ForEach(allWordsInSentence, id: \.self) { word in
+                    ForEach(allWordsInSentence.indices, id: \.self) { index in
+                        let word = allWordsInSentence[index]
                         Button {
-                            vm.selectTestWord(word: word)
+                            vm.selectTestWord(index: index)
                         } label: {
                             HStack(spacing: 6) {
-                                if vm.isTestWordSelected(word: word) {
+                                if vm.isTestWordSelected(index: index) {
                                     Image(systemName: "checkmark.circle.fill")
                                 }
                                 Text(word)
@@ -129,11 +130,11 @@ extension ExerciseCreateView {
                             .padding(.horizontal, 10)
                             .background(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(vm.isTestWordSelected(word: word) ? Color.accentColor.opacity(0.15) : Color.clear)
+                                    .fill(vm.isTestWordSelected(index: index) ? Color.accentColor.opacity(0.15) : Color.clear)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(vm.isTestWordSelected(word: word) ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
+                                    .stroke(vm.isTestWordSelected(index: index) ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)

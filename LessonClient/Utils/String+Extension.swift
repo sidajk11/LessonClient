@@ -10,7 +10,8 @@ import Foundation
 let punctuationSet: [String] = [",", ".", "!", "?"]
 
 let expressions = [
-    "Christmas Day", "New Year's Eve", "Christmas Eve", "New Year's Day"
+    "Christmas Day", "New Year's Eve", "Christmas Eve", "New Year's Day",
+    "New York City"
 ]
 
 extension String {

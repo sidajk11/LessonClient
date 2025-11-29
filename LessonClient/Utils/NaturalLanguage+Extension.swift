@@ -32,6 +32,10 @@ struct NL {
         "Christmas", "Eve", "Christmas Day", "New Year's Eve", "Christmas Eve", "New Year's Day"
     ]
     
+    static let counties: [String] = [
+        "Italian", "English", "New York City",
+    ]
+    
     static func words(text: String) -> [String] {
         let tokenizer = NLTokenizer(unit: .word)
         tokenizer.string = text
@@ -48,7 +52,7 @@ struct NL {
     }
     
     static func isName(sentence: String, word: String) -> Bool {
-        let tagger = NLTagger(tagSchemes: [.nameTypeOrLexicalClass])
+        let tagger = NLTagger(tagSchemes: [.nameTypeOrLexicalClass, .lemma, .lexicalClass])
         tagger.string = sentence
 
         let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation]
@@ -58,7 +62,7 @@ struct NL {
                              unit: .word,
                              scheme: .nameTypeOrLexicalClass,
                              options: options) { tag, range in
-            if tag == .personalName || tag == .placeName || tag == .organizationName {
+            if tag == .personalName || tag == .placeName || tag == .organizationName || tag == .pronoun {
                 print("Person name →", sentence[range])
                 let token = String(sentence[range])
                 if currentName.isEmpty {
@@ -117,6 +121,10 @@ struct NL {
         }
         
         if holidays.contains(where: { $0.isSameWord(word: word) }) {
+            return false
+        }
+        
+        if counties.contains(where: { $0.isSameWord(word: word) }) {
             return false
         }
         

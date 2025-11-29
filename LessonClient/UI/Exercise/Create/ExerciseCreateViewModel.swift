@@ -11,7 +11,7 @@ final class ExerciseCreateViewModel: ObservableObject {
     var word: Word?
     
     @Published var type: ExerciseType = .select // change as needed
-    @Published var selectedTestWords: [String] = []
+    @Published var selectedIndexes: [Int] = []
     // 영어문장에서 추출한 단어들
     @Published var allWordsInSentence: [String] = []
     // 번역에서 추출한 단어들
@@ -31,6 +31,10 @@ final class ExerciseCreateViewModel: ObservableObject {
     @Published var isSubmitting: Bool = false
     @Published var errorMessage: String?
     @Published var createdExercise: Exercise?
+    
+    var selectedTestWords: [String] {
+        return selectedIndexes.map { self.allWordsInSentence[$0] }
+    }
 
     var canSubmit: Bool {
         !isSubmitting
@@ -84,16 +88,17 @@ extension ExerciseCreateViewModel {
 }
 
 extension ExerciseCreateViewModel {
-    func selectTestWord(word: String) {
-        if selectedTestWords.contains(word) {
-            selectedTestWords.removeAll(where: { $0 == word })
+    func selectTestWord(index: Int) {
+        
+        if selectedIndexes.contains(index) {
+            selectedIndexes.removeAll(where: { $0 == index })
         } else {
-            selectedTestWords.append(word)
+            selectedIndexes.append(index)
         }
     }
     
-    func isTestWordSelected(word: String) -> Bool {
-        selectedTestWords.contains(word)
+    func isTestWordSelected(index: Int) -> Bool {
+        selectedIndexes.contains(index)
     }
 }
 
@@ -109,15 +114,15 @@ extension ExerciseCreateViewModel {
             if !exercises.contains(where: { $0.type == .select }), let word {
                 type = .select
                 
-                selectedTestWords = []
-                if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() }) {
-                    selectedTestWords.append(word.text)
-                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "s" }) {
-                    selectedTestWords.append(word.text + "s")
-                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "es" }) {
-                    selectedTestWords.append(word.text + "es")
-                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "ed" }) {
-                    selectedTestWords.append(word.text + "ed")
+                selectedIndexes = []
+                if let index = allWordsInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() }) {
+                    selectedIndexes.append(index)
+                } else if let index = allWordsInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "s" }) {
+                    selectedIndexes.append(index)
+                } else if let index = allWordsInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "es" }) {
+                    selectedIndexes.append(index)
+                } else if let index = allWordsInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "ed" }) {
+                    selectedIndexes.append(index)
                 }
                 let dummyWords = dummyWords
                     .filter { dummyWord in
@@ -131,7 +136,7 @@ extension ExerciseCreateViewModel {
                 let index = Int.random(in: 0 ..< dummyWords.count)
                 selectedDummyWords = [dummyWords[index]]
                 
-                if !content.contains("_") || selectedTestWords.count == 0 {
+                if !content.contains("_") || selectedIndexes.count == 0 {
                     errorMessage = "Generate select exercise failed!"
                     return
                 }
@@ -199,17 +204,13 @@ extension ExerciseCreateViewModel {
         $type
             .removeDuplicates()
             .filter { $0 == .select }
-            .combineLatest($selectedTestWords.compactMap { $0 })
-            .sink { [weak self] (type, selectedTestWords) in
+            .combineLatest($selectedIndexes)
+            .sink { [weak self] (type, selectedIndexes) in
                 guard let self else { return }
                 sentence = example.text
                 var tokens = sentence.tokenize(word: word?.text)
-                tokens = tokens.map { word in
-                    if selectedTestWords.contains(where: { $0.lowercased() == word.lowercased() }) {
-                        "_"
-                    } else {
-                        word
-                    }
+                for index in selectedIndexes {
+                    tokens[index] = "_"
                 }
                 
                 content = tokens.joinTokens()
@@ -219,11 +220,12 @@ extension ExerciseCreateViewModel {
         
         $type
             .filter { $0 == .select }
-            .combineLatest($selectedTestWords) { $1 }
+            .combineLatest($selectedIndexes) { $1 }
             .compactMap { $0 }
             .combineLatest($selectedDummyWords)
-            .map { selectedTestWords, selectedDummyWords in
+            .map { selectedIndexes, selectedDummyWords in
                 var words = selectedDummyWords
+                let selectedTestWords = selectedIndexes.map { self.allWordsInSentence[$0] }
                 words.insert(contentsOf: selectedTestWords, at: 0)
                 return words
             }
