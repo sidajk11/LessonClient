@@ -15,10 +15,10 @@ final class UserDataSource {
     // MARK: Auth
     struct TokenRes: Codable { let access_token: String; let token_type: String }
     
-    func me() async throws -> User { try await api.request("GET", "/users/me", as: User.self) }
+    func me() async throws -> User { try await api.request("GET", "admin/users/me", as: User.self) }
     func register(email: String, password: String) async throws -> User {
         struct Body: Codable { let email: String; let password: String }
-        return try await api.request("POST", "/users", jsonBody: Body(email: email, password: password), authorized: false, as: User.self)
+        return try await api.request("POST", "admin/users", jsonBody: Body(email: email, password: password), authorized: false, as: User.self)
     }
     
     func login(email: String, password: String) async throws {

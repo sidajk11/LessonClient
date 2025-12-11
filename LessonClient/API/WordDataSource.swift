@@ -16,7 +16,7 @@ final class WordDataSource {
     @discardableResult
     func createWord(text: String, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
         let body = WordUpdate(text: text, lessonId: lessonId, translations: translations)
-        return try await api.request("POST", "/words", jsonBody: body, as: Word.self)
+        return try await api.request("POST", "admin/words", jsonBody: body, as: Word.self)
     }
 
     // MARK: - Fetch Words
@@ -44,14 +44,14 @@ final class WordDataSource {
 
         return try await api.request(
             "GET",
-            "/words",
+            "admin/words",
             query: query,
             as: [Word].self
         )
     }
     
     func word(id: Int, lang: String = "ko") async throws -> Word {
-        try await api.request("GET", "/words/\(id)", as: Word.self)
+        try await api.request("GET", "admin/words/\(id)", as: Word.self)
     }
 
     // MARK: - Search Words
@@ -78,28 +78,28 @@ final class WordDataSource {
             items.append(URLQueryItem(name: "langs", value: langs.joined(separator: ",")))
         }
 
-        return try await api.request("GET", "/words/search", query: items, as: [Word].self)
+        return try await api.request("GET", "admin/words/search", query: items, as: [Word].self)
     }
     
     func wordsLessThan(unit: Int) async throws -> [Word] {
         var items: [URLQueryItem] = []
         items.append(URLQueryItem(name: "unit_lt",  value: String(unit)))
-        return try await api.request("GET", "/words/list/unit-lt", query: items, as: [Word].self)
+        return try await api.request("GET", "admin/words/list/unit-lt", query: items, as: [Word].self)
     }
 
     func listUnassigned() async throws -> [Word] {
-        return try await api.request("GET", "/words/list/unassigned", as: [Word].self)
+        return try await api.request("GET", "admin/words/list/unassigned", as: [Word].self)
     }
 
     // MARK: - Update Word
     @discardableResult
     func updateWord(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
         let body = WordUpdate(text: text, lessonId: lessonId, translations: translations)
-        return try await api.request("PUT", "/words/\(id)", jsonBody: body, as: Word.self)
+        return try await api.request("PUT", "admin/words/\(id)", jsonBody: body, as: Word.self)
     }
 
     // MARK: - Delete Word
     func deleteWord(id: Int) async throws {
-        _ = try await api.request("DELETE", "/words/\(id)", as: Empty.self)
+        _ = try await api.request("DELETE", "admin/words/\(id)", as: Empty.self)
     }
 }

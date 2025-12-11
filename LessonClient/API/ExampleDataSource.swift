@@ -26,12 +26,12 @@ final class ExampleDataSource {
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleUpdate(text: text, wordId: wordId, translations: translations)
-        return try await api.request("POST", "/examples", jsonBody: body, as: Example.self)
+        return try await api.request("POST", "admin/examples", jsonBody: body, as: Example.self)
     }
 
     /// 예문 단건 조회
     func example(id: Int) async throws -> Example {
-        try await api.request("GET", "/examples/\(id)", as: Example.self)
+        try await api.request("GET", "admin/examples/\(id)", as: Example.self)
     }
 
     /// 예문 수정
@@ -47,12 +47,12 @@ final class ExampleDataSource {
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleUpdate(text: text, wordId: wordId, translations: translations)
-        return try await api.request("PUT", "/examples/\(id)", jsonBody: body, as: Example.self)
+        return try await api.request("PUT", "admin/examples/\(id)", jsonBody: body, as: Example.self)
     }
 
     /// 예문 삭제
     func deleteExample(id: Int) async throws {
-        _ = try await api.request("DELETE", "/examples/\(id)", as: Empty.self)
+        _ = try await api.request("DELETE", "admin/examples/\(id)", as: Empty.self)
     }
 
     // MARK: - Search
@@ -81,13 +81,13 @@ final class ExampleDataSource {
 
         return try await api.request(
             "GET",
-            "/examples/search",
+            "admin/examples/search",
             query: query,
             as: [Example].self
         )
     }
 
     func examples(wordId: Int) async throws -> [Example] {
-        try await api.request("GET", "/examples/by-word/\(wordId)", as: [Example].self)
+        try await api.request("GET", "admin/examples/by-word/\(wordId)", as: [Example].self)
     }
 }

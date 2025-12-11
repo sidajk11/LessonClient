@@ -18,29 +18,29 @@ final class ExerciseDataSource {
     func list(exampleId: Int? = nil, limit: Int = 50) async throws -> [Exercise] {
         var query: [URLQueryItem] = [.init(name: "limit", value: "\(min(max(limit, 1), 200))")]
         if let exampleId { query.append(.init(name: "example_id", value: "\(exampleId)")) }
-        return try await api.request("GET", "/exercises", query: query, as: [Exercise].self)
+        return try await api.request("GET", "admin/exercises", query: query, as: [Exercise].self)
     }
 
     /// 단건 조회
     func get(id: Int) async throws -> Exercise {
-        try await api.request("GET", "/exercises/\(id)", as: Exercise.self)
+        try await api.request("GET", "admin/exercises/\(id)", as: Exercise.self)
     }
 
     /// 생성
     @discardableResult
     func create(exercise: ExerciseUpdate) async throws -> Exercise {
-        return try await api.request("POST", "/exercises", jsonBody: exercise, as: Exercise.self)
+        return try await api.request("POST", "admin/exercises", jsonBody: exercise, as: Exercise.self)
     }
 
     /// 수정 (전달한 항목만 갱신, 옵션/번역은 전달 시 전체 치환)
     @discardableResult
     func update(id: Int, exercise: ExerciseUpdate) async throws -> Exercise {
-        return try await api.request("PUT", "/exercises/\(id)", jsonBody: exercise, as: Exercise.self)
+        return try await api.request("PUT", "admin/exercises/\(id)", jsonBody: exercise, as: Exercise.self)
     }
 
     /// 삭제
     func delete(id: Int) async throws {
-        _ = try await api.request("DELETE", "/exercises/\(id)", as: Empty.self)
+        _ = try await api.request("DELETE", "admin/exercises/\(id)", as: Empty.self)
     }
     
     /// 연습문제 검색 (GET /exercises/search)
@@ -68,7 +68,7 @@ final class ExerciseDataSource {
 
         return try await api.request(
             "GET",
-            "/exercises/search",
+            "admin/exercises/search",
             query: query,
             as: [Exercise].self
         )

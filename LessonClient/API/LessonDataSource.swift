@@ -40,7 +40,7 @@ extension LessonDataSource {
             wordIds: wordIds,
             translations: translations
         )
-        return try await api.request("POST", "/lessons", jsonBody: body, as: Lesson.self)
+        return try await api.request("POST", "admin/lessons", jsonBody: body, as: Lesson.self)
     }
 
     /// 레슨 목록
@@ -53,11 +53,11 @@ extension LessonDataSource {
         if let level { query.append(.init(name: "level", value: "\(level)")) }
         if let unit { query.append(.init(name: "unit", value: "\(unit)")) }
         query.append(URLQueryItem(name: "limit", value: String(limit)))
-        return try await api.request("GET", "/lessons", query: query.isEmpty ? nil : query, as: [Lesson].self)
+        return try await api.request("GET", "admin/lessons", query: query.isEmpty ? nil : query, as: [Lesson].self)
     }
 
     func lesson(id: Int) async throws -> Lesson {
-        try await api.request("GET", "/lessons/\(id)", as: Lesson.self)
+        try await api.request("GET", "admin/lessons/\(id)", as: Lesson.self)
     }
 
     /// 레슨 수정 (전달한 필드만 갱신, translation/wordIds는 전체 치환 정책)
@@ -77,11 +77,11 @@ extension LessonDataSource {
             wordIds: wordIds,
             translations: translations
         )
-        return try await api.request("PUT", "/lessons/\(id)", jsonBody: body, as: Lesson.self)
+        return try await api.request("PUT", "admin/lessons/\(id)", jsonBody: body, as: Lesson.self)
     }
 
     func deleteLesson(id: Int) async throws {
-        _ = try await api.request("DELETE", "/lessons/\(id)", as: Empty.self)
+        _ = try await api.request("DELETE", "admin/lessons/\(id)", as: Empty.self)
     }
 
     // MARK: - Word attach/detach (1:N)
@@ -90,12 +90,12 @@ extension LessonDataSource {
     @discardableResult
     func attachWord(lessonId: Int, wordId: Int) async throws -> Lesson {
         let body = AttachWordBody(wordId: wordId)
-        return try await api.request("POST", "/lessons/\(lessonId)/words", jsonBody: body, as: Lesson.self)
+        return try await api.request("POST", "admin/lessons/\(lessonId)/words", jsonBody: body, as: Lesson.self)
     }
 
     /// 단어 분리(detach) → 서버가 Lesson 반환
     @discardableResult
     func detachWord(lessonId: Int, wordId: Int) async throws -> Lesson {
-        try await api.request("DELETE", "/lessons/\(lessonId)/words/\(wordId)", as: Lesson.self)
+        try await api.request("DELETE", "admin/lessons/\(lessonId)/words/\(wordId)", as: Lesson.self)
     }
 }
