@@ -18,14 +18,14 @@ final class UserDataSource {
     func me() async throws -> User { try await api.request("GET", "admin/users/me", as: User.self) }
     func register(email: String, password: String) async throws -> User {
         struct Body: Codable { let email: String; let password: String }
-        return try await api.request("POST", "admin/users", jsonBody: Body(email: email, password: password), authorized: false, as: User.self)
+        return try await api.request("POST", "app/v1/auth/join", jsonBody: Body(email: email, password: password), authorized: false, as: User.self)
     }
     
     func login(email: String, password: String) async throws {
         do {
             let res: TokenRes = try await api.request(
                 "POST",
-                "auth/login",
+                "app/v1/auth/login",
                 formBody: [
                     "username": email,
                     "password": password,

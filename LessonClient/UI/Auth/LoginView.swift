@@ -14,9 +14,9 @@ struct LoginView: View {
 
             TextField("이메일", text: $email).textFieldStyle(.roundedBorder)
             SecureField("비밀번호", text: $password).textFieldStyle(.roundedBorder)
-
+            
             if let e = error { Text(e).foregroundColor(.red) }
-
+            
             HStack {
                 Button(isRegister ? "가입하기" : "로그인") {
                     Task {
