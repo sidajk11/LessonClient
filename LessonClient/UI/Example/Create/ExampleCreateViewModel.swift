@@ -37,7 +37,7 @@ final class ExampleCreateViewModel: ObservableObject {
             examples.append(example)
         }
         
-        let word = try await WordDataSource.shared.word(id: wordId)
+        let word = try await VocabularyDataSource.shared.word(id: wordId)
         
         for example in examples {
             await autoGenerateCombine(example: example, word: word)
@@ -48,68 +48,68 @@ final class ExampleCreateViewModel: ObservableObject {
         return examples
     }
     
-    private func autoGenerateCombine(example: Example, word: Word) async {
+    private func autoGenerateCombine(example: Example, word: Vocabulary) async {
         do {
-            let exercises = try await ExerciseDataSource.shared.list(exampleId: example.id)
-            if !exercises.contains(where: { $0.type == .combine }) {
-                let allWordsInSentence = example.text.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
+            let practices = try await PracticeDataSource.shared.list(exampleId: example.id)
+            if !practices.contains(where: { $0.type == .combine }) {
+                let allVocabularysInSentence = example.text.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
                 let content = example.text.underlinesText
-                await submit(example: example, content: content, type: .combine, wordOptionTextList: allWordsInSentence)
+                await submit(example: example, content: content, type: .combine, wordOptionTextList: allVocabularysInSentence)
             }
         } catch {
             errorMessage = error.localizedDescription
         }
     }
     
-    private func autoGenerateSelect(example: Example, word: Word) async {
+    private func autoGenerateSelect(example: Example, word: Vocabulary) async {
         guard let lessonId = word.lessonId else { return }
         do {
-            let exercises = try await ExerciseDataSource.shared.list(exampleId: example.id)
+            let practices = try await PracticeDataSource.shared.list(exampleId: example.id)
             let lesson = try await LessonDataSource.shared.lesson(id: lessonId)
-            if !exercises.contains(where: { $0.type == .select }) {
-                let allWordsInSentence = example.text.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
+            if !practices.contains(where: { $0.type == .select }) {
+                let allVocabularysInSentence = example.text.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
                 
-                var selectedTestWords: [String] = []
-                if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() }) {
-                    selectedTestWords.append(word.text)
-                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "s" }) {
-                    selectedTestWords.append(word.text + "s")
-                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "es" }) {
-                    selectedTestWords.append(word.text + "es")
-                } else if allWordsInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "ed" }) {
-                    selectedTestWords.append(word.text + "ed")
+                var selectedTestVocabularys: [String] = []
+                if allVocabularysInSentence.contains(where: { $0.lowercased() == word.text.lowercased() }) {
+                    selectedTestVocabularys.append(word.text)
+                } else if allVocabularysInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "s" }) {
+                    selectedTestVocabularys.append(word.text + "s")
+                } else if allVocabularysInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "es" }) {
+                    selectedTestVocabularys.append(word.text + "es")
+                } else if allVocabularysInSentence.contains(where: { $0.lowercased() == word.text.lowercased() + "ed" }) {
+                    selectedTestVocabularys.append(word.text + "ed")
                 }
                 
-                let wordsLearned = try await WordDataSource.shared.wordsLessThan(unit: lesson.unit).map { $0.text }
-                let dummyWords = wordsLearned
-                    .filter { dummyWord in
-                        !dummyWord.contains(" ")
+                let wordsLearned = try await VocabularyDataSource.shared.wordsLessThan(unit: lesson.unit).map { $0.text }
+                let dummyVocabularys = wordsLearned
+                    .filter { dummyVocabulary in
+                        !dummyVocabulary.contains(" ")
                     }
-                    .filter { dummyWord in
-                        !allWordsInSentence.contains(where: {
-                            $0.lowercased() == dummyWord.lowercased()
+                    .filter { dummyVocabulary in
+                        !allVocabularysInSentence.contains(where: {
+                            $0.lowercased() == dummyVocabulary.lowercased()
                         })
                     }
-                let index = Int.random(in: 0 ..< dummyWords.count)
-                selectedTestWords.append(dummyWords[index])
+                let index = Int.random(in: 0 ..< dummyVocabularys.count)
+                selectedTestVocabularys.append(dummyVocabularys[index])
                 
                 var tokens = example.text.tokenize(word: word.text)
                 tokens = tokens.map { word in
-                    if selectedTestWords.contains(where: { $0.lowercased() == word.lowercased() }) {
+                    if selectedTestVocabularys.contains(where: { $0.lowercased() == word.lowercased() }) {
                         "_"
                     } else {
                         word
                     }
                 }
                 
-                if !tokens.contains("_") || selectedTestWords.count <= 1 {
-                    errorMessage = "Generate select exercise failed!"
+                if !tokens.contains("_") || selectedTestVocabularys.count <= 1 {
+                    errorMessage = "Generate select practice failed!"
                     return
                 }
                 
                 let content = tokens.joinTokens()
                 
-                await submit(example: example, content: content, type: .select, wordOptionTextList: selectedTestWords)
+                await submit(example: example, content: content, type: .select, wordOptionTextList: selectedTestVocabularys)
             }
             
         } catch {
@@ -117,19 +117,19 @@ final class ExampleCreateViewModel: ObservableObject {
         }
     }
     
-    private func submit(example: Example, content: String, type: ExerciseType, wordOptionTextList: [String]) async {
-        var transList: [ExerciseTranslation] = []
-        let trans = ExerciseTranslation(langCode: .enUS, content: content, question: nil)
+    private func submit(example: Example, content: String, type: PracticeType, wordOptionTextList: [String]) async {
+        var transList: [PracticeTranslation] = []
+        let trans = PracticeTranslation(langCode: .enUS, content: content, question: nil)
         transList.append(trans)
         
-        var wordsOptions: [ExerciseWordOption] = []
+        var wordsOptions: [PracticeVocabularyOption] = []
         wordsOptions = wordOptionTextList.map {
             let text = NL.lowercaseAvailable(sentence: example.text, word: $0) ? $0.lowercased() : $0
-            let translation = ExerciseOptionTranslation(langCode: .enUS, text: text)
-            return ExerciseWordOption(translations: [translation])
+            let translation = PracticeOptionTranslation(langCode: .enUS, text: text)
+            return PracticeVocabularyOption(translations: [translation])
         }
         
-        let exerciseCrate = ExerciseUpdate(
+        let practiceCrate = PracticeUpdate(
             exampleId: example.id,
             type: type,
             wordOptions: wordsOptions,
@@ -137,7 +137,7 @@ final class ExampleCreateViewModel: ObservableObject {
             translations: transList
         )
         do {
-            let _ = try await ExerciseDataSource.shared.create(exercise: exerciseCrate)
+            let _ = try await PracticeDataSource.shared.create(practice: practiceCrate)
         } catch {
             errorMessage = error.localizedDescription
         }

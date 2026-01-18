@@ -1,5 +1,5 @@
 //
-//  ExerciseListView.swift
+//  PracticeListView.swift
 //  LessonClient
 //
 //  Created by 정영민 on 10/14/25.
@@ -8,13 +8,13 @@
 import SwiftUI
 import Combine
 
-// MARK: - Exercise List View
-struct ExerciseListView: View {
-    @StateObject private var vm: ExerciseListViewModel
+// MARK: - Practice List View
+struct PracticeListView: View {
+    @StateObject private var vm: PracticeListViewModel
     @State private var showingCreate: Bool = false
 
     init(example: Example) {
-        _vm = StateObject(wrappedValue: ExerciseListViewModel(example: example))
+        _vm = StateObject(wrappedValue: PracticeListViewModel(example: example))
     }
 
     var body: some View {
@@ -25,20 +25,20 @@ struct ExerciseListView: View {
                 }
             }
 
-            if vm.isLoading && vm.exercises.isEmpty {
+            if vm.isLoading && vm.practices.isEmpty {
                 Section {
                     HStack { Spacer(); ProgressView(); Spacer() }
                 }
             }
 
             Section(header: Text("연습문제 목록")) {
-                if vm.exercises.isEmpty && !vm.isLoading && vm.errorMessage == nil {
+                if vm.practices.isEmpty && !vm.isLoading && vm.errorMessage == nil {
                     Text("등록된 연습문제가 없습니다.")
                         .foregroundStyle(.secondary)
                 }
-                ForEach(vm.exercises, id: \.id) { ex in
+                ForEach(vm.practices, id: \.id) { ex in
                     NavigationLink {
-                        ExerciseDetailView(example: vm.example, exercise: ex)
+                        PracticeDetailView(example: vm.example, practice: ex)
                             .onDisappear {
                                 Task {
                                     await vm.load()
@@ -87,7 +87,7 @@ struct ExerciseListView: View {
             Task { await vm.load() }
         }) {
             NavigationStack { // keep navigation chrome consistent
-                ExerciseCreateView(example: vm.example, lesson: nil, word: vm.word) { _ in
+                PracticeCreateView(example: vm.example, lesson: nil, word: vm.word) { _ in
                         // 선택: 생성 후 리스트 새로고침
                         Task { await vm.load() }
                     }

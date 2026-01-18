@@ -1,5 +1,5 @@
 //
-//  WordDetailViewModel.swift
+//  VocabularyDetailViewModel.swift
 //  LessonClient
 //
 //  Created by ymj on 10/13/25.
@@ -9,7 +9,7 @@
 import Foundation
 
 @MainActor
-final class WordDetailViewModel: ObservableObject {
+final class VocabularyDetailViewModel: ObservableObject {
     let wordId: Int
     var lesson: Lesson? {
         didSet {
@@ -17,7 +17,7 @@ final class WordDetailViewModel: ObservableObject {
         }
     }
     // Data
-    @Published var word: Word?
+    @Published var word: Vocabulary?
     @Published var translationText: String = ""
     @Published var examples: [Example] = []
 
@@ -54,7 +54,7 @@ final class WordDetailViewModel: ObservableObject {
 
     func load() async {
         do {
-            let w = try await WordDataSource.shared.word(id: wordId)
+            let w = try await VocabularyDataSource.shared.word(id: wordId)
             word = w
             translationText = w.translations.toString()
             examples = try await ExampleDataSource.shared.examples(wordId: wordId)
@@ -68,15 +68,15 @@ final class WordDetailViewModel: ObservableObject {
         }
     }
 
-    func saveWord() async {
+    func saveVocabulary() async {
         guard let e = word else { return }
         do {
-            var translations = [WordTranslation].parse(from: translationText)
-            translations.append(WordTranslation(langCode: .enUS, text: e.text))
-            let updated = try await WordDataSource.shared.updateWord(
+            var translations = [VocabularyTranslation].parse(from: translationText)
+            translations.append(VocabularyTranslation(langCode: .enUS, text: e.text))
+            let updated = try await VocabularyDataSource.shared.updateVocabulary(
                 id: e.id,
                 lessonId: e.lessonId,
-                translations: [WordTranslation].parse(from: translationText)
+                translations: [VocabularyTranslation].parse(from: translationText)
             )
             word = updated
             info = "기본 텍스트 저장 완료"
@@ -85,10 +85,10 @@ final class WordDetailViewModel: ObservableObject {
         }
     }
 
-    func removeWord() async {
+    func removeVocabulary() async {
         guard let e = word else { return }
         do {
-            try await WordDataSource.shared.deleteWord(id: e.id)
+            try await VocabularyDataSource.shared.deleteVocabulary(id: e.id)
             info = "단어가 삭제되었습니다."
         } catch {
             self.error = (error as NSError).localizedDescription
@@ -107,7 +107,7 @@ final class WordDetailViewModel: ObservableObject {
                 self.error = "해당 Unit의 레슨을 찾을 수 없습니다."
                 return
             }
-            _ = try await LessonDataSource.shared.attachWord(lessonId: target.id, wordId: wid)
+            _ = try await LessonDataSource.shared.attachVocabulary(lessonId: target.id, wordId: wid)
             // reload word to reflect lessonId
             await load()
             info = "레슨(#\(target.id))에 연결되었습니다."

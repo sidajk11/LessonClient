@@ -19,9 +19,9 @@ final class LessonDetailViewModel: ObservableObject {
     @Published var grammar: String = ""
     @Published var wq: String = ""
 
-    // Words
-    @Published var words: [Word] = []
-    @Published var wsearch: [Word] = []
+    // Vocabularys
+    @Published var words: [Vocabulary] = []
+    @Published var wsearch: [Vocabulary] = []
 
     // UI state
     @Published var error: String?
@@ -77,7 +77,7 @@ final class LessonDetailViewModel: ObservableObject {
 
     func attach(_ wordId: Int) async {
         do {
-            let updated = try await LessonDataSource.shared.attachWord(lessonId: lessonId, wordId: wordId)
+            let updated = try await LessonDataSource.shared.attachVocabulary(lessonId: lessonId, wordId: wordId)
             model = updated
             words = updated.words
         } catch {
@@ -87,7 +87,7 @@ final class LessonDetailViewModel: ObservableObject {
 
     func detach(_ wordId: Int) async {
         do {
-            let updated = try await LessonDataSource.shared.detachWord(lessonId: lessonId, wordId: wordId)
+            let updated = try await LessonDataSource.shared.detachVocabulary(lessonId: lessonId, wordId: wordId)
             model = updated
             words = updated.words
         } catch {
@@ -95,12 +95,12 @@ final class LessonDetailViewModel: ObservableObject {
         }
     }
 
-    func doWordSearch() async {
+    func doVocabularySearch() async {
         do {
             if wq.isEmpty {
-                wsearch = try await WordDataSource.shared.listUnassigned()
+                wsearch = try await VocabularyDataSource.shared.listUnassigned()
             } else {
-                wsearch = try await WordDataSource.shared.searchWords(q: wq)
+                wsearch = try await VocabularyDataSource.shared.searchVocabularys(q: wq)
             }
         } catch {
             self.error = (error as NSError).localizedDescription

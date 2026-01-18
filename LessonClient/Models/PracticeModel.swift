@@ -1,49 +1,49 @@
 //
-//  ExerciseModel.swift
+//  PracticeModel.swift
 //  LessonClient
 //
 //  Created by ymj on 10/15/25.
 //
 
-struct Exercise: Codable, Identifiable {
+struct Practice: Codable, Identifiable {
     let id: Int
     let exampleId: Int
-    var type: ExerciseType
-    var wordOptions: [ExerciseWordOption]
+    var type: PracticeType
+    var wordOptions: [PracticeVocabularyOption]
     var correctOptionId: Int?
-    var options: [ExerciseOption]
-    var translations: [ExerciseTranslation]
+    var options: [PracticeOption]
+    var translations: [PracticeTranslation]
 
     enum CodingKeys: String, CodingKey {
         case id
         case exampleId = "example_id"
         case type
         case correctOptionId = "correct_option_id"
-        case wordOptions = "word_options"
+        case wordOptions = "vocabulary_options"
         case options
         case translations
     }
 }
 
-struct ExerciseUpdate: Codable {
+struct PracticeUpdate: Codable {
     let exampleId: Int
-    var type: ExerciseType?
-    var wordOptions: [ExerciseWordOption]?
+    var type: PracticeType?
+    var wordOptions: [PracticeVocabularyOption]?
     var correctOptionId: Int?
-    var options: [ExerciseOptionUpdate]?
-    var translations: [ExerciseTranslation]?
+    var options: [PracticeOptionUpdate]?
+    var translations: [PracticeTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case exampleId = "example_id"
         case type
         case correctOptionId = "correct_option_id"
-        case wordOptions = "word_options"
+        case wordOptions = "vocabulary_options"
         case options
         case translations
     }
 }
 
-struct ExerciseTranslation: Codable {
+struct PracticeTranslation: Codable {
     let langCode: LangCode
     var content: String?
     var question: String?
@@ -55,9 +55,9 @@ struct ExerciseTranslation: Codable {
     }
 }
 
-struct ExerciseOption: Codable, Identifiable {
+struct PracticeOption: Codable, Identifiable {
     let id: Int
-    let translations: [ExerciseOptionTranslation]
+    let translations: [PracticeOptionTranslation]
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -65,11 +65,11 @@ struct ExerciseOption: Codable, Identifiable {
     }
 }
 
-struct ExerciseOptionUpdate: Codable {
-    let translations: [ExerciseOptionTranslation]?
+struct PracticeOptionUpdate: Codable {
+    let translations: [PracticeOptionTranslation]?
 }
 
-struct ExerciseOptionTranslation: Codable {
+struct PracticeOptionTranslation: Codable {
     let langCode: LangCode
     var text: String
     
@@ -80,15 +80,15 @@ struct ExerciseOptionTranslation: Codable {
 }
 
 
-struct ExerciseWordOption: Codable {
-    let translations: [ExerciseOptionTranslation]
+struct PracticeVocabularyOption: Codable {
+    let translations: [PracticeOptionTranslation]
 
     enum CodingKeys: String, CodingKey {
         case translations
     }
 }
 
-struct ExerciseWordOptionTranslation: Codable {
+struct PracticeVocabularyOptionTranslation: Codable {
     let langCode: LangCode
     var text: String
     

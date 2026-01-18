@@ -88,6 +88,6 @@ final class ExampleDataSource {
     }
 
     func examples(wordId: Int) async throws -> [Example] {
-        try await api.request("GET", "admin/examples/by-word/\(wordId)", as: [Example].self)
+        try await api.request("GET", "admin/examples/by-vocabulary/\(wordId)", as: [Example].self)
     }
 }

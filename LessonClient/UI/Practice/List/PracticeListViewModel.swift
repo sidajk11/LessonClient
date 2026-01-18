@@ -2,12 +2,12 @@
 import SwiftUI
 import Combine
 
-// MARK: - Exercise List ViewModel
+// MARK: - Practice List ViewModel
 @MainActor
-final class ExerciseListViewModel: ObservableObject {
+final class PracticeListViewModel: ObservableObject {
     let example: Example
-    @Published var word: Word?
-    @Published var exercises: [Exercise] = []
+    @Published var word: Vocabulary?
+    @Published var practices: [Practice] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
@@ -21,9 +21,9 @@ final class ExerciseListViewModel: ObservableObject {
         defer { isLoading = false }
         do {
             // Assumes your data source exposes a list method by example
-            let result = try await ExerciseDataSource.shared.list(exampleId: example.id)
-            word = try await WordDataSource.shared.word(id: example.wordId)
-            exercises = result
+            let result = try await PracticeDataSource.shared.list(exampleId: example.id)
+            word = try await VocabularyDataSource.shared.word(id: example.wordId)
+            practices = result
         } catch {
             errorMessage = error.localizedDescription
         }

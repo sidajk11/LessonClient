@@ -1,28 +1,28 @@
-// MARK: - Exercise Create ViewModel
+// MARK: - Practice Create ViewModel
 
 import SwiftUI
 import Combine
 
 @MainActor
-final class ExerciseCreateViewModel: ObservableObject {
+final class PracticeCreateViewModel: ObservableObject {
     // Inputs
     let example: Example
     var lesson: Lesson?
-    var word: Word?
+    var word: Vocabulary?
     
-    @Published var type: ExerciseType = .select // change as needed
+    @Published var type: PracticeType = .select // change as needed
     @Published var selectedIndexes: [Int] = []
     // 영어문장에서 추출한 단어들
-    @Published var allWordsInSentence: [String] = []
+    @Published var allVocabularysInSentence: [String] = []
     // 번역에서 추출한 단어들
-    @Published var allTransWords: [LangCode: [ExerciseOptionTranslation]] = [:]
+    @Published var allTransVocabularys: [LangCode: [PracticeOptionTranslation]] = [:]
     
-    @Published private var dummyWords: [String] = []
-    @Published private var selectedDummyWords: [String] = []
+    @Published private var dummyVocabularys: [String] = []
+    @Published private var selectedDummyVocabularys: [String] = []
     
     @Published var wordOptionTextList: [String] = []
     @Published var correctionOptionId: Int = 0
-    @Published var options: [ExerciseOptionUpdate] = []      // 보기
+    @Published var options: [PracticeOptionUpdate] = []      // 보기
 
     // UI State
     @Published var translation: String = ""
@@ -30,10 +30,10 @@ final class ExerciseCreateViewModel: ObservableObject {
     @Published var content: String = ""
     @Published var isSubmitting: Bool = false
     @Published var errorMessage: String?
-    @Published var createdExercise: Exercise?
+    @Published var createdPractice: Practice?
     
-    var selectedTestWords: [String] {
-        return selectedIndexes.map { self.allWordsInSentence[$0] }
+    var selectedTestVocabularys: [String] {
+        return selectedIndexes.map { self.allVocabularysInSentence[$0] }
     }
 
     var canSubmit: Bool {
@@ -42,18 +42,18 @@ final class ExerciseCreateViewModel: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
 
-    init(example: Example, lesson: Lesson?, word: Word?) {
+    init(example: Example, lesson: Lesson?, word: Vocabulary?) {
         self.example = example
         self.lesson = lesson
         self.word = word
         if lesson == nil {
             Task {
                 do {
-                    let word = try await WordDataSource.shared.word(id: example.wordId)
+                    let word = try await VocabularyDataSource.shared.word(id: example.wordId)
                     if let lessonId = word.lessonId {
                         self.lesson = try await LessonDataSource.shared.lesson(id: lessonId)
                         if let lesson = self.lesson {
-                            self.dummyWords = try await WordDataSource.shared.wordsLessThan(unit: lesson.unit).map { $0.text }
+                            self.dummyVocabularys = try await VocabularyDataSource.shared.wordsLessThan(unit: lesson.unit).map { $0.text }
                         }
                     }
                 } catch {
@@ -63,32 +63,32 @@ final class ExerciseCreateViewModel: ObservableObject {
         }
         
         translation = example.translations.koText()
-        allWordsInSentence = words(from: example.text).filter { !punctuationSet.contains($0) }
-        allTransWords = transWords(from: example.translations)
+        allVocabularysInSentence = words(from: example.text).filter { !punctuationSet.contains($0) }
+        allTransVocabularys = transVocabularys(from: example.translations)
         
         bind()
     }
 }
 
-extension ExerciseCreateViewModel {
-    func selectableDummyWords() -> [String] {
-        return dummyWords
+extension PracticeCreateViewModel {
+    func selectableDummyVocabularys() -> [String] {
+        return dummyVocabularys
     }
-    func selectDummyWord(word: String) {
-        if selectedDummyWords.contains(word) {
-            selectedDummyWords.removeAll(where: { $0 == word })
+    func selectDummyVocabulary(word: String) {
+        if selectedDummyVocabularys.contains(word) {
+            selectedDummyVocabularys.removeAll(where: { $0 == word })
         } else {
-            selectedDummyWords.append(word)
+            selectedDummyVocabularys.append(word)
         }
     }
     
-    func isDummyWordSelected(word: String) -> Bool {
-        selectedDummyWords.contains(word)
+    func isDummyVocabularySelected(word: String) -> Bool {
+        selectedDummyVocabularys.contains(word)
     }
 }
 
-extension ExerciseCreateViewModel {
-    func selectTestWord(index: Int) {
+extension PracticeCreateViewModel {
+    func selectTestVocabulary(index: Int) {
         
         if selectedIndexes.contains(index) {
             selectedIndexes.removeAll(where: { $0 == index })
@@ -97,47 +97,47 @@ extension ExerciseCreateViewModel {
         }
     }
     
-    func isTestWordSelected(index: Int) -> Bool {
+    func isTestVocabularySelected(index: Int) -> Bool {
         selectedIndexes.contains(index)
     }
 }
 
-extension ExerciseCreateViewModel {
+extension PracticeCreateViewModel {
     func autoGenerate() async {
         do {
-            let exercises = try await ExerciseDataSource.shared.list(exampleId: example.id)
-            if !exercises.contains(where: { $0.type == .combine }) {
+            let practices = try await PracticeDataSource.shared.list(exampleId: example.id)
+            if !practices.contains(where: { $0.type == .combine }) {
                 type = .combine
                 await submit()
             }
             
-            if !exercises.contains(where: { $0.type == .select }), let word {
+            if !practices.contains(where: { $0.type == .select }), let word {
                 type = .select
                 
                 selectedIndexes = []
-                if let index = allWordsInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() }) {
+                if let index = allVocabularysInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() }) {
                     selectedIndexes.append(index)
-                } else if let index = allWordsInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "s" }) {
+                } else if let index = allVocabularysInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "s" }) {
                     selectedIndexes.append(index)
-                } else if let index = allWordsInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "es" }) {
+                } else if let index = allVocabularysInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "es" }) {
                     selectedIndexes.append(index)
-                } else if let index = allWordsInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "ed" }) {
+                } else if let index = allVocabularysInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "ed" }) {
                     selectedIndexes.append(index)
                 }
-                let dummyWords = dummyWords
-                    .filter { dummyWord in
-                        !dummyWord.contains(" ")
+                let dummyVocabularys = dummyVocabularys
+                    .filter { dummyVocabulary in
+                        !dummyVocabulary.contains(" ")
                     }
-                    .filter { dummyWord in
-                        !allWordsInSentence.contains(where: {
-                            $0.lowercased() == dummyWord.lowercased()
+                    .filter { dummyVocabulary in
+                        !allVocabularysInSentence.contains(where: {
+                            $0.lowercased() == dummyVocabulary.lowercased()
                         })
                     }
-                let index = Int.random(in: 0 ..< dummyWords.count)
-                selectedDummyWords = [dummyWords[index]]
+                let index = Int.random(in: 0 ..< dummyVocabularys.count)
+                selectedDummyVocabularys = [dummyVocabularys[index]]
                 
                 if !content.contains("_") || selectedIndexes.count == 0 {
-                    errorMessage = "Generate select exercise failed!"
+                    errorMessage = "Generate select practice failed!"
                     return
                 }
                 await submit()
@@ -149,25 +149,25 @@ extension ExerciseCreateViewModel {
     
     func submit() async {
         errorMessage = nil
-        createdExercise = nil
+        createdPractice = nil
         isSubmitting = true
         defer { isSubmitting = false }
         
-        var transList: [ExerciseTranslation] = []
+        var transList: [PracticeTranslation] = []
         if type == .combine || type == .select {
-            let trans = ExerciseTranslation(langCode: .enUS, content: content, question: nil)
+            let trans = PracticeTranslation(langCode: .enUS, content: content, question: nil)
             transList.append(trans)
         }
-        var wordsOptions: [ExerciseWordOption] = []
+        var wordsOptions: [PracticeVocabularyOption] = []
         if type == .combine || type == .select, wordOptionTextList.count > 0 {
             wordsOptions = wordOptionTextList.map {
                 let text = NL.lowercaseAvailable(sentence: example.text, word: $0) ? $0.lowercased() : $0
-                let translation = ExerciseOptionTranslation(langCode: .enUS, text: text)
-                return ExerciseWordOption(translations: [translation])
+                let translation = PracticeOptionTranslation(langCode: .enUS, text: text)
+                return PracticeVocabularyOption(translations: [translation])
             }
         }
         
-        let exerciseCrate = ExerciseUpdate(
+        let practiceCrate = PracticeUpdate(
             exampleId: example.id,
             type: type,
             wordOptions: wordsOptions,
@@ -175,8 +175,8 @@ extension ExerciseCreateViewModel {
             translations: transList
         )
         do {
-            let exercise = try await ExerciseDataSource.shared.create(exercise: exerciseCrate)
-            createdExercise = exercise
+            let practice = try await PracticeDataSource.shared.create(practice: practiceCrate)
+            createdPractice = practice
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -188,7 +188,7 @@ extension ExerciseCreateViewModel {
  _ _ _ _ _
  My, mom, and, my, dad
  */
-extension ExerciseCreateViewModel {
+extension PracticeCreateViewModel {
     private func bind() {
         $type
             .removeDuplicates()
@@ -197,7 +197,7 @@ extension ExerciseCreateViewModel {
                 guard let self else { return }
                 sentence = example.translations.text(langCode: .ko)
                 content = content(from: example.text)
-                wordOptionTextList = allWordsInSentence
+                wordOptionTextList = allVocabularysInSentence
             }
             .store(in: &cancellables)
         
@@ -222,11 +222,11 @@ extension ExerciseCreateViewModel {
             .filter { $0 == .select }
             .combineLatest($selectedIndexes) { $1 }
             .compactMap { $0 }
-            .combineLatest($selectedDummyWords)
-            .map { selectedIndexes, selectedDummyWords in
-                var words = selectedDummyWords
-                let selectedTestWords = selectedIndexes.map { self.allWordsInSentence[$0] }
-                words.insert(contentsOf: selectedTestWords, at: 0)
+            .combineLatest($selectedDummyVocabularys)
+            .map { selectedIndexes, selectedDummyVocabularys in
+                var words = selectedDummyVocabularys
+                let selectedTestVocabularys = selectedIndexes.map { self.allVocabularysInSentence[$0] }
+                words.insert(contentsOf: selectedTestVocabularys, at: 0)
                 return words
             }
             .assign(to: &$wordOptionTextList)
@@ -241,17 +241,17 @@ extension ExerciseCreateViewModel {
         return sentence.tokenize(word: word?.text)
     }
     
-    private func transWords(from translations: [ExampleTranslation]) -> [LangCode: [ExerciseOptionTranslation]] {
+    private func transVocabularys(from translations: [ExampleTranslation]) -> [LangCode: [PracticeOptionTranslation]] {
         /*
          This is my phone.
          ko:이것은 내 휴대폰이야.
          es:Este es mi teléfono.
          */
-        var dict: [LangCode: [ExerciseOptionTranslation]] = [:]
+        var dict: [LangCode: [PracticeOptionTranslation]] = [:]
         translations.forEach { trans in
             let words = NL.words(text: trans.text)
             let optionTranslations = words.map {
-                ExerciseOptionTranslation(langCode: trans.langCode, text: $0)
+                PracticeOptionTranslation(langCode: trans.langCode, text: $0)
             }
             dict[trans.langCode] = optionTranslations
         }

@@ -10,12 +10,12 @@ import SwiftUI
 struct LessonRowView: View {
     let lesson: Lesson
 
-    @State private var previews: [WordPreview] = []
+    @State private var previews: [VocabularyPreview] = []
     @State private var isLoading = false
     @State private var rowError: String?
 
     /// 한 레슨당 최대 몇 개의 단어/예문을 미리 보여줄지
-    private let maxWords = 10
+    private let maxVocabularys = 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -78,20 +78,20 @@ struct LessonRowView: View {
         do {
             // 레슨의 단어 목록 가져오기
             let loadedLesson = try await LessonDataSource.shared.lesson(id: lesson.id)
-            let words = loadedLesson.words.prefix(maxWords)
+            let words = loadedLesson.words.prefix(maxVocabularys)
 
             // 각 단어의 첫 예문만 비동기 병렬로 가져오기
-            var tmp: [WordPreview] = []
+            var tmp: [VocabularyPreview] = []
             tmp.reserveCapacity(words.count)
 
-            try await withThrowingTaskGroup(of: (Int, WordPreview?).self) { group in
+            try await withThrowingTaskGroup(of: (Int, VocabularyPreview?).self) { group in
                 for (index, word) in words.enumerated() {
                     group.addTask {
                         let examples = word.examples
                         let first = examples.first
                         return (
                             index,
-                            WordPreview(
+                            VocabularyPreview(
                                 id: word.id,
                                 text: word.text,
                                 exampleEN: first?.translations.first(where: { $0.langCode == .enUS })?.text,
@@ -102,7 +102,7 @@ struct LessonRowView: View {
                 }
 
                 // 결과를 인덱스 위치에 채워 넣기
-                var buffer = Array<WordPreview?>(repeating: nil, count: words.count)
+                var buffer = Array<VocabularyPreview?>(repeating: nil, count: words.count)
                 for try await (index, preview) in group {
                     buffer[index] = preview
                 }
@@ -116,7 +116,7 @@ struct LessonRowView: View {
     }
 
     // 미리보기 전용 경량 모델
-    private struct WordPreview: Identifiable {
+    private struct VocabularyPreview: Identifiable {
         let id: Int
         let text: String
         let exampleEN: String?

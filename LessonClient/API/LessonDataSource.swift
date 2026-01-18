@@ -17,9 +17,9 @@ final class LessonDataSource {
 
 extension LessonDataSource {
     /// POST /lessons/{lesson_id}/words
-    private struct AttachWordBody: Codable {
+    private struct AttachVocabularyBody: Codable {
         let wordId: Int
-        enum CodingKeys: String, CodingKey { case wordId = "word_id" }
+        enum CodingKeys: String, CodingKey { case wordId = "vocabulary_id" }
     }
 
     // MARK: - Lessons
@@ -84,18 +84,18 @@ extension LessonDataSource {
         _ = try await api.request("DELETE", "admin/lessons/\(id)", as: Empty.self)
     }
 
-    // MARK: - Word attach/detach (1:N)
+    // MARK: - Vocabulary attach/detach (1:N)
 
     /// 단어 연결/이동
     @discardableResult
-    func attachWord(lessonId: Int, wordId: Int) async throws -> Lesson {
-        let body = AttachWordBody(wordId: wordId)
-        return try await api.request("POST", "admin/lessons/\(lessonId)/words", jsonBody: body, as: Lesson.self)
+    func attachVocabulary(lessonId: Int, wordId: Int) async throws -> Lesson {
+        let body = AttachVocabularyBody(wordId: wordId)
+        return try await api.request("POST", "admin/lessons/\(lessonId)/vocabularies", jsonBody: body, as: Lesson.self)
     }
 
     /// 단어 분리(detach) → 서버가 Lesson 반환
     @discardableResult
-    func detachWord(lessonId: Int, wordId: Int) async throws -> Lesson {
-        try await api.request("DELETE", "admin/lessons/\(lessonId)/words/\(wordId)", as: Lesson.self)
+    func detachVocabulary(lessonId: Int, wordId: Int) async throws -> Lesson {
+        try await api.request("DELETE", "admin/lessons/\(lessonId)/vocabularies/\(wordId)", as: Lesson.self)
     }
 }

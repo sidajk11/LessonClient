@@ -1,5 +1,5 @@
 //
-//  WordListView.swift
+//  VocabularyListView.swift
 //  LessonClient
 //
 //  Created by ymj on 10/13/25.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct WordListView: View {
-    @StateObject private var vm = WordListViewModel()
+struct VocabularyListView: View {
+    @StateObject private var vm = VocabularyListViewModel()
 
     var body: some View {
         NavigationStack {
@@ -36,7 +36,7 @@ struct WordListView: View {
 
                 List(vm.items) { e in
                     NavigationLink {
-                        WordDetailView(wordId: e.id, lesson: nil)
+                        VocabularyDetailView(wordId: e.id, lesson: nil)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(e.text)
@@ -53,7 +53,7 @@ struct WordListView: View {
 
                 NavigationLink(
                     "+ 새 단어",
-                    destination: WordCreateView(onCreated: { words in
+                    destination: VocabularyCreateView(onCreated: { words in
                         vm.didCreate(words)
                     })
                 )
@@ -61,7 +61,7 @@ struct WordListView: View {
 
                 NavigationLink(
                     "+ 여러 개 추가",
-                    destination: WordBulkImportScreen(onImported: { list in
+                    destination: VocabularyBulkImportScreen(onImported: { list in
                         vm.didImport(list)
                     })
                 )

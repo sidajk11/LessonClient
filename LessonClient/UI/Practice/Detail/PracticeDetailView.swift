@@ -1,5 +1,5 @@
 //
-//  ExerciseDetailView.swift
+//  PracticeDetailView.swift
 //  LessonClient
 //
 //  Created by ymj on 10/21/25.
@@ -7,15 +7,15 @@
 
 import SwiftUI
 
-struct ExerciseDetailView: View {
-    @StateObject private var vm: ExerciseDetailViewModel
+struct PracticeDetailView: View {
+    @StateObject private var vm: PracticeDetailViewModel
     @Environment(\.dismiss) private var dismiss
 
     var onDeleted: (() -> Void)?
 
-    init(example: Example, exercise: Exercise,
+    init(example: Example, practice: Practice,
          onDeleted: (() -> Void)? = nil) {
-        _vm = StateObject(wrappedValue: ExerciseDetailViewModel(example: example, exercise: exercise))
+        _vm = StateObject(wrappedValue: PracticeDetailViewModel(example: example, practice: practice))
         self.onDeleted = onDeleted
     }
 
@@ -28,8 +28,8 @@ struct ExerciseDetailView: View {
             }
 
             Section("기본 정보") {
-                infoRow(title: "ID", value: "#\(vm.exercise.id)")
-                infoRow(title: "유형", value: vm.exercise.type.rawValue)
+                infoRow(title: "ID", value: "#\(vm.practice.id)")
+                infoRow(title: "유형", value: vm.practice.type.rawValue)
             }
 
             Section("문장") {
@@ -51,9 +51,9 @@ struct ExerciseDetailView: View {
             }
 
             // ✅ select 타입일 때: 더미 단어 관리 UI
-            if vm.exercise.type == .select {
+            if vm.practice.type == .select {
                 Section("더미 단어 관리") {
-                    if vm.isLoadingWords {
+                    if vm.isLoadingVocabularys {
                         ProgressView("불러오는 중…")
                     } else {
                         // 현재 보기(토글로 제거 가능)
@@ -94,7 +94,7 @@ struct ExerciseDetailView: View {
 
                             let cols = [GridItem(.adaptive(minimum: 80), spacing: 8)]
                             LazyVGrid(columns: cols, alignment: .leading, spacing: 8) {
-                                ForEach(vm.extraWords, id: \.self) { w in
+                                ForEach(vm.extraVocabularys, id: \.self) { w in
                                     Button {
                                         vm.toggle(word: w)
                                     } label: {
@@ -131,7 +131,7 @@ struct ExerciseDetailView: View {
                 }
             }
         }
-        .navigationTitle("연습문제 #\(vm.exercise.id)")
+        .navigationTitle("연습문제 #\(vm.practice.id)")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(role: .destructive) {

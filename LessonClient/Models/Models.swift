@@ -15,7 +15,7 @@ struct Lesson: Codable, Identifiable {
     var level: Int                // ✅ Int로 직접 보유
     var grammar: String?
     var translations: [LessonTranslation] = []
-    var words: [Word] = []
+    var words: [Vocabulary] = []
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -23,7 +23,7 @@ struct Lesson: Codable, Identifiable {
         case level
         case grammar
         case translations
-        case words
+        case words = "vocabularies"
     }
 }
 
@@ -38,7 +38,7 @@ struct LessonUpdate: Codable {
         case unit
         case level
         case grammar
-        case wordIds = "word_ids"
+        case wordIds = "vocabulary_ids"
         case translations
     }
 }
@@ -53,12 +53,12 @@ struct LessonTranslation: Codable {
     }
 }
 
-// MARK: - Word (GET /words/*)
-struct Word: Codable, Identifiable {
+// MARK: - Vocabulary (GET /words/*)
+struct Vocabulary: Codable, Identifiable {
     let id: Int
     var text: String
     var lessonId: Int?   // detach 허용 시 서버 nullable
-    var translations: [WordTranslation]
+    var translations: [VocabularyTranslation]
     var examples: [Example]
 
     enum CodingKeys: String, CodingKey {
@@ -70,7 +70,7 @@ struct Word: Codable, Identifiable {
     }
 }
 
-struct WordTranslation: Codable {
+struct VocabularyTranslation: Codable {
     let langCode: LangCode
     var text: String
     
@@ -80,10 +80,10 @@ struct WordTranslation: Codable {
     }
 }
 
-struct WordUpdate: Codable {
+struct VocabularyUpdate: Codable {
     let text: String?
     let lessonId: Int?           // ✅ lesson_id 선택적
-    let translations: [WordTranslation]?
+    let translations: [VocabularyTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case text
@@ -91,7 +91,7 @@ struct WordUpdate: Codable {
         case translations
     }
     
-    init(text: String? = nil, lessonId: Int? = nil, translations: [WordTranslation]? = nil) {
+    init(text: String? = nil, lessonId: Int? = nil, translations: [VocabularyTranslation]? = nil) {
         self.text = text
         self.lessonId = lessonId
         self.translations = translations
@@ -106,15 +106,15 @@ struct Example: Codable, Identifiable {
     let wordId: Int
     let wordText: String?
     let translations: [ExampleTranslation]
-    let exercises: [Exercise]
+    let practices: [Practice]
 
     enum CodingKeys: String, CodingKey {
         case id
         case text
-        case wordId = "word_id"
-        case wordText = "word_text"
+        case wordId = "vocabulary_id"
+        case wordText = "vocabulary_text"
         case translations
-        case exercises
+        case practices
     }
 }
 
@@ -123,22 +123,22 @@ struct ExampleUpdate: Codable {
     let wordId: Int?
     let wordText: String?
     let translations: [ExampleTranslation]?
-    let exercises: [Exercise]?
+    let practices: [Practice]?
 
     enum CodingKeys: String, CodingKey {
         case text
-        case wordId = "word_id"
-        case wordText = "word_text"
+        case wordId = "vocabulary_id"
+        case wordText = "vocabulary_text"
         case translations
-        case exercises
+        case practices
     }
     
-    init(text: String? = nil, wordId: Int? = nil, wordText: String? = nil, translations: [ExampleTranslation]? = nil, exercises: [Exercise]? = nil) {
+    init(text: String? = nil, wordId: Int? = nil, wordText: String? = nil, translations: [ExampleTranslation]? = nil, practices: [Practice]? = nil) {
         self.text = text
         self.wordId = wordId
         self.wordText = wordText
         self.translations = translations
-        self.exercises = exercises
+        self.practices = practices
     }
 }
 

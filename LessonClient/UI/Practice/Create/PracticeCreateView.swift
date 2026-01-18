@@ -1,19 +1,19 @@
 import SwiftUI
 import Combine
 
-struct ExerciseCreateView: View {
+struct PracticeCreateView: View {
     @Environment(\.dismiss) private var dismiss
-    let onCreated: ((Exercise) -> Void)?
+    let onCreated: ((Practice) -> Void)?
     
-    @StateObject private var vm: ExerciseCreateViewModel
+    @StateObject private var vm: PracticeCreateViewModel
     
-    init(example: Example, lesson: Lesson?, word: Word?, onCreated: ((Exercise) -> Void)? = nil) {
+    init(example: Example, lesson: Lesson?, word: Vocabulary?, onCreated: ((Practice) -> Void)? = nil) {
         self.onCreated = onCreated
-        let vm = ExerciseCreateViewModel(example: example, lesson: lesson, word: word)
+        let vm = PracticeCreateViewModel(example: example, lesson: lesson, word: word)
         _vm = StateObject(wrappedValue: vm)
     }
 
-    private let exerciseTypes: [ExerciseType] = ExerciseType.allCases
+    private let practiceTypes: [PracticeType] = PracticeType.allCases
     
     // MARK: - View
     var body: some View {
@@ -54,7 +54,7 @@ struct ExerciseCreateView: View {
                         if vm.isSubmitting {
                             ProgressView()
                         } else {
-                            Text("Create Exercise")
+                            Text("Create Practice")
                                 .frame(maxWidth: .infinity)
                         }
                     }
@@ -70,12 +70,12 @@ struct ExerciseCreateView: View {
             }
 
             // 결과/에러
-            if let created = vm.createdExercise {
+            if let created = vm.createdPractice {
                 Section(header: Text("Created")) {
                     Text(verbatim: "ID: \(created.id)")
                     Text(verbatim: "Type: \(created.type.rawValue)")
                     if created.type == .combine {
-                        Text(verbatim: "Words: \(created.wordOptions.text(langCode: .enUS))")
+                        Text(verbatim: "Vocabularys: \(created.wordOptions.text(langCode: .enUS))")
                     }
                 }
             }
@@ -86,11 +86,11 @@ struct ExerciseCreateView: View {
                 }
             }
         }
-        .navigationTitle("New Exercise")
+        .navigationTitle("New Practice")
     }
 }
 
-extension ExerciseCreateView {
+extension PracticeCreateView {
     private var combineCreatorView: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("옵션")
@@ -104,22 +104,22 @@ extension ExerciseCreateView {
     private var selectCreatorView: some View {
         VStack(alignment: .leading, spacing: 12) {
 
-            let allWordsInSentence = vm.allWordsInSentence
+            let allVocabularysInSentence = vm.allVocabularysInSentence
 
-            if allWordsInSentence.isEmpty {
+            if allVocabularysInSentence.isEmpty {
                 Text("단어가 없습니다.")
                     .foregroundStyle(.secondary)
             } else {
                 // 칩 레이아웃
                 let columns = [GridItem(.adaptive(minimum: 80), spacing: 8)]
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-                    ForEach(allWordsInSentence.indices, id: \.self) { index in
-                        let word = allWordsInSentence[index]
+                    ForEach(allVocabularysInSentence.indices, id: \.self) { index in
+                        let word = allVocabularysInSentence[index]
                         Button {
-                            vm.selectTestWord(index: index)
+                            vm.selectTestVocabulary(index: index)
                         } label: {
                             HStack(spacing: 6) {
-                                if vm.isTestWordSelected(index: index) {
+                                if vm.isTestVocabularySelected(index: index) {
                                     Image(systemName: "checkmark.circle.fill")
                                 }
                                 Text(word)
@@ -130,11 +130,11 @@ extension ExerciseCreateView {
                             .padding(.horizontal, 10)
                             .background(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(vm.isTestWordSelected(index: index) ? Color.accentColor.opacity(0.15) : Color.clear)
+                                    .fill(vm.isTestVocabularySelected(index: index) ? Color.accentColor.opacity(0.15) : Color.clear)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(vm.isTestWordSelected(index: index) ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
+                                    .stroke(vm.isTestVocabularySelected(index: index) ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
@@ -144,21 +144,21 @@ extension ExerciseCreateView {
             }
 
             // 선택 상태 표시
-            Text("선택된 단어: \(vm.selectedTestWords.joined(separator: ", "))")
+            Text("선택된 단어: \(vm.selectedTestVocabularys.joined(separator: ", "))")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             
             Spacer()
             
-            let extra = vm.selectableDummyWords()
+            let extra = vm.selectableDummyVocabularys()
             let columns = [GridItem(.adaptive(minimum: 80), spacing: 8)]
             LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
                 ForEach(extra, id: \.self) { word in
                     Button {
-                        vm.selectDummyWord(word: word)
+                        vm.selectDummyVocabulary(word: word)
                     } label: {
                         HStack(spacing: 6) {
-                            if vm.isDummyWordSelected(word: word) {
+                            if vm.isDummyVocabularySelected(word: word) {
                                 Image(systemName: "checkmark.circle.fill")
                             }
                             Text(word)
@@ -169,11 +169,11 @@ extension ExerciseCreateView {
                         .padding(.horizontal, 10)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(vm.isDummyWordSelected(word: word) ? Color.accentColor.opacity(0.15) : Color.clear)
+                                .fill(vm.isDummyVocabularySelected(word: word) ? Color.accentColor.opacity(0.15) : Color.clear)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
-                                .stroke(vm.isDummyWordSelected(word: word) ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
+                                .stroke(vm.isDummyVocabularySelected(word: word) ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: 1)
                         )
                     }
                     .buttonStyle(.plain)
@@ -205,7 +205,7 @@ extension ExerciseCreateView {
         // 공통 섹션
         Section() {
             Picker("Type", selection: $vm.type) {
-                ForEach(exerciseTypes, id: \.self) { t in
+                ForEach(practiceTypes, id: \.self) { t in
                     Text(t.name).tag(t)   // vm.type은 String(rawValue)
                 }
             }

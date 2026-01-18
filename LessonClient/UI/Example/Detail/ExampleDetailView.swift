@@ -5,7 +5,7 @@ import SwiftUI
 struct ExampleDetailView: View {
     @StateObject private var vm: ExampleDetailViewModel
 
-    init(exampleId: Int, lesson: Lesson?, word: Word?) {
+    init(exampleId: Int, lesson: Lesson?, word: Vocabulary?) {
         _vm = StateObject(wrappedValue: ExampleDetailViewModel(exampleId: exampleId, lesson: lesson, word: word))
     }
 
@@ -14,7 +14,7 @@ struct ExampleDetailView: View {
             Section(header: Text("연습문제")) {
                 NavigationLink("연습문제들") {
                     if let example = vm.example {
-                        ExerciseListView(example: example)
+                        PracticeListView(example: example)
                     }
                 }
             }

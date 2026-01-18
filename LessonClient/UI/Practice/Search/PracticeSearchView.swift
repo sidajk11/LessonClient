@@ -1,5 +1,5 @@
 //
-//  ExerciseSearchView.swift
+//  PracticeSearchView.swift
 //  LessonClient
 //
 //  Created by ymj on 10/14/25.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct ExerciseSearchView: View {
-    @StateObject private var vm = ExerciseSearchViewModel()
+struct PracticeSearchView: View {
+    @StateObject private var vm = PracticeSearchViewModel()
 
     var body: some View {
         VStack(spacing: 8) {
@@ -46,7 +46,7 @@ struct ExerciseSearchView: View {
                         Text(ex.type.rawValue)
                             .font(.headline)
                         Spacer()
-                        Text("Words: \(ex.wordOptions)")
+                        Text("Vocabularys: \(ex.wordOptions)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

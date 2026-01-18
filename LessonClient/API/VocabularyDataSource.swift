@@ -1,5 +1,5 @@
 //
-//  WordDataSource.swift
+//  VocabularyDataSource.swift
 //  LessonClient
 //
 //  Created by ymj on 10/01/25
@@ -7,19 +7,19 @@
 
 import Foundation
 
-final class WordDataSource {
-    static let shared = WordDataSource()
+final class VocabularyDataSource {
+    static let shared = VocabularyDataSource()
     private let api = APIClient.shared
     private init() {}
 
-    // MARK: - Create Word
+    // MARK: - Create Vocabulary
     @discardableResult
-    func createWord(text: String, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
-        let body = WordUpdate(text: text, lessonId: lessonId, translations: translations)
-        return try await api.request("POST", "admin/words", jsonBody: body, as: Word.self)
+    func createVocabulary(text: String, lessonId: Int? = nil, translations: [VocabularyTranslation]? = nil) async throws -> Vocabulary {
+        let body = VocabularyUpdate(text: text, lessonId: lessonId, translations: translations)
+        return try await api.request("POST", "admin/vocabularies", jsonBody: body, as: Vocabulary.self)
     }
 
-    // MARK: - Fetch Words
+    // MARK: - Fetch Vocabularys
     /// 단어 목록 조회 (서버: GET /words)
     /// - Parameters:
     ///   - level: Lesson.level 정확 일치
@@ -33,7 +33,7 @@ final class WordDataSource {
         lessonId: Int? = nil,
         limit: Int = 30,
         offset: Int = 0
-    ) async throws -> [Word] {
+    ) async throws -> [Vocabulary] {
         var query: [URLQueryItem] = [
             .init(name: "limit", value: String(min(max(limit, 1), 200))),
             .init(name: "offset", value: String(max(offset, 0)))
@@ -44,24 +44,24 @@ final class WordDataSource {
 
         return try await api.request(
             "GET",
-            "admin/words",
+            "admin/vocabularies",
             query: query,
-            as: [Word].self
+            as: [Vocabulary].self
         )
     }
     
-    func word(id: Int, lang: String = "ko") async throws -> Word {
-        try await api.request("GET", "admin/words/\(id)", as: Word.self)
+    func word(id: Int, lang: String = "ko") async throws -> Vocabulary {
+        try await api.request("GET", "admin/vocabularies/\(id)", as: Vocabulary.self)
     }
 
-    // MARK: - Search Words
-    func searchWords(
+    // MARK: - Search Vocabularys
+    func searchVocabularys(
         q: String? = nil,
         level: Int? = nil,
         unit: Int? = nil,
         limit: Int = 30,
         langs: [String]? = nil
-    ) async throws -> [Word] {
+    ) async throws -> [Vocabulary] {
         var items: [URLQueryItem] = []
         // 서버 기본값이 "" 이므로 nil이어도 q 파라미터는 넣어줍니다.
         if let q {
@@ -78,28 +78,28 @@ final class WordDataSource {
             items.append(URLQueryItem(name: "langs", value: langs.joined(separator: ",")))
         }
 
-        return try await api.request("GET", "admin/words/search", query: items, as: [Word].self)
+        return try await api.request("GET", "admin/vocabularies/search", query: items, as: [Vocabulary].self)
     }
     
-    func wordsLessThan(unit: Int) async throws -> [Word] {
+    func wordsLessThan(unit: Int) async throws -> [Vocabulary] {
         var items: [URLQueryItem] = []
         items.append(URLQueryItem(name: "unit_lt",  value: String(unit)))
-        return try await api.request("GET", "admin/words/list/unit-lt", query: items, as: [Word].self)
+        return try await api.request("GET", "admin/vocabularies/list/unit-lt", query: items, as: [Vocabulary].self)
     }
 
-    func listUnassigned() async throws -> [Word] {
-        return try await api.request("GET", "admin/words/list/unassigned", as: [Word].self)
+    func listUnassigned() async throws -> [Vocabulary] {
+        return try await api.request("GET", "admin/vocabularies/list/unassigned", as: [Vocabulary].self)
     }
 
-    // MARK: - Update Word
+    // MARK: - Update Vocabulary
     @discardableResult
-    func updateWord(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [WordTranslation]? = nil) async throws -> Word {
-        let body = WordUpdate(text: text, lessonId: lessonId, translations: translations)
-        return try await api.request("PUT", "admin/words/\(id)", jsonBody: body, as: Word.self)
+    func updateVocabulary(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [VocabularyTranslation]? = nil) async throws -> Vocabulary {
+        let body = VocabularyUpdate(text: text, lessonId: lessonId, translations: translations)
+        return try await api.request("PUT", "admin/vocabularies/\(id)", jsonBody: body, as: Vocabulary.self)
     }
 
-    // MARK: - Delete Word
-    func deleteWord(id: Int) async throws {
-        _ = try await api.request("DELETE", "admin/words/\(id)", as: Empty.self)
+    // MARK: - Delete Vocabulary
+    func deleteVocabulary(id: Int) async throws {
+        _ = try await api.request("DELETE", "admin/vocabularies/\(id)", as: Empty.self)
     }
 }

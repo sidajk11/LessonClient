@@ -1,5 +1,5 @@
 //
-//  WordListViewModel.swift
+//  VocabularyListViewModel.swift
 //  LessonClient
 //
 //  Created by ymj on 10/13/25.
@@ -8,9 +8,9 @@
 import Foundation
 
 @MainActor
-final class WordListViewModel: ObservableObject {
+final class VocabularyListViewModel: ObservableObject {
     // UI State
-    @Published var items: [Word] = []
+    @Published var items: [Vocabulary] = []
     @Published var searchText: String = ""
     @Published var levelText: String = ""     // free-form, parsed to Int?
     @Published var isLoading: Bool = false
@@ -35,7 +35,7 @@ final class WordListViewModel: ObservableObject {
         do {
             isLoading = true
             defer { isLoading = false }
-            items = try await WordDataSource.shared.searchWords(
+            items = try await VocabularyDataSource.shared.searchVocabularys(
                 q: searchText,
                 level: levelParam,
                 limit: 50
@@ -46,10 +46,10 @@ final class WordListViewModel: ObservableObject {
     }
 
     // Callbacks from child screens
-    func didCreate(_ words: [Word]) {
+    func didCreate(_ words: [Vocabulary]) {
         items.insert(contentsOf: words, at: 0)
     }
-    func didImport(_ list: [Word]) {
+    func didImport(_ list: [Vocabulary]) {
         items.insert(contentsOf: list, at: 0)
     }
 
@@ -58,7 +58,7 @@ final class WordListViewModel: ObservableObject {
         do {
             isLoading = true
             defer { isLoading = false }
-            items = try await WordDataSource.shared.words()
+            items = try await VocabularyDataSource.shared.words()
         } catch {
             self.error = (error as NSError).localizedDescription
         }

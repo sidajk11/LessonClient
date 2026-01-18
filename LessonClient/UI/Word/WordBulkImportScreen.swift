@@ -1,5 +1,5 @@
 //
-//  WordBulkImportScreen.swift
+//  VocabularyBulkImportScreen.swift
 //  LessonClient
 //
 //  Created by ymj on 10/13/25.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct WordBulkImportScreen: View {
-    var onImported: (([Word]) -> Void)
+struct VocabularyBulkImportScreen: View {
+    var onImported: (([Vocabulary]) -> Void)
     
     var body: some View {
         Text("")

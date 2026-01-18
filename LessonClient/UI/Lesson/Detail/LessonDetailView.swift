@@ -39,7 +39,7 @@ struct LessonDetailView: View {
             }
             
             NavigationLink("+ 새 단어 만들기") {
-                WordCreateView(onCreated: { words in
+                VocabularyCreateView(onCreated: { words in
                     for word in words {
                         Task { await vm.attach(word.id) }
                     }
@@ -51,7 +51,7 @@ struct LessonDetailView: View {
                 Section("단어 (\(vm.words.count))") {
                     ForEach(vm.words, id: \.id) { w in
                         NavigationLink {
-                            WordDetailView(wordId: w.id, lesson: vm.model)
+                            VocabularyDetailView(wordId: w.id, lesson: vm.model)
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -83,8 +83,8 @@ struct LessonDetailView: View {
             Section("단어 검색 & 연결") {
                 HStack {
                     TextField("검색", text: $vm.wq)
-                        .onSubmit { Task { await vm.doWordSearch() } }
-                    Button("검색") { Task { await vm.doWordSearch() } }
+                        .onSubmit { Task { await vm.doVocabularySearch() } }
+                    Button("검색") { Task { await vm.doVocabularySearch() } }
                 }
 
                 ForEach(vm.wsearch, id: \.id) { w in

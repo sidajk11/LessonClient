@@ -6,7 +6,7 @@ import Foundation
 final class ExampleDetailViewModel: ObservableObject {
     let exampleId: Int
     let lesson: Lesson?
-    let word: Word?
+    let word: Vocabulary?
 
     @Published var example: Example?
     @Published var sentence: String = ""           // en
@@ -15,7 +15,7 @@ final class ExampleDetailViewModel: ObservableObject {
     @Published var error: String?
     @Published var info: String?
 
-    init(exampleId: Int, lesson: Lesson?, word: Word?) {
+    init(exampleId: Int, lesson: Lesson?, word: Vocabulary?) {
         self.exampleId = exampleId
         self.lesson = lesson
         self.word = word

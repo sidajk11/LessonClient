@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum ExerciseType: String, CaseIterable, Codable {
+enum PracticeType: String, CaseIterable, Codable {
     // 영어 단어 선택
     case select
     // 번역 단어 선택
@@ -34,7 +34,7 @@ enum ExerciseType: String, CaseIterable, Codable {
         }
     }
     
-    var exerciseTitle: String {
+    var practiceTitle: String {
         switch self {
         case .select:
             "단어를 선택하세요."

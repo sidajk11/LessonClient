@@ -1,5 +1,5 @@
 //
-//  WordDetailView.swift
+//  VocabularyDetailView.swift
 //  LessonClient
 //
 //  Created by ymj on 10/13/25.
@@ -8,11 +8,11 @@
 
 import SwiftUI
 
-struct WordDetailView: View {
-    @StateObject private var vm: WordDetailViewModel
+struct VocabularyDetailView: View {
+    @StateObject private var vm: VocabularyDetailViewModel
 
     init(wordId: Int, lesson: Lesson?) {
-        _vm = StateObject(wrappedValue: WordDetailViewModel(wordId: wordId, lesson: lesson))
+        _vm = StateObject(wrappedValue: VocabularyDetailViewModel(wordId: wordId, lesson: lesson))
     }
 
     var body: some View {
@@ -36,16 +36,16 @@ struct WordDetailView: View {
     private var headerSection: some View {
         if let e = vm.word {
             Section("단어") {
-                TextField("기본 텍스트 (Word.text)", text: Binding(
+                TextField("기본 텍스트 (Vocabulary.text)", text: Binding(
                     get: { e.text },
                     set: { vm.word?.text = $0 }
                 ))
 
                 HStack {
-                    Button("기본 텍스트 저장") { Task { await vm.saveWord() } }
+                    Button("기본 텍스트 저장") { Task { await vm.saveVocabulary() } }
                         .buttonStyle(.borderedProminent)
                     Spacer()
-                    Button(role: .destructive) { Task { await vm.removeWord() } } label: {
+                    Button(role: .destructive) { Task { await vm.removeVocabulary() } } label: {
                         Text("단어 삭제")
                     }
                 }

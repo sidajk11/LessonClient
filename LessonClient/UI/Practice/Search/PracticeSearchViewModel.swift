@@ -1,5 +1,5 @@
 //
-//  ExerciseSearchViewModel.swift
+//  PracticeSearchViewModel.swift
 //  LessonClient
 //
 //  Created by ymj on 10/14/25.
@@ -8,14 +8,14 @@
 import Foundation
 
 @MainActor
-final class ExerciseSearchViewModel: ObservableObject {
+final class PracticeSearchViewModel: ObservableObject {
     // Inputs
     @Published var q: String = ""
     @Published var levelText: String = ""   // 숫자만
     @Published var unitText: String = ""    // 숫자만
 
     // State
-    @Published var items: [Exercise] = []
+    @Published var items: [Practice] = []
     @Published var isLoading: Bool = false
     @Published var error: String?
 
@@ -45,7 +45,7 @@ final class ExerciseSearchViewModel: ObservableObject {
         do {
             isLoading = true
             defer { isLoading = false }
-            items = try await ExerciseDataSource.shared.search(
+            items = try await PracticeDataSource.shared.search(
                 q: q,
                 level: levelParam,
                 unit: unitParam,

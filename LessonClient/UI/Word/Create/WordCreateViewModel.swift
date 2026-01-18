@@ -1,5 +1,5 @@
 //
-//  WordCreateViewModel.swift
+//  VocabularyCreateViewModel.swift
 //  LessonClient
 //
 //  Created by ymj on 10/13/25.
@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 @MainActor
-final class WordCreateViewModel: ObservableObject {
+final class VocabularyCreateViewModel: ObservableObject {
     /**
      예)
      my
@@ -29,21 +29,21 @@ final class WordCreateViewModel: ObservableObject {
     }
 
     // Action
-    func createWord() async throws -> [Word] {
+    func createVocabulary() async throws -> [Vocabulary] {
         guard canSubmit else { throw NSError(domain: "invalid.form", code: 0, userInfo: [NSLocalizedDescriptionKey: "입력을 확인해 주세요."]) }
         isSaving = true
         defer { isSaving = false }
         
         text = text.replacingOccurrences(of: "’", with: "'")
         
-        var words: [Word] = []
+        var words: [Vocabulary] = []
         let paras = text.components(separatedBy: "\n\n")
         for para in paras {
             var components = para.components(separatedBy: .newlines)
             let text = components.removeFirst().trimmed
-            let translations = [WordTranslation].parse(from: components)
+            let translations = [VocabularyTranslation].parse(from: components)
 
-            let word = try await WordDataSource.shared.createWord(
+            let word = try await VocabularyDataSource.shared.createVocabulary(
                 text: text.trimmed,
                 lessonId: lessonId,
                 translations: translations

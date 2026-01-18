@@ -1,17 +1,17 @@
 
 import SwiftUI
 
-struct WordCreateView: View {
-    var onCreated: (([Word]) -> Void)? = nil
+struct VocabularyCreateView: View {
+    var onCreated: (([Vocabulary]) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var vm = WordCreateViewModel()
+    @StateObject private var vm = VocabularyCreateViewModel()
 
     var body: some View {
         Form {
             Button {
                 Task {
                     do {
-                        let w = try await vm.createWord()
+                        let w = try await vm.createVocabulary()
                         onCreated?(w)
                         dismiss()
                     } catch {

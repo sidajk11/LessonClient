@@ -25,7 +25,7 @@ extension LessonTranslation {
     }
 }
 
-extension WordTranslation {
+extension VocabularyTranslation {
     func toString() -> String? {
         let text = text.trimmed
         if text.isEmpty {
@@ -45,7 +45,7 @@ extension ExampleTranslation {
     }
 }
 
-extension ExerciseWordOptionTranslation {
+extension PracticeVocabularyOptionTranslation {
     func toString() -> String? {
         let text = text.trimmed
         if text.isEmpty {
@@ -55,7 +55,7 @@ extension ExerciseWordOptionTranslation {
     }
 }
 
-extension Array where Element == WordTranslation {
+extension Array where Element == VocabularyTranslation {
     /// Parse multiline text like: "ko: 번역1\nes: texto"
     static func parse(from text: String) -> [Element] {
         let lines = text
@@ -139,13 +139,13 @@ extension Array where Element == LessonTranslation {
     }
 }
 
-extension Array where Element == ExerciseTranslation {
+extension Array where Element == PracticeTranslation {
     func content(langCode: LangCode) -> String {
         first(where: { $0.langCode == langCode })?.content ?? ""
     }
 }
 
-extension Array where Element == ExerciseWordOption {
+extension Array where Element == PracticeVocabularyOption {
     func enText() -> String {
         text(langCode: .enUS)
     }
