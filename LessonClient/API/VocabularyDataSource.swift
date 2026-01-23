@@ -16,7 +16,7 @@ final class VocabularyDataSource {
     @discardableResult
     func createVocabulary(text: String, lessonId: Int? = nil, translations: [VocabularyTranslation]? = nil) async throws -> Vocabulary {
         let body = VocabularyUpdate(text: text, lessonId: lessonId, translations: translations)
-        return try await api.request("POST", "admin/vocabularies", jsonBody: body, as: Vocabulary.self)
+        return try await api.request("POST", "admin/vocabularies", jsonBody: body.toDict(), as: Vocabulary.self)
     }
 
     // MARK: - Fetch Vocabularys
@@ -95,7 +95,7 @@ final class VocabularyDataSource {
     @discardableResult
     func updateVocabulary(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [VocabularyTranslation]? = nil) async throws -> Vocabulary {
         let body = VocabularyUpdate(text: text, lessonId: lessonId, translations: translations)
-        return try await api.request("PUT", "admin/vocabularies/\(id)", jsonBody: body, as: Vocabulary.self)
+        return try await api.request("PUT", "admin/vocabularies/\(id)", jsonBody: body.toDict(), as: Vocabulary.self)
     }
 
     // MARK: - Delete Vocabulary

@@ -26,7 +26,7 @@ final class ExampleDataSource {
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleUpdate(text: text, wordId: wordId, translations: translations)
-        return try await api.request("POST", "admin/examples", jsonBody: body, as: Example.self)
+        return try await api.request("POST", "admin/examples", jsonBody: body.toDict(), as: Example.self)
     }
 
     /// 예문 단건 조회
@@ -47,7 +47,7 @@ final class ExampleDataSource {
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleUpdate(text: text, wordId: wordId, translations: translations)
-        return try await api.request("PUT", "admin/examples/\(id)", jsonBody: body, as: Example.self)
+        return try await api.request("PUT", "admin/examples/\(id)", jsonBody: body.toDict(), as: Example.self)
     }
 
     /// 예문 삭제

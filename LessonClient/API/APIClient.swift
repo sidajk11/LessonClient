@@ -36,7 +36,7 @@ final class APIClient {
         _ method: String,
         _ path: String,
         query: [URLQueryItem]? = nil,
-        jsonBody: Encodable? = nil,
+        jsonBody: [String: Any]? = nil,
         formBody: [String:String]? = nil,
         authorized: Bool = true,
         as type: T.Type
@@ -58,7 +58,7 @@ final class APIClient {
             print("body: \(body)")
         } else if let body = jsonBody {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            req.httpBody = try JSONEncoder().encode(AnyEncodable(body))
+            req.httpBody = try JSONSerialization.data(withJSONObject: body)
             print("body: \(body)")
         }
 

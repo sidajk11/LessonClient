@@ -29,13 +29,13 @@ final class PracticeDataSource {
     /// 생성
     @discardableResult
     func create(practice: PracticeUpdate) async throws -> Practice {
-        return try await api.request("POST", "admin/practices", jsonBody: practice, as: Practice.self)
+        return try await api.request("POST", "admin/practices", jsonBody: practice.toDict(), as: Practice.self)
     }
 
     /// 수정 (전달한 항목만 갱신, 옵션/번역은 전달 시 전체 치환)
     @discardableResult
     func update(id: Int, practice: PracticeUpdate) async throws -> Practice {
-        return try await api.request("PUT", "admin/practices/\(id)", jsonBody: practice, as: Practice.self)
+        return try await api.request("PUT", "admin/practices/\(id)", jsonBody: practice.toDict(), as: Practice.self)
     }
 
     /// 삭제

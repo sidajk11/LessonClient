@@ -19,7 +19,7 @@ struct Practice: Codable, Identifiable {
         case exampleId = "example_id"
         case type
         case correctOptionId = "correct_option_id"
-        case wordOptions = "vocabulary_options"
+        case wordOptions = "word_options"
         case options
         case translations
     }
@@ -32,14 +32,16 @@ struct PracticeUpdate: Codable {
     var correctOptionId: Int?
     var options: [PracticeOptionUpdate]?
     var translations: [PracticeTranslation]?
+    var correctWordOptionIds: [Int]?
 
     enum CodingKeys: String, CodingKey {
         case exampleId = "example_id"
         case type
         case correctOptionId = "correct_option_id"
-        case wordOptions = "vocabulary_options"
+        case wordOptions = "word_options"
         case options
         case translations
+        case correctWordOptionIds = "correct_word_option_ids"
     }
 }
 

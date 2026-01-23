@@ -40,7 +40,7 @@ extension LessonDataSource {
             wordIds: wordIds,
             translations: translations
         )
-        return try await api.request("POST", "admin/lessons", jsonBody: body, as: Lesson.self)
+        return try await api.request("POST", "admin/lessons", jsonBody: body.toDict(), as: Lesson.self)
     }
 
     /// 레슨 목록
@@ -77,7 +77,7 @@ extension LessonDataSource {
             wordIds: wordIds,
             translations: translations
         )
-        return try await api.request("PUT", "admin/lessons/\(id)", jsonBody: body, as: Lesson.self)
+        return try await api.request("PUT", "admin/lessons/\(id)", jsonBody: body.toDict(), as: Lesson.self)
     }
 
     func deleteLesson(id: Int) async throws {
@@ -90,7 +90,7 @@ extension LessonDataSource {
     @discardableResult
     func attachVocabulary(lessonId: Int, wordId: Int) async throws -> Lesson {
         let body = AttachVocabularyBody(wordId: wordId)
-        return try await api.request("POST", "admin/lessons/\(lessonId)/vocabularies", jsonBody: body, as: Lesson.self)
+        return try await api.request("POST", "admin/lessons/\(lessonId)/vocabularies", jsonBody: body.toDict(), as: Lesson.self)
     }
 
     /// 단어 분리(detach) → 서버가 Lesson 반환
