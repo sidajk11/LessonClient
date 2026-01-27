@@ -25,7 +25,7 @@ final class ExampleDetailViewModel: ObservableObject {
         do {
             let ex = try await ExampleDataSource.shared.example(id: exampleId)
             example = ex
-            sentence = ex.text
+            sentence = ex.sentence
             let lines = ex.translations
                 .sorted { $0.langCode.rawValue < $1.langCode.rawValue }
                 .map { "\($0.langCode): \($0.text)" }
@@ -49,7 +49,7 @@ final class ExampleDetailViewModel: ObservableObject {
 
             let updated = try await ExampleDataSource.shared.updateExample(
                 id: exampleId,
-                text: sentence.trimmed,
+                sentence: sentence.trimmed,
                 translations: payload
             )
             example = updated

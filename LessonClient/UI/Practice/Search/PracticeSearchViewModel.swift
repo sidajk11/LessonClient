@@ -15,7 +15,7 @@ final class PracticeSearchViewModel: ObservableObject {
     @Published var unitText: String = ""    // 숫자만
 
     // State
-    @Published var items: [Practice] = []
+    @Published var items: [Exercise] = []
     @Published var isLoading: Bool = false
     @Published var error: String?
 

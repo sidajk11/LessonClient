@@ -47,7 +47,7 @@ struct ExamplesSearchView: View {
             // 결과 리스트
             List(vm.items) { row in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(row.text)
+                    Text(row.sentence)
                         .font(.body)
 
                     Text(row.translations.toString())

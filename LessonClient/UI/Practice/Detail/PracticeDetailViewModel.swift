@@ -10,7 +10,7 @@ import Combine
 
 final class PracticeDetailViewModel: ObservableObject {
     @Published var example: Example
-    @Published var practice: Practice
+    @Published var practice: Exercise
 
     @Published var sentence: String = ""
     @Published var content: String = ""
@@ -30,7 +30,7 @@ final class PracticeDetailViewModel: ObservableObject {
     private var originalOptions: [String] = []
     private var wordsLearned: [Vocabulary] = []
 
-    init(example: Example, practice: Practice) {
+    init(example: Example, practice: Exercise) {
         self.example = example
         self.practice = practice
 
@@ -54,7 +54,7 @@ final class PracticeDetailViewModel: ObservableObject {
     }
 
     // MARK: - Helpers
-    private static func enOptions(from practice: Practice) -> [String] {
+    private static func enOptions(from practice: Exercise) -> [String] {
         practice.wordOptions.compactMap {
             $0.translations.first(where: { $0.langCode == .enUS })?.text
         }
@@ -113,19 +113,19 @@ final class PracticeDetailViewModel: ObservableObject {
         defer { isSaving = false }
 
         // 서버로 전송할 wordOptions 구성
-        let wordsOptions: [PracticeVocabularyOption] = currentOptions.map {
+        let wordsOptions: [ExerciseVocabularyOption] = currentOptions.map {
             let t = PracticeOptionTranslation(langCode: .enUS, text: $0.lowercased())
-            return PracticeVocabularyOption(translations: [t])
+            return ExerciseVocabularyOption(translations: [t])
         }
 
         // translations는 기존 그대로 유지 (영문 content만 사용)
-        let trans = PracticeTranslation(langCode: .enUS, content: content, question: nil)
+        let trans = ExerciseTranslation(langCode: .enUS, content: content, question: nil)
 
         let options = practice.options.map {
-            PracticeOptionUpdate(translations: $0.translations)
+            ExerciseOptionUpdate(translations: $0.translations)
         }
         
-        let update = PracticeUpdate(
+        let update = ExerciseUpdate(
             exampleId: practice.exampleId,
             type: .select,
             wordOptions: wordsOptions,

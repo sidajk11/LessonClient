@@ -51,7 +51,7 @@ struct PracticeListView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Text(vm.example.text)
+                                Text(vm.example.sentence)
                                 Spacer()
                                 Text(ex.translations.content(langCode: .enUS))
                                 Spacer()

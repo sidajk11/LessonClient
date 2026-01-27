@@ -87,7 +87,7 @@ struct LessonRowView: View {
             try await withThrowingTaskGroup(of: (Int, VocabularyPreview?).self) { group in
                 for (index, word) in words.enumerated() {
                     group.addTask {
-                        let examples = word.examples
+                        let examples = word.examples ?? []
                         let first = examples.first
                         return (
                             index,

@@ -3,17 +3,17 @@ import Combine
 
 struct PracticeCreateView: View {
     @Environment(\.dismiss) private var dismiss
-    let onCreated: ((Practice) -> Void)?
+    let onCreated: ((Exercise) -> Void)?
     
     @StateObject private var vm: PracticeCreateViewModel
     
-    init(example: Example, lesson: Lesson?, word: Vocabulary?, onCreated: ((Practice) -> Void)? = nil) {
+    init(example: Example, lesson: Lesson?, word: Vocabulary?, onCreated: ((Exercise) -> Void)? = nil) {
         self.onCreated = onCreated
         let vm = PracticeCreateViewModel(example: example, lesson: lesson, word: word)
         _vm = StateObject(wrappedValue: vm)
     }
 
-    private let practiceTypes: [PracticeType] = PracticeType.allCases
+    private let practiceTypes: [ExerciseType] = ExerciseType.allCases
     
     // MARK: - View
     var body: some View {
@@ -28,7 +28,7 @@ struct PracticeCreateView: View {
             Section {
                 VStack(alignment: .leading) {
                     HStack {
-                        Text(vm.example.text)
+                        Text(vm.example.sentence)
                     }
                     Text(vm.translation)
                     Text(vm.word?.text ?? "")

@@ -95,7 +95,7 @@ struct VocabularyDetailView: View {
                             NavigationLink {
                                 ExampleDetailView(exampleId: example.id, lesson: vm.lesson, word: vm.word)
                             } label: {
-                                Text(example.text)
+                                Text(example.sentence)
                                     .lineLimit(1)
                             }
                             .buttonStyle(.plain) // macOS에서 과한 버튼 스타일 제거

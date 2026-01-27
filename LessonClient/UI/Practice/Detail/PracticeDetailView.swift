@@ -13,7 +13,7 @@ struct PracticeDetailView: View {
 
     var onDeleted: (() -> Void)?
 
-    init(example: Example, practice: Practice,
+    init(example: Example, practice: Exercise,
          onDeleted: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: PracticeDetailViewModel(example: example, practice: practice))
         self.onDeleted = onDeleted

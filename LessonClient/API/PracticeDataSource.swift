@@ -15,32 +15,32 @@ final class PracticeDataSource {
     // MARK: - Public API
 
     /// 목록 조회 (예문별 필터 가능)
-    func list(exampleId: Int? = nil, limit: Int = 50) async throws -> [Practice] {
+    func list(exampleId: Int? = nil, limit: Int = 50) async throws -> [Exercise] {
         var query: [URLQueryItem] = [.init(name: "limit", value: "\(min(max(limit, 1), 200))")]
         if let exampleId { query.append(.init(name: "example_id", value: "\(exampleId)")) }
-        return try await api.request("GET", "admin/practices", query: query, as: [Practice].self)
+        return try await api.request("GET", "admin/exercises", query: query, as: [Exercise].self)
     }
 
     /// 단건 조회
-    func get(id: Int) async throws -> Practice {
-        try await api.request("GET", "admin/practices/\(id)", as: Practice.self)
+    func get(id: Int) async throws -> Exercise {
+        try await api.request("GET", "admin/exercises/\(id)", as: Exercise.self)
     }
 
     /// 생성
     @discardableResult
-    func create(practice: PracticeUpdate) async throws -> Practice {
-        return try await api.request("POST", "admin/practices", jsonBody: practice.toDict(), as: Practice.self)
+    func create(practice: ExerciseUpdate) async throws -> Exercise {
+        return try await api.request("POST", "admin/exercises", jsonBody: practice.toDict(), as: Exercise.self)
     }
 
     /// 수정 (전달한 항목만 갱신, 옵션/번역은 전달 시 전체 치환)
     @discardableResult
-    func update(id: Int, practice: PracticeUpdate) async throws -> Practice {
-        return try await api.request("PUT", "admin/practices/\(id)", jsonBody: practice.toDict(), as: Practice.self)
+    func update(id: Int, practice: ExerciseUpdate) async throws -> Exercise {
+        return try await api.request("PUT", "admin/exercises/\(id)", jsonBody: practice.toDict(), as: Exercise.self)
     }
 
     /// 삭제
     func delete(id: Int) async throws {
-        _ = try await api.request("DELETE", "admin/practices/\(id)", as: Empty.self)
+        _ = try await api.request("DELETE", "admin/exercises/\(id)", as: Empty.self)
     }
     
     /// 연습문제 검색 (GET /practices/search)
@@ -55,7 +55,7 @@ final class PracticeDataSource {
         level: Int? = nil,
         unit: Int? = nil,
         limit: Int = 50
-    ) async throws -> [Practice] {
+    ) async throws -> [Exercise] {
         let trimmedQ = q.trimmingCharacters(in: .whitespacesAndNewlines)
         let clampedLimit = min(max(limit, 1), 200)
 
@@ -68,9 +68,9 @@ final class PracticeDataSource {
 
         return try await api.request(
             "GET",
-            "admin/practices/search",
+            "admin/exercises/search",
             query: query,
-            as: [Practice].self
+            as: [Exercise].self
         )
     }
 

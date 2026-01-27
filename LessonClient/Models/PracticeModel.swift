@@ -5,14 +5,14 @@
 //  Created by ymj on 10/15/25.
 //
 
-struct Practice: Codable, Identifiable {
+struct Exercise: Codable, Identifiable {
     let id: Int
     let exampleId: Int
-    var type: PracticeType
-    var wordOptions: [PracticeVocabularyOption]
+    var type: ExerciseType
+    var wordOptions: [ExerciseVocabularyOption]
     var correctOptionId: Int?
     var options: [PracticeOption]
-    var translations: [PracticeTranslation]
+    var translations: [ExerciseTranslation]
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -25,13 +25,13 @@ struct Practice: Codable, Identifiable {
     }
 }
 
-struct PracticeUpdate: Codable {
+struct ExerciseUpdate: Codable {
     let exampleId: Int
-    var type: PracticeType?
-    var wordOptions: [PracticeVocabularyOption]?
+    var type: ExerciseType?
+    var wordOptions: [ExerciseVocabularyOption]?
     var correctOptionId: Int?
-    var options: [PracticeOptionUpdate]?
-    var translations: [PracticeTranslation]?
+    var options: [ExerciseOptionUpdate]?
+    var translations: [ExerciseTranslation]?
     var correctWordOptionIds: [Int]?
 
     enum CodingKeys: String, CodingKey {
@@ -45,7 +45,7 @@ struct PracticeUpdate: Codable {
     }
 }
 
-struct PracticeTranslation: Codable {
+struct ExerciseTranslation: Codable {
     let langCode: LangCode
     var content: String?
     var question: String?
@@ -67,7 +67,7 @@ struct PracticeOption: Codable, Identifiable {
     }
 }
 
-struct PracticeOptionUpdate: Codable {
+struct ExerciseOptionUpdate: Codable {
     let translations: [PracticeOptionTranslation]?
 }
 
@@ -82,7 +82,7 @@ struct PracticeOptionTranslation: Codable {
 }
 
 
-struct PracticeVocabularyOption: Codable {
+struct ExerciseVocabularyOption: Codable {
     let translations: [PracticeOptionTranslation]
 
     enum CodingKeys: String, CodingKey {

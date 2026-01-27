@@ -59,7 +59,7 @@ struct Vocabulary: Codable, Identifiable {
     var text: String
     var lessonId: Int?   // detach 허용 시 서버 nullable
     var translations: [VocabularyTranslation]
-    var examples: [Example]
+    var examples: [Example]?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -102,43 +102,43 @@ struct VocabularyUpdate: Codable {
 // MARK: - Example (GET /examples/{id}, /examples/search)
 struct Example: Codable, Identifiable {
     let id: Int
-    let text: String
+    let sentence: String
     let wordId: Int
     let wordText: String?
     let translations: [ExampleTranslation]
-    let practices: [Practice]
+    let exercises: [Exercise]?
 
     enum CodingKeys: String, CodingKey {
         case id
-        case text
+        case sentence
         case wordId = "vocabulary_id"
         case wordText = "vocabulary_text"
         case translations
-        case practices
+        case exercises
     }
 }
 
 struct ExampleUpdate: Codable {
-    let text: String?
+    let sentence: String?
     let wordId: Int?
     let wordText: String?
     let translations: [ExampleTranslation]?
-    let practices: [Practice]?
+    let exercises: [Exercise]?
 
     enum CodingKeys: String, CodingKey {
-        case text
+        case sentence
         case wordId = "vocabulary_id"
         case wordText = "vocabulary_text"
         case translations
-        case practices
+        case exercises
     }
     
-    init(text: String? = nil, wordId: Int? = nil, wordText: String? = nil, translations: [ExampleTranslation]? = nil, practices: [Practice]? = nil) {
-        self.text = text
+    init(sentence: String? = nil, wordId: Int? = nil, wordText: String? = nil, translations: [ExampleTranslation]? = nil, exercises: [Exercise]? = nil) {
+        self.sentence = sentence
         self.wordId = wordId
         self.wordText = wordText
         self.translations = translations
-        self.practices = practices
+        self.exercises = exercises
     }
 }
 

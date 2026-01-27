@@ -21,11 +21,11 @@ final class ExampleDataSource {
     /// - Returns: 생성된 Example
     @discardableResult
     func createExample(
-        text: String,
+        sentence: String,
         wordId: Int,
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
-        let body = ExampleUpdate(text: text, wordId: wordId, translations: translations)
+        let body = ExampleUpdate(sentence: sentence, wordId: wordId, translations: translations)
         return try await api.request("POST", "admin/examples", jsonBody: body.toDict(), as: Example.self)
     }
 
@@ -42,11 +42,11 @@ final class ExampleDataSource {
     @discardableResult
     func updateExample(
         id: Int,
-        text: String?,
+        sentence: String?,
         wordId: Int? = nil,
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
-        let body = ExampleUpdate(text: text, wordId: wordId, translations: translations)
+        let body = ExampleUpdate(sentence: sentence, wordId: wordId, translations: translations)
         return try await api.request("PUT", "admin/examples/\(id)", jsonBody: body.toDict(), as: Example.self)
     }
 

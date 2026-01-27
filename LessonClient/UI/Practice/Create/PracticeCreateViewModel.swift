@@ -10,7 +10,7 @@ final class PracticeCreateViewModel: ObservableObject {
     var lesson: Lesson?
     var word: Vocabulary?
     
-    @Published var type: PracticeType = .select // change as needed
+    @Published var type: ExerciseType = .select // change as needed
     @Published var selectedIndexes: [Int] = []
     // 영어문장에서 추출한 단어들
     @Published var allVocabularysInSentence: [String] = []
@@ -22,7 +22,7 @@ final class PracticeCreateViewModel: ObservableObject {
     
     @Published var wordOptionTextList: [String] = []
     @Published var correctionOptionId: Int = 0
-    @Published var options: [PracticeOptionUpdate] = []      // 보기
+    @Published var options: [ExerciseOptionUpdate] = []      // 보기
 
     // UI State
     @Published var translation: String = ""
@@ -30,7 +30,7 @@ final class PracticeCreateViewModel: ObservableObject {
     @Published var content: String = ""
     @Published var isSubmitting: Bool = false
     @Published var errorMessage: String?
-    @Published var createdPractice: Practice?
+    @Published var createdPractice: Exercise?
     
     var selectedTestVocabularys: [String] {
         return selectedIndexes.map { self.allVocabularysInSentence[$0] }
@@ -63,7 +63,7 @@ final class PracticeCreateViewModel: ObservableObject {
         }
         
         translation = example.translations.koText()
-        allVocabularysInSentence = words(from: example.text).filter { !punctuationSet.contains($0) }
+        allVocabularysInSentence = words(from: example.sentence).filter { !punctuationSet.contains($0) }
         allTransVocabularys = transVocabularys(from: example.translations)
         
         bind()
@@ -153,21 +153,21 @@ extension PracticeCreateViewModel {
         isSubmitting = true
         defer { isSubmitting = false }
         
-        var transList: [PracticeTranslation] = []
+        var transList: [ExerciseTranslation] = []
         if type == .combine || type == .select {
-            let trans = PracticeTranslation(langCode: .enUS, content: content, question: nil)
+            let trans = ExerciseTranslation(langCode: .enUS, content: content, question: nil)
             transList.append(trans)
         }
-        var wordsOptions: [PracticeVocabularyOption] = []
+        var wordsOptions: [ExerciseVocabularyOption] = []
         if type == .combine || type == .select, wordOptionTextList.count > 0 {
             wordsOptions = wordOptionTextList.map {
-                let text = NL.lowercaseAvailable(sentence: example.text, word: $0) ? $0.lowercased() : $0
+                let text = NL.lowercaseAvailable(sentence: example.sentence, word: $0) ? $0.lowercased() : $0
                 let translation = PracticeOptionTranslation(langCode: .enUS, text: text)
-                return PracticeVocabularyOption(translations: [translation])
+                return ExerciseVocabularyOption(translations: [translation])
             }
         }
         
-        let practiceCrate = PracticeUpdate(
+        let practiceCrate = ExerciseUpdate(
             exampleId: example.id,
             type: type,
             wordOptions: wordsOptions,
@@ -196,7 +196,7 @@ extension PracticeCreateViewModel {
             .sink { [weak self] _ in
                 guard let self else { return }
                 sentence = example.translations.text(langCode: .ko)
-                content = content(from: example.text)
+                content = content(from: example.sentence)
                 wordOptionTextList = allVocabularysInSentence
             }
             .store(in: &cancellables)
@@ -207,7 +207,7 @@ extension PracticeCreateViewModel {
             .combineLatest($selectedIndexes)
             .sink { [weak self] (type, selectedIndexes) in
                 guard let self else { return }
-                sentence = example.text
+                sentence = example.sentence
                 var tokens = sentence.tokenize(word: word?.text)
                 for index in selectedIndexes {
                     tokens[index] = "_"

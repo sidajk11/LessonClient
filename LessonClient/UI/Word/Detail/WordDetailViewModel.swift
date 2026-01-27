@@ -124,7 +124,7 @@ final class VocabularyDetailViewModel: ObservableObject {
             // 3) Create
             guard let wid = word?.id else { return }
             let created = try await ExampleDataSource.shared.createExample(
-                text: newSentence.trimmed,
+                sentence: newSentence.trimmed,
                 wordId: wid,
                 translations: payload
             )
@@ -141,7 +141,7 @@ final class VocabularyDetailViewModel: ObservableObject {
 
     func startEdit(example: Example) {
         editingExample = example
-        editSentence = example.text
+        editSentence = example.sentence
         // build bulk text excluding en
         let lines = example.translations
             .filter { $0.langCode != .enUS }
@@ -157,7 +157,7 @@ final class VocabularyDetailViewModel: ObservableObject {
 
             let updated = try await ExampleDataSource.shared.updateExample(
                 id: ex.id,
-                text: editSentence.trimmed,
+                sentence: editSentence.trimmed,
                 translations: payload
             )
             if let idx = examples.firstIndex(where: { $0.id == ex.id }) {

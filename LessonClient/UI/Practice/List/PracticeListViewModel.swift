@@ -7,7 +7,7 @@ import Combine
 final class PracticeListViewModel: ObservableObject {
     let example: Example
     @Published var word: Vocabulary?
-    @Published var practices: [Practice] = []
+    @Published var practices: [Exercise] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 

@@ -139,13 +139,13 @@ extension Array where Element == LessonTranslation {
     }
 }
 
-extension Array where Element == PracticeTranslation {
+extension Array where Element == ExerciseTranslation {
     func content(langCode: LangCode) -> String {
         first(where: { $0.langCode == langCode })?.content ?? ""
     }
 }
 
-extension Array where Element == PracticeVocabularyOption {
+extension Array where Element == ExerciseVocabularyOption {
     func enText() -> String {
         text(langCode: .enUS)
     }

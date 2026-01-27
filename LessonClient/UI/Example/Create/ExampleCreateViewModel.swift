@@ -26,11 +26,11 @@ final class ExampleCreateViewModel: ObservableObject {
         let paras = text.components(separatedBy: "\n\n")
         for para in paras {
             var components = para.components(separatedBy: .newlines)
-            let text = components.removeFirst().trimmed
+            let sentence = components.removeFirst().trimmed
             let translations = [ExampleTranslation].parse(from: components)
 
             let example = try await ExampleDataSource.shared.createExample(
-                text: text,
+                sentence: sentence,
                 wordId: wordId,
                 translations: translations
             )
@@ -52,8 +52,8 @@ final class ExampleCreateViewModel: ObservableObject {
         do {
             let practices = try await PracticeDataSource.shared.list(exampleId: example.id)
             if !practices.contains(where: { $0.type == .combine }) {
-                let allVocabularysInSentence = example.text.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
-                let content = example.text.underlinesText
+                let allVocabularysInSentence = example.sentence.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
+                let content = example.sentence.underlinesText
                 await submit(example: example, content: content, type: .combine, wordOptionTextList: allVocabularysInSentence)
             }
         } catch {
@@ -67,7 +67,7 @@ final class ExampleCreateViewModel: ObservableObject {
             let practices = try await PracticeDataSource.shared.list(exampleId: example.id)
             let lesson = try await LessonDataSource.shared.lesson(id: lessonId)
             if !practices.contains(where: { $0.type == .select }) {
-                let allVocabularysInSentence = example.text.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
+                let allVocabularysInSentence = example.sentence.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
                 
                 var selectedTestVocabularys: [String] = []
                 if allVocabularysInSentence.contains(where: { $0.lowercased() == word.text.lowercased() }) {
@@ -93,7 +93,7 @@ final class ExampleCreateViewModel: ObservableObject {
                 let index = Int.random(in: 0 ..< dummyVocabularys.count)
                 selectedTestVocabularys.append(dummyVocabularys[index])
                 
-                var tokens = example.text.tokenize(word: word.text)
+                var tokens = example.sentence.tokenize(word: word.text)
                 tokens = tokens.map { word in
                     if selectedTestVocabularys.contains(where: { $0.lowercased() == word.lowercased() }) {
                         "_"
@@ -117,19 +117,19 @@ final class ExampleCreateViewModel: ObservableObject {
         }
     }
     
-    private func submit(example: Example, content: String, type: PracticeType, wordOptionTextList: [String]) async {
-        var transList: [PracticeTranslation] = []
-        let trans = PracticeTranslation(langCode: .enUS, content: content, question: nil)
+    private func submit(example: Example, content: String, type: ExerciseType, wordOptionTextList: [String]) async {
+        var transList: [ExerciseTranslation] = []
+        let trans = ExerciseTranslation(langCode: .enUS, content: content, question: nil)
         transList.append(trans)
         
-        var wordsOptions: [PracticeVocabularyOption] = []
+        var wordsOptions: [ExerciseVocabularyOption] = []
         wordsOptions = wordOptionTextList.map {
-            let text = NL.lowercaseAvailable(sentence: example.text, word: $0) ? $0.lowercased() : $0
+            let text = NL.lowercaseAvailable(sentence: example.sentence, word: $0) ? $0.lowercased() : $0
             let translation = PracticeOptionTranslation(langCode: .enUS, text: text)
-            return PracticeVocabularyOption(translations: [translation])
+            return ExerciseVocabularyOption(translations: [translation])
         }
         
-        let practiceCrate = PracticeUpdate(
+        let practiceCrate = ExerciseUpdate(
             exampleId: example.id,
             type: type,
             wordOptions: wordsOptions,
