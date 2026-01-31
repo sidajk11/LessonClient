@@ -14,15 +14,12 @@ final class PracticeCreateViewModel: ObservableObject {
     @Published var selectedIndexes: [Int] = []
     // 영어문장에서 추출한 단어들
     @Published var allVocabularysInSentence: [String] = []
-    // 번역에서 추출한 단어들
-    @Published var allTransVocabularys: [LangCode: [PracticeOptionTranslation]] = [:]
     
     @Published private var dummyVocabularys: [String] = []
     @Published private var selectedDummyVocabularys: [String] = []
     
     @Published var wordOptionTextList: [String] = []
     @Published var correctionOptionId: Int = 0
-    @Published var options: [ExerciseOptionUpdate] = []      // 보기
 
     // UI State
     @Published var translation: String = ""
@@ -64,7 +61,6 @@ final class PracticeCreateViewModel: ObservableObject {
         
         translation = example.translations.koText()
         allVocabularysInSentence = words(from: example.sentence).filter { !punctuationSet.contains($0) }
-        allTransVocabularys = transVocabularys(from: example.translations)
         
         bind()
     }
@@ -155,22 +151,20 @@ extension PracticeCreateViewModel {
         
         var transList: [ExerciseTranslation] = []
         if type == .combine || type == .select {
-            let trans = ExerciseTranslation(langCode: .enUS, content: content, question: nil)
+            let trans = ExerciseTranslation(langCode: .enUS, question: content)
             transList.append(trans)
         }
-        var wordsOptions: [ExerciseVocabularyOption] = []
+        var options: [ExerciseOptionUpdate] = []
         if type == .combine || type == .select, wordOptionTextList.count > 0 {
-            wordsOptions = wordOptionTextList.map {
+            options = wordOptionTextList.map {
                 let text = NL.lowercaseAvailable(sentence: example.sentence, word: $0) ? $0.lowercased() : $0
-                let translation = PracticeOptionTranslation(langCode: .enUS, text: text)
-                return ExerciseVocabularyOption(translations: [translation])
+                return ExerciseOptionUpdate(text: text)
             }
         }
         
         let practiceCrate = ExerciseUpdate(
             exampleId: example.id,
             type: type,
-            wordOptions: wordsOptions,
             options: options,
             translations: transList
         )
@@ -239,23 +233,6 @@ extension PracticeCreateViewModel {
     private func words(from sentence: String) -> [String] {
         // 문장에 포함된 단어들 (중복 제거, 순서 유지)
         return sentence.tokenize(word: word?.text)
-    }
-    
-    private func transVocabularys(from translations: [ExampleTranslation]) -> [LangCode: [PracticeOptionTranslation]] {
-        /*
-         This is my phone.
-         ko:이것은 내 휴대폰이야.
-         es:Este es mi teléfono.
-         */
-        var dict: [LangCode: [PracticeOptionTranslation]] = [:]
-        translations.forEach { trans in
-            let words = NL.words(text: trans.text)
-            let optionTranslations = words.map {
-                PracticeOptionTranslation(langCode: trans.langCode, text: $0)
-            }
-            dict[trans.langCode] = optionTranslations
-        }
-        return dict
     }
 }
 

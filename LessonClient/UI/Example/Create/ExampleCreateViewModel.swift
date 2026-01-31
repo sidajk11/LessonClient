@@ -54,7 +54,7 @@ final class ExampleCreateViewModel: ObservableObject {
             if !practices.contains(where: { $0.type == .combine }) {
                 let allVocabularysInSentence = example.sentence.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
                 let content = example.sentence.underlinesText
-                await submit(example: example, content: content, type: .combine, wordOptionTextList: allVocabularysInSentence)
+                await submit(example: example, prompt: content, type: .combine, wordOptionTextList: allVocabularysInSentence)
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -109,7 +109,7 @@ final class ExampleCreateViewModel: ObservableObject {
                 
                 let content = tokens.joinTokens()
                 
-                await submit(example: example, content: content, type: .select, wordOptionTextList: selectedTestVocabularys)
+                await submit(example: example, prompt: content, type: .select, wordOptionTextList: selectedTestVocabularys)
             }
             
         } catch {
@@ -117,23 +117,22 @@ final class ExampleCreateViewModel: ObservableObject {
         }
     }
     
-    private func submit(example: Example, content: String, type: ExerciseType, wordOptionTextList: [String]) async {
+    private func submit(example: Example, prompt: String, type: ExerciseType, wordOptionTextList: [String]) async {
         var transList: [ExerciseTranslation] = []
-        let trans = ExerciseTranslation(langCode: .enUS, content: content, question: nil)
+        let trans = ExerciseTranslation(langCode: .enUS, question: nil)
         transList.append(trans)
         
-        var wordsOptions: [ExerciseVocabularyOption] = []
+        var wordsOptions: [ExerciseOptionUpdate] = []
         wordsOptions = wordOptionTextList.map {
             let text = NL.lowercaseAvailable(sentence: example.sentence, word: $0) ? $0.lowercased() : $0
-            let translation = PracticeOptionTranslation(langCode: .enUS, text: text)
-            return ExerciseVocabularyOption(translations: [translation])
+            return ExerciseOptionUpdate(text: text)
         }
         
         let practiceCrate = ExerciseUpdate(
             exampleId: example.id,
             type: type,
-            wordOptions: wordsOptions,
-            options: nil,
+            prompt: prompt,
+            options: wordsOptions,
             translations: transList
         )
         do {

@@ -53,7 +53,7 @@ struct PracticeListView: View {
                                 Spacer()
                                 Text(vm.example.sentence)
                                 Spacer()
-                                Text(ex.translations.content(langCode: .enUS))
+                                Text(ex.prompt ?? "")
                                 Spacer()
                                 Text(ex.type.rawValue)
                                     .font(.caption)
@@ -61,7 +61,7 @@ struct PracticeListView: View {
                                     .padding(.vertical, 2)
                                     .overlay(RoundedRectangle(cornerRadius: 4).stroke(.quaternary))
                             }
-                            Text(ex.wordOptions.enText())
+                            Text(ex.options.map { $0.text }.joined(separator: ", "))
                                 .font(.body)
                                 .lineLimit(2)
                         }

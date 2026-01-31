@@ -36,12 +36,12 @@ final class PracticeDetailViewModel: ObservableObject {
 
         if practice.type == .combine {
             sentence = example.translations.text(langCode: .ko)
-            content = practice.translations.content(langCode: .enUS)
-            optionsText = practice.wordOptions.text(langCode: .enUS)
+            content = practice.prompt ?? ""
+            optionsText = practice.options.map { $0.text }.joined(separator: ", ")
         } else if practice.type == .select {
             sentence = example.translations.text(langCode: .ko)
-            content = practice.translations.content(langCode: .enUS)
-            optionsText = practice.wordOptions.text(langCode: .enUS)
+            content = practice.prompt ?? ""
+            optionsText = practice.options.map { $0.text }.joined(separator: ", ")
         }
 
         // ✅ select 타입일 때 편집 데이터 준비
@@ -55,8 +55,8 @@ final class PracticeDetailViewModel: ObservableObject {
 
     // MARK: - Helpers
     private static func enOptions(from practice: Exercise) -> [String] {
-        practice.wordOptions.compactMap {
-            $0.translations.first(where: { $0.langCode == .enUS })?.text
+        practice.options.compactMap {
+            $0.text
         }
     }
 
@@ -113,22 +113,17 @@ final class PracticeDetailViewModel: ObservableObject {
         defer { isSaving = false }
 
         // 서버로 전송할 wordOptions 구성
-        let wordsOptions: [ExerciseVocabularyOption] = currentOptions.map {
-            let t = PracticeOptionTranslation(langCode: .enUS, text: $0.lowercased())
-            return ExerciseVocabularyOption(translations: [t])
+        let options: [ExerciseOptionUpdate] = currentOptions.map {
+            return ExerciseOptionUpdate(text: $0.lowercased())
         }
 
         // translations는 기존 그대로 유지 (영문 content만 사용)
-        let trans = ExerciseTranslation(langCode: .enUS, content: content, question: nil)
-
-        let options = practice.options.map {
-            ExerciseOptionUpdate(translations: $0.translations)
-        }
+        let trans = ExerciseTranslation(langCode: .enUS, question: nil)
         
         let update = ExerciseUpdate(
             exampleId: practice.exampleId,
             type: .select,
-            wordOptions: wordsOptions,
+            prompt: content,
             options: options,       // 기존 보기(선지)가 있다면 유지
             translations: [trans]
         )

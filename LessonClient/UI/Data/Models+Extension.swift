@@ -45,16 +45,6 @@ extension ExampleTranslation {
     }
 }
 
-extension PracticeVocabularyOptionTranslation {
-    func toString() -> String? {
-        let text = text.trimmed
-        if text.isEmpty {
-            return nil
-        }
-        return "\(langCode): \(text)"
-    }
-}
-
 extension Array where Element == VocabularyTranslation {
     /// Parse multiline text like: "ko: 번역1\nes: texto"
     static func parse(from text: String) -> [Element] {
@@ -140,20 +130,7 @@ extension Array where Element == LessonTranslation {
 }
 
 extension Array where Element == ExerciseTranslation {
-    func content(langCode: LangCode) -> String {
-        first(where: { $0.langCode == langCode })?.content ?? ""
-    }
-}
-
-extension Array where Element == ExerciseVocabularyOption {
-    func enText() -> String {
-        text(langCode: .enUS)
-    }
-    
-    func text(langCode: LangCode) -> String {
-        self.map {
-            $0.translations.first(where: { $0.langCode == langCode })?.text ?? ""
-        }
-        .joined(separator: ",")
+    func question(langCode: LangCode) -> String {
+        first(where: { $0.langCode == langCode })?.question ?? ""
     }
 }

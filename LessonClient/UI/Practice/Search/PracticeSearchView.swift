@@ -43,10 +43,10 @@ struct PracticeSearchView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     // 1) 상단: 타입 / 정답
                     HStack {
-                        Text(ex.type.rawValue)
+                        Text(ex.type.name)
                             .font(.headline)
                         Spacer()
-                        Text("Vocabularys: \(ex.wordOptions)")
+                        Text("Vocabularys: \(ex.options)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

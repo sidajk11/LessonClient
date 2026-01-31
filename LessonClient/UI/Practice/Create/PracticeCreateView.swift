@@ -75,7 +75,7 @@ struct PracticeCreateView: View {
                     Text(verbatim: "ID: \(created.id)")
                     Text(verbatim: "Type: \(created.type.rawValue)")
                     if created.type == .combine {
-                        Text(verbatim: "Vocabularys: \(created.wordOptions.text(langCode: .enUS))")
+                        Text(verbatim: "Vocabularys: \(created.options.map { $0.text }.joined(separator: ", "))")
                     }
                 }
             }
