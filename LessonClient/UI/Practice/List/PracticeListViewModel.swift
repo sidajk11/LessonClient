@@ -22,7 +22,10 @@ final class PracticeListViewModel: ObservableObject {
         do {
             // Assumes your data source exposes a list method by example
             let result = try await PracticeDataSource.shared.list(exampleId: example.id)
-            word = try await VocabularyDataSource.shared.word(id: example.wordId)
+            if let vocabularyId = example.vocabularyId {
+                word = try await VocabularyDataSource.shared.word(id: vocabularyId)
+            }
+            
             practices = result
         } catch {
             errorMessage = error.localizedDescription

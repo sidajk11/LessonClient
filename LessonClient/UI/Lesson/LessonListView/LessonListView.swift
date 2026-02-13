@@ -21,7 +21,7 @@ struct LessonListView: View {
                     TextField("유닛", text: $vm.unitText)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 120)
-                        .onChange(of: vm.unitText) { vm.unitText = $0.filter(\.isNumber) }
+                        .onChange(of: vm.unitText) { newValue, _ in vm.unitText = newValue.filter(\.isNumber) }
                         .onSubmit { Task { await vm.search() } }
 
                     Button("검색") { Task { await vm.search() } }

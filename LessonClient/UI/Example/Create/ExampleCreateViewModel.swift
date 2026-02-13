@@ -31,7 +31,7 @@ final class ExampleCreateViewModel: ObservableObject {
 
             let example = try await ExampleDataSource.shared.createExample(
                 sentence: sentence,
-                wordId: wordId,
+                vocabularyId: wordId,
                 translations: translations
             )
             examples.append(example)

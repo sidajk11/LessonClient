@@ -94,12 +94,15 @@ final class PracticeDetailViewModel: ObservableObject {
         defer { isLoadingVocabularys = false }
         do {
             // create 화면과 동일한 로직 재사용
-            let w = try await VocabularyDataSource.shared.word(id: example.wordId)
-            if let lessonId = w.lessonId {
-                let lesson = try await LessonDataSource.shared.lesson(id: lessonId)
-                self.wordsLearned = try await VocabularyDataSource.shared.wordsLessThan(unit: lesson.unit)
+            if let vocabularyId = example.vocabularyId {
+                let w = try await VocabularyDataSource.shared.word(id: vocabularyId)
+                if let lessonId = w.lessonId {
+                    let lesson = try await LessonDataSource.shared.lesson(id: lessonId)
+                    self.wordsLearned = try await VocabularyDataSource.shared.wordsLessThan(unit: lesson.unit)
+                }
+                recomputeExtraVocabularys()
             }
-            recomputeExtraVocabularys()
+            
         } catch {
             self.errorMessage = error.localizedDescription
         }

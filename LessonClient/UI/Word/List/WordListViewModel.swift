@@ -1,66 +1,72 @@
 //
-//  VocabularyListViewModel.swift
+//  WordListViewModel.swift
 //  LessonClient
 //
-//  Created by ymj on 10/13/25.
+//  Created by ym on 2/12/26.
 //
 
 import Foundation
 
 @MainActor
-final class VocabularyListViewModel: ObservableObject {
-    // UI State
-    @Published var items: [Vocabulary] = []
-    @Published var searchText: String = ""
-    @Published var levelText: String = ""     // free-form, parsed to Int?
+final class WordListViewModel: ObservableObject {
+    @Published var words: [WordRead] = []
     @Published var isLoading: Bool = false
-    @Published var error: String?
+    @Published var errorMessage: String?
 
-    // Initial load
-    func load() async {
-        await fetchAll()
-    }
+    // Filters
+    @Published var q: String = ""
+    @Published var kind: String = ""   // 필요 없으면 제거 가능
+    @Published var pos: String = ""    // 필요 없으면 제거 가능
 
-    // Search action (q + level)
-    func search() async {
-        let trimmed = levelText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let levelParam: Int? = trimmed.isEmpty ? nil : Int(trimmed)
+    // Paging
+    private(set) var limit: Int = 50
+    private var offset: Int = 0
+    private var hasMore: Bool = true
 
-        // Optional: validate numeric level
-        if !trimmed.isEmpty && levelParam == nil {
-            error = "레벨은 숫자로 입력해 주세요."
-            return
-        }
+    private let ds = WordDataSource.shared
+
+    func refresh() async {
+        isLoading = true
+        errorMessage = nil
+        offset = 0
+        hasMore = true
 
         do {
-            isLoading = true
-            defer { isLoading = false }
-            items = try await VocabularyDataSource.shared.searchVocabularys(
-                q: searchText,
-                level: levelParam,
-                limit: 50
+            let result = try await ds.listWords(
+                q: q.isEmpty ? nil : q,
+                kind: kind.isEmpty ? nil : kind,
+                limit: limit,
+                offset: offset
             )
+            words = result
+            offset += result.count
+            hasMore = result.count == limit
         } catch {
-            self.error = (error as NSError).localizedDescription
+            errorMessage = error.localizedDescription
         }
+
+        isLoading = false
     }
 
-    // Callbacks from child screens
-    func didCreate(_ words: [Vocabulary]) {
-        items.insert(contentsOf: words, at: 0)
-    }
-    func didImport(_ list: [Vocabulary]) {
-        items.insert(contentsOf: list, at: 0)
-    }
+    func loadMoreIfNeeded(current item: WordRead) async {
+        guard !isLoading, hasMore else { return }
+        guard item.id == words.last?.id else { return }
 
-    // MARK: - Private
-    private func fetchAll() async {
+        isLoading = true
+        defer { isLoading = false }
+
         do {
-            isLoading = true
-            defer { isLoading = false }
-            items = try await VocabularyDataSource.shared.words()
+            let result = try await ds.listWords(
+                q: q.isEmpty ? nil : q,
+                kind: kind.isEmpty ? nil : kind,
+                limit: limit,
+                offset: offset
+            )
+            words.append(contentsOf: result)
+            offset += result.count
+            hasMore = result.count == limit
         } catch {
-            self.error = (error as NSError).localizedDescription
+            errorMessage = error.localizedDescription
         }
     }
 }

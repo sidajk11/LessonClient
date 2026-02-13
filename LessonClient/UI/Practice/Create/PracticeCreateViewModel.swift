@@ -46,13 +46,16 @@ final class PracticeCreateViewModel: ObservableObject {
         if lesson == nil {
             Task {
                 do {
-                    let word = try await VocabularyDataSource.shared.word(id: example.wordId)
-                    if let lessonId = word.lessonId {
-                        self.lesson = try await LessonDataSource.shared.lesson(id: lessonId)
-                        if let lesson = self.lesson {
-                            self.dummyVocabularys = try await VocabularyDataSource.shared.wordsLessThan(unit: lesson.unit).map { $0.text }
+                    if let vocabularyId = example.vocabularyId {
+                        let word = try await VocabularyDataSource.shared.word(id: vocabularyId)
+                        if let lessonId = word.lessonId {
+                            self.lesson = try await LessonDataSource.shared.lesson(id: lessonId)
+                            if let lesson = self.lesson {
+                                self.dummyVocabularys = try await VocabularyDataSource.shared.wordsLessThan(unit: lesson.unit).map { $0.text }
+                            }
                         }
                     }
+                    
                 } catch {
                     errorMessage = error.localizedDescription
                 }

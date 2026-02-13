@@ -22,10 +22,10 @@ final class ExampleDataSource {
     @discardableResult
     func createExample(
         sentence: String,
-        wordId: Int,
+        vocabularyId: Int?,
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
-        let body = ExampleUpdate(sentence: sentence, wordId: wordId, translations: translations)
+        let body = ExampleUpdate(sentence: sentence, vocabularyId: vocabularyId, translations: translations)
         return try await api.request("POST", "admin/examples", jsonBody: body.toDict(), as: Example.self)
     }
 
@@ -43,10 +43,10 @@ final class ExampleDataSource {
     func updateExample(
         id: Int,
         sentence: String?,
-        wordId: Int? = nil,
+        vocabularyId: Int? = nil,
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
-        let body = ExampleUpdate(sentence: sentence, wordId: wordId, translations: translations)
+        let body = ExampleUpdate(sentence: sentence, vocabularyId: vocabularyId, translations: translations)
         return try await api.request("PUT", "admin/examples/\(id)", jsonBody: body.toDict(), as: Example.self)
     }
 
@@ -89,5 +89,21 @@ final class ExampleDataSource {
 
     func examples(wordId: Int) async throws -> [Example] {
         try await api.request("GET", "admin/examples/by-vocabulary/\(wordId)", as: [Example].self)
+    }
+
+    /// sense 기준 예문 목록 조회
+    /// - Parameters:
+    ///   - senseId: WordSense ID
+    ///   - limit: 최대 개수(1...200)
+    func examples(senseId: Int, limit: Int = 100) async throws -> [Example] {
+        let query: [URLQueryItem] = [
+            .init(name: "limit", value: String(min(max(limit, 1), 200)))
+        ]
+        return try await api.request(
+            "GET",
+            "admin/examples/by-sense/\(senseId)",
+            query: query,
+            as: [Example].self
+        )
     }
 }

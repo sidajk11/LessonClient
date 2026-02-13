@@ -1,76 +1,118 @@
 //
-//  VocabularyListView.swift
+//  WordList.swift
 //  LessonClient
 //
-//  Created by ymj on 10/13/25.
+//  Created by ym on 2/12/26.
 //
 
 import SwiftUI
 
-struct VocabularyListView: View {
-    @StateObject private var vm = VocabularyListViewModel()
+struct WordListView: View {
+    @StateObject private var vm = WordListViewModel()
 
     var body: some View {
         NavigationStack {
-            VStack {
-                // 검색 UI
+            VStack(spacing: 10) {
+                // Top bar: Create Sense 이동
+                HStack {
+                    NavigationLink {
+                        SenseCreateView()
+                    } label: {
+                        Text("Create Sense")
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Spacer()
+
+                    Button {
+                        Task { await vm.refresh() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+
+                // Search
                 HStack(spacing: 8) {
-                    TextField("단어 검색", text: $vm.searchText)
+                    TextField("Search (q)", text: $vm.q)
                         .textFieldStyle(.roundedBorder)
-                        .onSubmit { Task { await vm.search() } }
+                        .submitLabel(.search)
+                        .onSubmit {
+                            Task { await vm.refresh() }
+                        }
 
-                    TextField("레벨 (빈칸=전체)", text: $vm.levelText)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 140)
-                        .onSubmit { Task { await vm.search() } }
-
-                    Button("검색") { Task { await vm.search() } }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(vm.isLoading)
+                    Button("Search") {
+                        Task { await vm.refresh() }
+                    }
+                    .buttonStyle(.bordered)
                 }
                 .padding(.horizontal)
 
-                if vm.isLoading && vm.items.isEmpty {
-                    ProgressView().padding()
+                if let err = vm.errorMessage {
+                    Text(err)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
                 }
 
-                List(vm.items) { e in
-                    NavigationLink {
-                        VocabularyDetailView(wordId: e.id, lesson: nil)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(e.text)
-                            if !e.translations.isEmpty {
-                                Text(e.translations.toString())
+                List {
+                    ForEach(vm.words) { w in
+                        NavigationLink {
+                            WordDetailView(wordId: w.id)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(w.lemma)
+                                        .font(.headline)
+                                    Spacer()
+                                    if let p = w.pos, !p.isEmpty {
+                                        Text(p)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+
+                                Text("kind: \(w.kind) • normalized: \(w.normalized)")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
-                                    .lineLimit(1)
+
+                                if !w.senses.isEmpty {
+                                    Text("senses: \(w.senses.count)")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
+                            .padding(.vertical, 4)
+                        }
+                        .task {
+                            await vm.loadMoreIfNeeded(current: w)
+                        }
+                    }
+
+                    if vm.isLoading && !vm.words.isEmpty {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
                         }
                     }
                 }
-                .task { await vm.load() }
-
-                NavigationLink(
-                    "+ 새 단어",
-                    destination: VocabularyCreateView(onCreated: { words in
-                        vm.didCreate(words)
-                    })
-                )
-                .padding(.vertical)
-
-                NavigationLink(
-                    "+ 여러 개 추가",
-                    destination: VocabularyBulkImportScreen(onImported: { list in
-                        vm.didImport(list)
-                    })
-                )
-                .padding(.horizontal)
+                .listStyle(.plain)
+                .refreshable {
+                    await vm.refresh()
+                }
             }
-            .navigationTitle("단어")
+            .navigationTitle("Words")
+            .task {
+                if vm.words.isEmpty {
+                    await vm.refresh()
+                }
+            }
         }
-        .alert("오류", isPresented: .constant(vm.error != nil)) {
-            Button("확인") { vm.error = nil }
-        } message: { Text(vm.error ?? "") }
     }
 }

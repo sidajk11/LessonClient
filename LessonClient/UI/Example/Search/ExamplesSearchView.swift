@@ -27,7 +27,7 @@ struct ExamplesSearchView: View {
                 TextField("Unit (선택)", text: $vm.unitText)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 110)
-                    .onChange(of: vm.unitText) { newValue in
+                    .onChange(of: vm.unitText) { newValue, _ in
                         vm.sanitizeUnitInput(newValue)
                     }
 

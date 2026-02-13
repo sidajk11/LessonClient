@@ -27,7 +27,7 @@ final class VocabularyDataSource {
     ///   - lessonId: 특정 레슨에 속한 단어만
     ///   - limit: 1...200 (기본 30)
     ///   - offset: 0 이상 (기본 0)
-    func words(
+    func vocabularies(
         level: Int? = nil,
         unit: Int? = nil,
         lessonId: Int? = nil,

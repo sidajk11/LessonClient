@@ -103,7 +103,7 @@ struct VocabularyUpdate: Codable {
 struct Example: Codable, Identifiable {
     let id: Int
     let sentence: String
-    let wordId: Int
+    let vocabularyId: Int?
     let wordText: String?
     let translations: [ExampleTranslation]
     let exercises: [Exercise]?
@@ -111,7 +111,7 @@ struct Example: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id
         case sentence
-        case wordId = "vocabulary_id"
+        case vocabularyId = "vocabulary_id"
         case wordText = "vocabulary_text"
         case translations
         case exercises
@@ -120,22 +120,22 @@ struct Example: Codable, Identifiable {
 
 struct ExampleUpdate: Codable {
     let sentence: String?
-    let wordId: Int?
+    let vocabularyId: Int?
     let wordText: String?
     let translations: [ExampleTranslation]?
     let exercises: [Exercise]?
 
     enum CodingKeys: String, CodingKey {
         case sentence
-        case wordId = "vocabulary_id"
+        case vocabularyId = "vocabulary_id"
         case wordText = "vocabulary_text"
         case translations
         case exercises
     }
     
-    init(sentence: String? = nil, wordId: Int? = nil, wordText: String? = nil, translations: [ExampleTranslation]? = nil, exercises: [Exercise]? = nil) {
+    init(sentence: String? = nil, vocabularyId: Int? = nil, wordText: String? = nil, translations: [ExampleTranslation]? = nil, exercises: [Exercise]? = nil) {
         self.sentence = sentence
-        self.wordId = wordId
+        self.vocabularyId = vocabularyId
         self.wordText = wordText
         self.translations = translations
         self.exercises = exercises
