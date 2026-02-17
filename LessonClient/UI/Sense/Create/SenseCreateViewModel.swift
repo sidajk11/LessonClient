@@ -47,7 +47,7 @@ final class SenseCreateViewModel: ObservableObject {
             let parsed = try SenseBulkParser.parse(rawText)
 
             // 1) 단어 조회(있으면 id 획득), 없으면 생성
-            var word: WordRead? = try? await dataSource.findWord(word: parsed.head)
+            var word: WordRead? = try? await dataSource.getWord(word: parsed.head)
             if word == nil {
                 word = try await dataSource.createWord(lemma: parsed.head)
             }
@@ -58,8 +58,10 @@ final class SenseCreateViewModel: ObservableObject {
             }
 
             var created = 0
+            
+            var senseCode: String = ""
 
-            for item in parsed.items {
+            for (idx, item) in parsed.items.enumerated() {
                 let cefr = item.cefr.uppercased()
 
                 // 스키마에 example/cefr 필드가 없으므로 explain에 합쳐서 저장
@@ -77,8 +79,8 @@ final class SenseCreateViewModel: ObservableObject {
                         isPrimary: true
                     )
                 ]
-
-                let sense = try await dataSource.createWordSense(wordId: word.id, explain: explain, pos: item.pos, translations: translations)
+                senseCode = "s\(idx + 1)"
+                let sense = try await dataSource.createWordSense(wordId: word.id, senseCode: senseCode, explain: explain, pos: item.pos, translations: translations)
                 let example = try await ExampleDataSource.shared.createExample(sentence: item.example, vocabularyId: nil)
                 _ = try await dataSource.attachExampleToWordSense(senseId: sense.id, exampleId: example.id, isPrime: true)
                 

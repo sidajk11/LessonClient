@@ -129,21 +129,25 @@ struct WordUpdate: Codable, Hashable {
 
 // MARK: - WordSenseCreate
 struct WordSenseCreate: Codable, Hashable {
+    var senseCode: String?
     var explain: String
     var pos: String?
     var translations: [WordSenseTranslation]?
 
     enum CodingKeys: String, CodingKey {
+        case senseCode = "sense_code"
         case explain
         case pos
         case translations
     }
 
     init(
+        senseCode: String? = nil,
         explain: String,
         pos: String? = nil,
         translations: [WordSenseTranslation]? = nil
     ) {
+        self.senseCode = senseCode
         self.explain = explain
         self.pos = pos
         self.translations = translations

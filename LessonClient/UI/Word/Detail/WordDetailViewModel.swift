@@ -18,6 +18,10 @@ final class WordDetailViewModel: ObservableObject {
     let wordId: Int
     private let dataSource: WordDataSource
 
+    // 전체 삭제용
+    @Published var showDeleteAllConfirm: Bool = false
+    @Published var isDeletingAll: Bool = false
+
     init(wordId: Int, dataSource: WordDataSource = .shared) {
         self.wordId = wordId
         self.dataSource = dataSource
@@ -31,13 +35,34 @@ final class WordDetailViewModel: ObservableObject {
 
         do {
             let word = try await dataSource.word(id: wordId)
-            // senses listing method assumed: listWordSenses(wordId:)
-            let senses: [WordSenseRead] = word.senses
-            
             self.word = word
-            self.senses = senses
+            self.senses = word.senses
         } catch {
             self.errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteAllSenses() async {
+        guard !isDeletingAll else { return }
+        guard !senses.isEmpty else { return }
+
+        isDeletingAll = true
+        errorMessage = nil
+        defer { isDeletingAll = false }
+
+        // 현재 목록 스냅샷
+        let toDelete = senses
+
+        do {
+            // 순차 삭제(서버 부하/레이트리밋 안전)
+            for sense in toDelete {
+                try await dataSource.deleteWordSense(senseId: sense.id)
+                // 성공한 건 UI에서 바로 제거
+                senses.removeAll { $0.id == sense.id }
+            }
+        } catch {
+            // 중간 실패 시: 남아있는 senses는 그대로 유지(이미 지운 건 반영됨)
+            errorMessage = error.localizedDescription
         }
     }
 }

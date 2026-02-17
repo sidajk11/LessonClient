@@ -56,11 +56,13 @@ final class WordDataSource {
     @discardableResult
     func createWordSense(
         wordId: Int,
+        senseCode: String,
         explain: String,
         pos: String? = nil,
         translations: [WordSenseTranslation]? = nil
     ) async throws -> WordSenseRead {
         let body = WordSenseCreate(
+            senseCode: senseCode,
             explain: explain,
             pos: pos,
             translations: translations
@@ -154,6 +156,18 @@ extension WordDataSource {
         return try await api.request(
             "GET",
             "admin/words/search",
+            query: query,
+            as: WordRead.self
+        )
+    }
+    
+    func getWord(word: String) async throws -> WordRead {
+        let query: [URLQueryItem] = [
+            .init(name: "word", value: word)
+        ]
+        return try await api.request(
+            "GET",
+            "admin/words/by-lemma",
             query: query,
             as: WordRead.self
         )
