@@ -163,7 +163,7 @@ extension WordDataSource {
     
     func getWord(word: String) async throws -> WordRead {
         let query: [URLQueryItem] = [
-            .init(name: "word", value: word)
+            .init(name: "lemma", value: word)
         ]
         return try await api.request(
             "GET",
