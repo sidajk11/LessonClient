@@ -21,13 +21,13 @@ struct PracticeSearchView: View {
                 TextField("레벨 (선택)", text: $vm.levelText)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 120)
-                    .onChange(of: vm.levelText) { newValue, _ in vm.sanitizeLevel(newValue) }
+                    .onChange(of: vm.levelText) { _, newValue in vm.sanitizeLevel(newValue) }
                     .onSubmit { Task { await vm.search() } }
 
                 TextField("Unit (선택)", text: $vm.unitText)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 120)
-                    .onChange(of: vm.unitText) { newValue, _ in vm.sanitizeUnit(newValue) }
+                    .onChange(of: vm.unitText) { _, newValue in vm.sanitizeUnit(newValue) }
                     .onSubmit { Task { await vm.search() } }
 
                 Button("검색") { Task { await vm.search() } }

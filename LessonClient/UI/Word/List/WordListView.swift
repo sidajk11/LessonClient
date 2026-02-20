@@ -9,7 +9,7 @@ import SwiftUI
 
 struct WordListView: View {
     @StateObject private var vm = WordListViewModel()
-
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 10) {
@@ -23,9 +23,9 @@ struct WordListView: View {
                             .padding(.horizontal, 12)
                     }
                     .buttonStyle(.borderedProminent)
-
+                    
                     Spacer()
-
+                    
                     Button {
                         Task { await vm.refresh() }
                     } label: {
@@ -35,7 +35,7 @@ struct WordListView: View {
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
-
+                
                 // Search
                 HStack(spacing: 8) {
                     TextField("Search (q)", text: $vm.q)
@@ -44,14 +44,14 @@ struct WordListView: View {
                         .onSubmit {
                             Task { await vm.refresh() }
                         }
-
+                    
                     Button("Search") {
                         Task { await vm.refresh() }
                     }
                     .buttonStyle(.bordered)
                 }
                 .padding(.horizontal)
-
+                
                 if let err = vm.errorMessage {
                     Text(err)
                         .font(.footnote)
@@ -59,7 +59,7 @@ struct WordListView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
                 }
-
+                
                 List {
                     ForEach(vm.words) { w in
                         NavigationLink {
@@ -70,21 +70,28 @@ struct WordListView: View {
                                     Text(w.lemma)
                                         .font(.headline)
                                     Spacer()
-                                    if let p = w.pos, !p.isEmpty {
+                                    if let p = w.senses.first(where: { $0.isPrimary })?.pos, !p.isEmpty {
                                         Text(p)
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
                                 }
-
+                                
                                 Text("kind: \(w.kind) • normalized: \(w.normalized)")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
-
+                                
                                 if !w.senses.isEmpty {
                                     Text("senses: \(w.senses.count)")
                                         .font(.footnote)
                                         .foregroundStyle(.secondary)
+                                }
+                                
+                                if let count = w.senses.first?.translations.count, count > 2 {
+                                    Text("translations done")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color.green)
                                 }
                             }
                             .padding(.vertical, 4)
@@ -93,7 +100,7 @@ struct WordListView: View {
                             await vm.loadMoreIfNeeded(current: w)
                         }
                     }
-
+                    
                     if vm.isLoading && !vm.words.isEmpty {
                         HStack {
                             Spacer()

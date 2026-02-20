@@ -58,13 +58,15 @@ final class WordDataSource {
         wordId: Int,
         senseCode: String,
         explain: String,
-        pos: String? = nil,
+        pos: String?,
+        cefr: String?,
         translations: [WordSenseTranslation]? = nil
     ) async throws -> WordSenseRead {
         let body = WordSenseCreate(
             senseCode: senseCode,
             explain: explain,
             pos: pos,
+            cefr: cefr,
             translations: translations
         )
         return try await api.request(
@@ -82,12 +84,14 @@ final class WordDataSource {
         senseCode: String? = nil,
         explain: String? = nil,
         pos: String? = nil,
+        cefr: String? = nil,
         translations: [WordSenseTranslation]? = nil
     ) async throws -> WordSenseRead {
         let body = WordSenseUpdate(
             senseCode: senseCode,
             explain: explain,
             pos: pos,
+            cefr: cefr,
             translations: translations
         )
         return try await api.request(
@@ -124,6 +128,24 @@ final class WordDataSource {
             "admin/words/senses/\(senseId)/examples",
             jsonBody: body.toDict(),
             as: WordSenseExampleRead.self
+        )
+    }
+    
+    @discardableResult
+    func updateSenseTranslation(senseId: Int, lang: String, text: String, explain: String) async throws -> WordSenseRead {
+        // POST /word-senses/{senseId}/translations
+        // body: { "lang": lang, "text": text, "explain": "" }
+        struct Body: Encodable {
+            let lang: String
+            let text: String
+            let explain: String
+        }
+        let body = Body(lang: lang, text: text, explain: explain)
+        return try await api.request(
+            "PUT",
+            "admin/words/senses/\(senseId)/translations",
+            jsonBody: body.toDict(),
+            as: WordSenseRead.self
         )
     }
 }

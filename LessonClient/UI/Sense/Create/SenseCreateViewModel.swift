@@ -66,21 +66,16 @@ final class SenseCreateViewModel: ObservableObject {
 
                 // 스키마에 example/cefr 필드가 없으므로 explain에 합쳐서 저장
                 var explain = item.sense
-                if !item.example.isEmpty {
-                    explain += "\nExample: \(item.example)"
-                }
-                explain += "\nCEFR: \(cefr)"
 
                 let translations: [WordSenseTranslation] = [
                     .init(
                         lang: "ko",
                         text: item.ko,
-                        explain: "",       // 필요하면 번역 설명 넣기
-                        isPrimary: true
+                        explain: ""
                     )
                 ]
                 senseCode = "s\(idx + 1)"
-                let sense = try await dataSource.createWordSense(wordId: word.id, senseCode: senseCode, explain: explain, pos: item.pos, translations: translations)
+                let sense = try await dataSource.createWordSense(wordId: word.id, senseCode: senseCode, explain: explain, pos: item.pos, cefr: cefr, translations: translations)
                 let example = try await ExampleDataSource.shared.createExample(sentence: item.example, vocabularyId: nil)
                 _ = try await dataSource.attachExampleToWordSense(senseId: sense.id, exampleId: example.id, isPrime: true)
                 

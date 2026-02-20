@@ -68,7 +68,7 @@ enum SenseBulkParser {
         return Parsed(head: head, items: items)
     }
 
-    private static func parseBlockWithWord(_ block: String) -> (word: String, item: Item)? {
+    private static func parseBlockWithWord(_ block: String) -> (word: String?, item: Item)? {
         var word: String?
         var sense: String?
         var pos: String?
@@ -84,7 +84,8 @@ enum SenseBulkParser {
         for line in lines {
             guard let idx = line.firstIndex(of: ":") else { continue }
             let key = line[..<idx].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            let value = line[line.index(after: idx)...].trimmingCharacters(in: .whitespacesAndNewlines)
+            var value = line[line.index(after: idx)...].trimmingCharacters(in: .whitespacesAndNewlines)
+            value = value.replacingOccurrences(of: "’", with: "'")
 
             switch key {
             case "word": word = value
@@ -98,7 +99,6 @@ enum SenseBulkParser {
         }
 
         guard
-            let word, !word.isEmpty,
             let sense, !sense.isEmpty,
             let pos, !pos.isEmpty,
             let cefr, !cefr.isEmpty,
@@ -140,3 +140,63 @@ enum SenseBulkParser {
         return blocks
     }
 }
+
+// MARK: - WordRead -> Bulk text (SenseBulkParser input format)
+extension WordRead {
+
+    /// WordRead 모델을 SenseBulkParser가 읽을 수 있는 "bulk text" 포맷으로 변환합니다.
+    ///
+    /// - Parameters:
+    ///   - koLang: translations에서 한국어를 찾을 때 사용할 lang 값 (기본 "ko")
+    ///   - cefrProvider: 각 sense의 CEFR 값을 제공 (기본: senseCode가 CEFR처럼 보이면 사용, 아니면 "-")
+    ///   - koProvider: 각 sense의 한국어(ko) 값을 제공 (기본: translations에서 koLang 매칭되는 text)
+    ///   - exampleProvider: 각 sense의 example 문장을 제공 (기본: nil -> 빈 문자열)
+    ///
+    /// - Returns: SenseBulkParser 입력 포맷 문자열
+    func toSenseBulkText(
+        koLang: String = "ko"
+    ) -> String {
+        let koProvider: (WordSenseRead) -> String? = { sense in
+            sense.translations.first(where: { $0.lang.lowercased() == koLang.lowercased() })?.text
+        }
+        
+        let wordLine = "word: \(lemma)"
+
+        // senses가 비어있으면 word만 출력하거나 빈 문자열로 할지 선택 가능
+        guard !senses.isEmpty else { return wordLine }
+
+        var blocks: [String] = []
+        blocks.reserveCapacity(senses.count)
+
+        for (idx, s) in senses.enumerated() {
+            let senseText = s.explain.trimmingCharacters(in: .whitespacesAndNewlines)
+            let posText = (s.pos ?? "-").trimmingCharacters(in: .whitespacesAndNewlines)
+            let cefrText = (s.cefr ?? "-").trimmingCharacters(in: .whitespacesAndNewlines)
+            let koText = (koProvider(s) ?? "-").trimmingCharacters(in: .whitespacesAndNewlines)
+            let exText = (s.examples.first?.sentence ?? "-").trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // SenseBulkParser는 블록마다 word가 "있어도 되고 없어도" 되지만,
+            // 예시 포맷처럼 첫 블록에만 word를 넣어줍니다.
+            var lines: [String] = []
+            if idx == 0 { lines.append(wordLine) }
+
+            lines.append("sense: \(senseText.isEmpty ? "-" : senseText)")
+            lines.append("pos: \(posText.isEmpty ? "-" : posText)")
+            lines.append("cefr: \(cefrText.isEmpty ? "-" : cefrText)")
+            lines.append("ko: \(koText.isEmpty ? "-" : koText)")
+            lines.append("example: \(exText)") // example은 비어도 OK (파서는 example optional)
+
+            blocks.append(lines.joined(separator: "\n"))
+        }
+
+        // 블록 간 빈 줄 1개 (예시 포맷)
+        return blocks.joined(separator: "\n\n")
+    }
+
+    private static func isCefrLike(_ s: String) -> Bool {
+        // A1, A2, B1, B2, C1, C2 형태만 true
+        let upper = s.uppercased()
+        return upper == "A1" || upper == "A2" || upper == "B1" || upper == "B2" || upper == "C1" || upper == "C2"
+    }
+}
+
