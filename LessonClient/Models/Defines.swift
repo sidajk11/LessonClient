@@ -18,6 +18,50 @@ enum ExerciseType: String, CaseIterable, Codable {
     case input
     // 문장 이해
     case comprehend
+    case unknown
+
+    static var allCases: [ExerciseType] {
+        [.select, .selectTrans, .combine, .input, .comprehend]
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = (try? container.decode(String.self)) ?? ""
+        switch raw {
+        case "select":
+            self = .select
+        case "select_trans":
+            self = .selectTrans
+        case "combine", "combine_word":
+            self = .combine
+        case "input", "input_word", "input_sentence":
+            self = .input
+        case "comprehend":
+            self = .comprehend
+        default:
+            self = .unknown
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        let raw: String
+        switch self {
+        case .select:
+            raw = "select"
+        case .selectTrans:
+            raw = "select_trans"
+        case .combine:
+            raw = "combine_word"
+        case .input:
+            raw = "input_word"
+        case .comprehend:
+            raw = "comprehend"
+        case .unknown:
+            raw = "select"
+        }
+        try container.encode(raw)
+    }
     
     var name: String {
         switch self {
@@ -31,6 +75,8 @@ enum ExerciseType: String, CaseIterable, Codable {
             "단어 입력"
         case .comprehend:
             "문장 이해"
+        case .unknown:
+            "알 수 없음"
         }
     }
     
@@ -46,6 +92,8 @@ enum ExerciseType: String, CaseIterable, Codable {
             "단어를 입력하세요."
         case .comprehend:
             "답변을 선택하세요."
+        case .unknown:
+            "문제를 풀어보세요."
         }
     }
 }

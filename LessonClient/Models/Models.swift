@@ -13,32 +13,52 @@ struct Lesson: Codable, Identifiable {
     let id: Int
     var unit: Int                 // ✅ Int로 직접 보유
     var level: Int                // ✅ Int로 직접 보유
+    var trackCode: String
     var grammar: String?
+    var lessonTargets: [LessonTargetRead] = []
     var translations: [LessonTranslation] = []
-    var words: [Vocabulary] = []
+    var vocabularies: [Vocabulary] = []
 
     enum CodingKeys: String, CodingKey {
         case id
         case unit
         case level
+        case trackCode = "track_code"
         case grammar
+        case lessonTargets = "lesson_targets"
         case translations
-        case words = "vocabularies"
+        case vocabularies = "vocabularies"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        unit = try c.decode(Int.self, forKey: .unit)
+        level = try c.decode(Int.self, forKey: .level)
+        trackCode = try c.decodeIfPresent(String.self, forKey: .trackCode) ?? "en-US"
+        grammar = try c.decodeIfPresent(String.self, forKey: .grammar)
+        lessonTargets = try c.decodeIfPresent([LessonTargetRead].self, forKey: .lessonTargets) ?? []
+        translations = try c.decodeIfPresent([LessonTranslation].self, forKey: .translations) ?? []
+        vocabularies = try c.decodeIfPresent([Vocabulary].self, forKey: .vocabularies) ?? []
     }
 }
 
 struct LessonUpdate: Codable {
     let unit: Int?
     let level: Int?
+    let trackCode: String?
     let grammar: String?
-    let wordIds: [Int]?
+    let vocabularyIds: [Int]?
+    let lessonTargets: [LessonTargetUpsertSchema]?
     let translations: [LessonTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case unit
         case level
+        case trackCode = "track_code"
         case grammar
-        case wordIds = "vocabulary_ids"
+        case vocabularyIds = "vocabulary_ids"
+        case lessonTargets = "lesson_targets"
         case translations
     }
 }
@@ -58,6 +78,8 @@ struct Vocabulary: Codable, Identifiable {
     let id: Int
     var text: String
     var lessonId: Int?   // detach 허용 시 서버 nullable
+    var lessonTargetId: Int?
+    var lessonTarget: LessonTargetRead?
     var translations: [VocabularyTranslation]
     var examples: [Example]?
 
@@ -65,8 +87,21 @@ struct Vocabulary: Codable, Identifiable {
         case id
         case text
         case lessonId = "lesson_id"
+        case lessonTargetId = "lesson_target_id"
+        case lessonTarget = "lesson_target"
         case translations
         case examples
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        text = try c.decode(String.self, forKey: .text)
+        lessonId = try c.decodeIfPresent(Int.self, forKey: .lessonId)
+        lessonTargetId = try c.decodeIfPresent(Int.self, forKey: .lessonTargetId)
+        lessonTarget = try c.decodeIfPresent(LessonTargetRead.self, forKey: .lessonTarget)
+        translations = try c.decodeIfPresent([VocabularyTranslation].self, forKey: .translations) ?? []
+        examples = try c.decodeIfPresent([Example].self, forKey: .examples)
     }
 }
 

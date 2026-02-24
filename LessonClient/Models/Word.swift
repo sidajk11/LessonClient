@@ -80,6 +80,7 @@ struct WordRead: Codable, Identifiable {
     var kind: String
     var normalized: String
     var senses: [WordSenseRead]
+    var pronunciations: [PronunciationRead]?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -87,6 +88,7 @@ struct WordRead: Codable, Identifiable {
         case kind
         case normalized
         case senses
+        case pronunciations
     }
 
     init(
@@ -94,13 +96,15 @@ struct WordRead: Codable, Identifiable {
         lemma: String,
         kind: String,
         normalized: String,
-        senses: [WordSenseRead] = []
+        senses: [WordSenseRead] = [],
+        pronunciations: [PronunciationRead]? = nil
     ) {
         self.id = id
         self.lemma = lemma
         self.kind = kind
         self.normalized = normalized
         self.senses = senses
+        self.pronunciations = pronunciations
     }
 }
 

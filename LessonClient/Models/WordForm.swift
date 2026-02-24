@@ -56,12 +56,14 @@ struct WordFormRead: Codable, Identifiable, Hashable {
 
 struct WordFormCreate: Codable {
     let wordId: Int
+    let derivedWordId: Int?
     let form: String
     let formType: String?
     let translations: [WordFormTranslationSchema]?
 
     enum CodingKeys: String, CodingKey {
         case wordId = "word_id"
+        case derivedWordId = "derived_word_id"
         case form
         case formType = "form_type"
         case translations
