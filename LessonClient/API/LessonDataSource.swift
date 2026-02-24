@@ -29,15 +29,19 @@ extension LessonDataSource {
     func createLesson(
         unit: Int,
         level: Int,
+        trackCode: String = "en-US",
         grammar: String? = nil,
         translations: [LessonTranslation]? = nil,
+        lessonTargets: [LessonTargetUpsertSchema]? = nil,
         wordIds: [Int]? = nil
     ) async throws -> Lesson {
         let body = LessonUpdate(
             unit: unit,
             level: level,
+            trackCode: trackCode,
             grammar: grammar,
-            wordIds: wordIds,
+            vocabularyIds: wordIds,
+            lessonTargets: lessonTargets,
             translations: translations
         )
         return try await api.request("POST", "admin/lessons", jsonBody: body.toDict(), as: Lesson.self)
@@ -66,15 +70,19 @@ extension LessonDataSource {
         id: Int,
         unit: Int? = nil,
         level: Int? = nil,
+        trackCode: String? = nil,
         grammar: String? = nil,
         wordIds: [Int]? = nil,
+        lessonTargets: [LessonTargetUpsertSchema]? = nil,
         translations: [LessonTranslation]? = nil
     ) async throws -> Lesson {
         let body = LessonUpdate(
             unit: unit,
             level: level,
+            trackCode: trackCode,
             grammar: grammar,
-            wordIds: wordIds,
+            vocabularyIds: wordIds,
+            lessonTargets: lessonTargets,
             translations: translations
         )
         return try await api.request("PUT", "admin/lessons/\(id)", jsonBody: body.toDict(), as: Lesson.self)

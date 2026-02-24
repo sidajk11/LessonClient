@@ -1,5 +1,5 @@
 //
-//  PracticeDataSource.swift
+//  ExerciseDataSource.swift
 //  LessonClient
 //
 //  Created by ymj on 10/01/25
@@ -7,8 +7,8 @@
 
 import Foundation
 
-final class PracticeDataSource {
-    static let shared = PracticeDataSource()
+final class ExerciseDataSource {
+    static let shared = ExerciseDataSource()
     private let api = APIClient.shared
     private init() {}
 
@@ -28,7 +28,7 @@ final class PracticeDataSource {
 
     /// 생성
     @discardableResult
-    func create(practice: ExerciseUpdate) async throws -> Exercise {
+    func create(practice: ExerciseCreate) async throws -> Exercise {
         return try await api.request("POST", "admin/exercises", jsonBody: practice.toDict(), as: Exercise.self)
     }
 
@@ -43,13 +43,13 @@ final class PracticeDataSource {
         _ = try await api.request("DELETE", "admin/exercises/\(id)", as: Empty.self)
     }
     
-    /// 연습문제 검색 (GET /practices/search)
+    /// 연습문제 검색 (GET /admin/exercises/search)
     /// - Parameters:
     ///   - q: 부분검색어 (연습문제/예문/번역/선택지)
     ///   - level: Lesson.level 정확 일치
     ///   - unit: Lesson.unit 정확 일치
     ///   - limit: 1...200
-    /// - Returns: Practice 배열 (서버의 PracticeOut과 동일 구조 가정)
+    /// - Returns: Practice 배열 (서버의 ExerciseOut과 동일 구조 가정)
     func search(
         q: String = "",
         level: Int? = nil,
@@ -74,6 +74,48 @@ final class PracticeDataSource {
         )
     }
 
-}
+    /// 보기 전체 치환 (PUT /admin/exercises/{id}/options)
+    @discardableResult
+    func replaceOptions(id: Int, payload: OptionsReplace) async throws -> Exercise {
+        try await api.request(
+            "PUT",
+            "admin/exercises/\(id)/options",
+            jsonBody: payload.toDict(),
+            as: Exercise.self
+        )
+    }
 
+    /// 번역 전체 치환 (PUT /admin/exercises/{id}/translations)
+    @discardableResult
+    func replaceTranslations(id: Int, payload: ContentReplace) async throws -> Exercise {
+        try await api.request(
+            "PUT",
+            "admin/exercises/\(id)/translations",
+            jsonBody: payload.toDict(),
+            as: Exercise.self
+        )
+    }
+
+    /// 입력형 정답 전체 치환 (PUT /admin/exercises/{id}/expected-answers)
+    @discardableResult
+    func replaceExpectedAnswers(id: Int, payload: ExpectedAnswersReplace) async throws -> Exercise {
+        try await api.request(
+            "PUT",
+            "admin/exercises/\(id)/expected-answers",
+            jsonBody: payload.toDict(),
+            as: Exercise.self
+        )
+    }
+
+    /// 조합형 정답 순서 전체 치환 (PUT /admin/exercises/{id}/correct-options)
+    @discardableResult
+    func replaceCorrectOptions(id: Int, payload: CorrectOptionsReplace) async throws -> Exercise {
+        try await api.request(
+            "PUT",
+            "admin/exercises/\(id)/correct-options",
+            jsonBody: payload.toDict(),
+            as: Exercise.self
+        )
+    }
+}
 

@@ -68,9 +68,11 @@ final class APIClient {
         
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw APIError.unknown }
+        let responseBody = String(data: data, encoding: .utf8) ?? "<non-utf8 body: \(data.count) bytes>"
+        print("response[\(req.httpMethod ?? "UNKNOWN") \(url.absoluteString)] status=\(http.statusCode)")
+        print("response body: \(responseBody)")
         if !(200...299).contains(http.statusCode) {
-            let msg = String(data: data, encoding: .utf8)
-            throw APIError.http(http.statusCode, msg)
+            throw APIError.http(http.statusCode, responseBody)
         }
         if T.self == Empty.self { return Empty() as! T }
         do {

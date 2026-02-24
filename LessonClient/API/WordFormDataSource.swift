@@ -12,6 +12,27 @@ final class WordFormDataSource {
     private let api = APIClient.shared
     private init() {}
 
+    // MARK: - form 문자열로 WordForm 조회 (GET /word-forms/by-form)
+    func listWordFormsByForm(
+        form: String,
+        limit: Int = 50,
+        offset: Int = 0
+    ) async throws -> [WordFormRead] {
+        let trimmed = form.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query: [URLQueryItem] = [
+            .init(name: "form", value: trimmed),
+            .init(name: "limit", value: String(min(max(limit, 1), 200))),
+            .init(name: "offset", value: String(max(offset, 0)))
+        ]
+
+        return try await api.request(
+            "GET",
+            "admin/word-forms/by-form",
+            query: query,
+            as: [WordFormRead].self
+        )
+    }
+
     // MARK: - WordForm 목록 조회 (GET /word-forms)
     func listWordForms(
         wordId: Int? = nil,
@@ -53,12 +74,14 @@ final class WordFormDataSource {
     @discardableResult
     func createWordForm(
         wordId: Int,
+        derivedWordId: Int? = nil,
         form: String,
         formType: String? = nil,
         translations: [WordFormTranslationSchema]? = nil
     ) async throws -> WordFormRead {
         let body = WordFormCreate(
             wordId: wordId,
+            derivedWordId: derivedWordId,
             form: form,
             formType: formType,
             translations: translations
