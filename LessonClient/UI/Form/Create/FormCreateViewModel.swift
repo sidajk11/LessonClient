@@ -234,10 +234,12 @@ Parsing: blocks=\(totalBlocks), parsed=\(parsedCount), ready=\(readyCount), inva
             do {
                 // 1) word -> word_id 조회
                 let wordRead = try await wordDS.getWord(word: word)
+                let derivedWordId = try? await wordDS.getWord(word: form).id
 
                 // 2) create word-form
                 let created = try await formDS.createWordForm(
                     wordId: wordRead.id,
+                    derivedWordId: derivedWordId,
                     form: form,
                     formType: (formType?.isEmpty == true ? nil : formType),
                     translations: translations

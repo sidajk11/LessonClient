@@ -86,6 +86,13 @@ struct WordListView: View {
                                         .font(.footnote)
                                         .foregroundStyle(.secondary)
                                 }
+
+                                if let pronunciations = w.pronunciations, !pronunciations.isEmpty {
+                                    Text("pronunciations: \(pronunciations.count) • \(pronunciations.map { $0.ipa }.joined(separator: ", "))")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                }
                                 
                                 if let count = w.senses.first?.translations.count, count > 2 {
                                     Text("translations done")

@@ -76,13 +76,13 @@ extension LessonListViewModel {
         lines.append("\n")
         lines.append(lesson.grammar ?? "_")
         lines.append("\n\n")
-        for word in lesson.words {
+        for word in lesson.vocabularies {
             lines.append(word.text)
             lines.append("\n")
             lines.append(word.translations.toString())
             lines.append("\n\n")
         }
-        for word in lesson.words {
+        for word in lesson.vocabularies {
             if word.examples?.count == 0 {
                 continue
             }

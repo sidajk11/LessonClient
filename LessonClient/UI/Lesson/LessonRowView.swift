@@ -78,7 +78,7 @@ struct LessonRowView: View {
         do {
             // 레슨의 단어 목록 가져오기
             let loadedLesson = try await LessonDataSource.shared.lesson(id: lesson.id)
-            let words = loadedLesson.words.prefix(maxVocabularys)
+            let words = loadedLesson.vocabularies.prefix(maxVocabularys)
 
             // 각 단어의 첫 예문만 비동기 병렬로 가져오기
             var tmp: [VocabularyPreview] = []

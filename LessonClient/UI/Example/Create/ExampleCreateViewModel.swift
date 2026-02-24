@@ -50,7 +50,7 @@ final class ExampleCreateViewModel: ObservableObject {
     
     private func autoGenerateCombine(example: Example, word: Vocabulary) async {
         do {
-            let practices = try await PracticeDataSource.shared.list(exampleId: example.id)
+            let practices = try await ExerciseDataSource.shared.list(exampleId: example.id)
             if !practices.contains(where: { $0.type == .combine }) {
                 let allVocabularysInSentence = example.sentence.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
                 let content = example.sentence.underlinesText
@@ -64,7 +64,7 @@ final class ExampleCreateViewModel: ObservableObject {
     private func autoGenerateSelect(example: Example, word: Vocabulary) async {
         guard let lessonId = word.lessonId else { return }
         do {
-            let practices = try await PracticeDataSource.shared.list(exampleId: example.id)
+            let practices = try await ExerciseDataSource.shared.list(exampleId: example.id)
             let lesson = try await LessonDataSource.shared.lesson(id: lessonId)
             if !practices.contains(where: { $0.type == .select }) {
                 let allVocabularysInSentence = example.sentence.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
@@ -125,10 +125,10 @@ final class ExampleCreateViewModel: ObservableObject {
         var wordsOptions: [ExerciseOptionUpdate] = []
         wordsOptions = wordOptionTextList.map {
             let text = NL.lowercaseAvailable(sentence: example.sentence, word: $0) ? $0.lowercased() : $0
-            return ExerciseOptionUpdate(text: text)
+            return ExerciseOptionUpdate.textOption(text)
         }
         
-        let practiceCrate = ExerciseUpdate(
+        let practiceCrate = ExerciseCreate(
             exampleId: example.id,
             type: type,
             prompt: prompt,
@@ -136,7 +136,7 @@ final class ExampleCreateViewModel: ObservableObject {
             translations: transList
         )
         do {
-            let _ = try await PracticeDataSource.shared.create(practice: practiceCrate)
+            let _ = try await ExerciseDataSource.shared.create(practice: practiceCrate)
         } catch {
             errorMessage = error.localizedDescription
         }

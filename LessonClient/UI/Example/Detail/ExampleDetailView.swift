@@ -14,7 +14,7 @@ struct ExampleDetailView: View {
             Section(header: Text("연습문제")) {
                 NavigationLink("연습문제들") {
                     if let example = vm.example {
-                        PracticeListView(example: example)
+                        ExerciseListView(example: example)
                     }
                 }
             }

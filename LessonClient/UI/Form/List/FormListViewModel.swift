@@ -32,6 +32,7 @@ final class FormListViewModel: ObservableObject {
     private var canLoadMore: Bool = true
 
     private let ds = WordFormDataSource.shared
+    private let wordDS = WordDataSource.shared
 
     init(wordId: Int? = nil) {
         self.wordId = wordId
@@ -145,8 +146,10 @@ final class FormListViewModel: ObservableObject {
                 }
             } else {
                 // NOTE: DS가 formType을 non-optional로 받는다면 nil 대신 ""로 넘기도록 맞춰줘야 함
+                let derivedWordId = try? await wordDS.getWord(word: form).id
                 let created = try await ds.createWordForm(
                     wordId: wordId,
+                    derivedWordId: derivedWordId,
                     form: form,
                     formType: formType ?? ""
                 )
