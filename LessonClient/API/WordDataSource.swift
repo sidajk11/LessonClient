@@ -52,6 +52,33 @@ final class WordDataSource {
         )
     }
 
+    // MARK: - WordSense 목록 조회 (GET /words/{word_id}/senses)
+    func listWordSenses(
+        wordId: Int,
+        limit: Int = 100,
+        offset: Int = 0
+    ) async throws -> [WordSenseRead] {
+        let query: [URLQueryItem] = [
+            .init(name: "limit", value: String(min(max(limit, 1), 500))),
+            .init(name: "offset", value: String(max(offset, 0)))
+        ]
+        return try await api.request(
+            "GET",
+            "admin/words/\(wordId)/senses",
+            query: query,
+            as: [WordSenseRead].self
+        )
+    }
+
+    // MARK: - WordSense 단건 조회 (GET /words/senses/{sense_id})
+    func wordSense(senseId: Int) async throws -> WordSenseRead {
+        try await api.request(
+            "GET",
+            "admin/words/senses/\(senseId)",
+            as: WordSenseRead.self
+        )
+    }
+
     // MARK: - WordSense 생성 (POST /words/{word_id}/senses)
     @discardableResult
     func createWordSense(
@@ -133,7 +160,7 @@ final class WordDataSource {
     
     @discardableResult
     func updateSenseTranslation(senseId: Int, lang: String, text: String, explain: String) async throws -> WordSenseRead {
-        // POST /word-senses/{senseId}/translations
+        // PUT /words/senses/{sense_id}/translations
         // body: { "lang": lang, "text": text, "explain": "" }
         struct Body: Encodable {
             let lang: String
@@ -192,6 +219,26 @@ extension WordDataSource {
             "admin/words/by-lemma",
             query: query,
             as: WordRead.self
+        )
+    }
+
+    /// lemma로 sense 목록 조회 (서버: GET /words/senses/by-lemma?lemma=...)
+    func listWordSensesByLemma(
+        lemma: String,
+        limit: Int = 100,
+        offset: Int = 0
+    ) async throws -> [WordSenseRead] {
+        let trimmed = lemma.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query: [URLQueryItem] = [
+            .init(name: "lemma", value: trimmed),
+            .init(name: "limit", value: String(min(max(limit, 1), 500))),
+            .init(name: "offset", value: String(max(offset, 0)))
+        ]
+        return try await api.request(
+            "GET",
+            "admin/words/senses/by-lemma",
+            query: query,
+            as: [WordSenseRead].self
         )
     }
 }

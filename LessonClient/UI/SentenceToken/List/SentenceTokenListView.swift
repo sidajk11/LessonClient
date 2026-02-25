@@ -18,6 +18,10 @@ struct SentenceTokenListView: View {
                         .textFieldStyle(.roundedBorder)
                         .frame(maxWidth: 120)
 
+                    TextField("phraseId", text: $vm.phraseIdText)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 120)
+
                     TextField("wordId", text: $vm.wordIdText)
                         .textFieldStyle(.roundedBorder)
                         .frame(maxWidth: 120)
@@ -69,6 +73,7 @@ struct SentenceTokenListView: View {
                                 .font(.headline)
 
                             HStack {
+                                Text("phraseId: \(token.phraseId.map(String.init) ?? "-")")
                                 Text("wordId: \(token.wordId.map(String.init) ?? "-")")
                                 Text("formId: \(token.formId.map(String.init) ?? "-")")
                                 Text("senseId: \(token.senseId.map(String.init) ?? "-")")

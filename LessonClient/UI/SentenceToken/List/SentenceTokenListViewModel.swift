@@ -14,6 +14,7 @@ final class SentenceTokenListViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     @Published var exampleIdText: String = ""
+    @Published var phraseIdText: String = ""
     @Published var wordIdText: String = ""
     @Published var formIdText: String = ""
     @Published var senseIdText: String = ""
@@ -27,6 +28,7 @@ final class SentenceTokenListViewModel: ObservableObject {
         errorMessage = nil
 
         guard let exampleId = parsedIdAllowingEmpty(from: exampleIdText, label: "exampleId"),
+              let phraseId = parsedIdAllowingEmpty(from: phraseIdText, label: "phraseId"),
               let wordId = parsedIdAllowingEmpty(from: wordIdText, label: "wordId"),
               let formId = parsedIdAllowingEmpty(from: formIdText, label: "formId"),
               let senseId = parsedIdAllowingEmpty(from: senseIdText, label: "senseId") else {
@@ -42,6 +44,7 @@ final class SentenceTokenListViewModel: ObservableObject {
         do {
             let result = try await ds.listSentenceTokens(
                 exampleId: exampleId,
+                phraseId: phraseId,
                 wordId: wordId,
                 formId: formId,
                 senseId: senseId,
@@ -61,6 +64,7 @@ final class SentenceTokenListViewModel: ObservableObject {
         guard item.id == tokens.last?.id else { return }
 
         guard let exampleId = parsedIdAllowingEmpty(from: exampleIdText, label: "exampleId"),
+              let phraseId = parsedIdAllowingEmpty(from: phraseIdText, label: "phraseId"),
               let wordId = parsedIdAllowingEmpty(from: wordIdText, label: "wordId"),
               let formId = parsedIdAllowingEmpty(from: formIdText, label: "formId"),
               let senseId = parsedIdAllowingEmpty(from: senseIdText, label: "senseId") else {
@@ -73,6 +77,7 @@ final class SentenceTokenListViewModel: ObservableObject {
         do {
             let result = try await ds.listSentenceTokens(
                 exampleId: exampleId,
+                phraseId: phraseId,
                 wordId: wordId,
                 formId: formId,
                 senseId: senseId,

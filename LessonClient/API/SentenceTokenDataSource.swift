@@ -14,6 +14,7 @@ final class SentenceTokenDataSource {
 
     func listSentenceTokens(
         exampleId: Int? = nil,
+        phraseId: Int? = nil,
         wordId: Int? = nil,
         formId: Int? = nil,
         senseId: Int? = nil,
@@ -25,6 +26,7 @@ final class SentenceTokenDataSource {
             .init(name: "offset", value: String(max(offset, 0)))
         ]
         if let exampleId { query.append(.init(name: "example_id", value: String(exampleId))) }
+        if let phraseId { query.append(.init(name: "phrase_id", value: String(phraseId))) }
         if let wordId { query.append(.init(name: "word_id", value: String(wordId))) }
         if let formId { query.append(.init(name: "form_id", value: String(formId))) }
         if let senseId { query.append(.init(name: "sense_id", value: String(senseId))) }
@@ -42,6 +44,7 @@ final class SentenceTokenDataSource {
         exampleId: Int,
         tokenIndex: Int,
         surface: String,
+        phraseId: Int? = nil,
         wordId: Int? = nil,
         formId: Int? = nil,
         senseId: Int? = nil,
@@ -53,6 +56,7 @@ final class SentenceTokenDataSource {
             exampleId: exampleId,
             tokenIndex: tokenIndex,
             surface: surface,
+            phraseId: phraseId,
             wordId: wordId,
             formId: formId,
             senseId: senseId,
@@ -82,6 +86,7 @@ final class SentenceTokenDataSource {
         exampleId: Int? = nil,
         tokenIndex: Int? = nil,
         surface: String? = nil,
+        phraseId: Int? = nil,
         wordId: Int? = nil,
         formId: Int? = nil,
         senseId: Int? = nil,
@@ -93,6 +98,7 @@ final class SentenceTokenDataSource {
             exampleId: exampleId,
             tokenIndex: tokenIndex,
             surface: surface,
+            phraseId: phraseId,
             wordId: wordId,
             formId: formId,
             senseId: senseId,
@@ -113,6 +119,21 @@ final class SentenceTokenDataSource {
             "DELETE",
             "admin/sentence-tokens/\(id)",
             as: Empty.self
+        )
+    }
+
+    @discardableResult
+    func upsertSentenceTokenTranslation(
+        tokenId: Int,
+        lang: String,
+        text: String
+    ) async throws -> SentenceTokenRead {
+        let body = SentenceTokenTranslationCreate(lang: lang, text: text)
+        return try await api.request(
+            "PUT",
+            "admin/sentence-tokens/\(tokenId)/translations",
+            jsonBody: body.toDict(),
+            as: SentenceTokenRead.self
         )
     }
 }
