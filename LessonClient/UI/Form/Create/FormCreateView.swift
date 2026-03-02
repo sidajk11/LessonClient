@@ -31,11 +31,48 @@ struct FormCreateView: View {
                     }
                 }
 
+                if vm.isAutoAdding {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text("Auto Adding…")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if let progress = vm.autoProgressText {
+                    Text(progress)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let currentWord = vm.currentWordText {
+                    Text(currentWord)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Button("자동추가") {
+                    Task {
+                        await vm.autoAddMissingForms()
+                    }
+                }
+                .disabled(vm.isSaving || vm.isAutoAdding)
+
+                Button("다음") {
+                    Task { await vm.moveToNextWordWithoutSaving() }
+                }
+                .disabled(!vm.canMoveNextWord || vm.isSaving || vm.isAutoAdding)
+
+                Button("OpenAI 호출") {
+                    Task { await vm.callOpenAIForCurrentWord() }
+                }
+                .disabled(!vm.isAutoSessionActive || vm.isSaving || vm.isAutoAdding)
+
                 Button("Save") {
                     Task {
                         await vm.saveAll()
-                        // 하나라도 성공했으면 종료
-                        if vm.rows.contains(where: {
+                        // 수동 모드에서만 저장 성공 시 종료
+                        if !vm.isAutoSessionActive && vm.rows.contains(where: {
                             if case .saved = $0.status { return true }
                             return false
                         }) {
@@ -43,11 +80,11 @@ struct FormCreateView: View {
                         }
                     }
                 }
-                .disabled(vm.rows.isEmpty || vm.isSaving)
+                .disabled(previewRows.isEmpty || vm.isSaving || vm.isAutoAdding)
                 .keyboardShortcut(.defaultAction)
 
                 Button("Clear") { vm.clearAll() }
-                    .disabled(vm.isSaving)
+                    .disabled(vm.isSaving || vm.isAutoAdding)
             }
 
             // Error banner
@@ -71,6 +108,7 @@ struct FormCreateView: View {
 
                     TextEditor(text: $vm.rawText)
                         .font(.system(.body, design: .monospaced))
+                        .disabled(vm.isAutoAdding)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
                                 .strokeBorder(.separator, lineWidth: 1)
@@ -88,7 +126,7 @@ struct FormCreateView: View {
                         }
                     }
 
-                    Table(vm.rows) {
+                    Table(previewRows) {
                         TableColumn("Word") { row in
                             Text(row.word)
                         }
@@ -163,6 +201,14 @@ explain: 3인칭 단수 현재형 (he/she/it is) – 그는/그녀는/그것은 
                 .help(message) // hover 시 에러 메시지
         case .skipped(reason: let reason):
             Text("Skipped (#\(reason))")
+        }
+    }
+
+    private var previewRows: [FormCreateViewModel.DraftRow] {
+        vm.rows.filter { row in
+            let word = row.word.trimmingCharacters(in: .whitespacesAndNewlines)
+            let form = row.form.trimmingCharacters(in: .whitespacesAndNewlines)
+            return word.caseInsensitiveCompare(form) != .orderedSame
         }
     }
 }

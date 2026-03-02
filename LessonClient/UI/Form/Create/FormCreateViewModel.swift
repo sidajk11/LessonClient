@@ -38,19 +38,27 @@ final class FormCreateViewModel: ObservableObject {
     // UI State
     @Published var isParsing: Bool = false
     @Published var isSaving: Bool = false
+    @Published var isAutoAdding: Bool = false
+    @Published private(set) var isAutoSessionActive: Bool = false
+    @Published private(set) var autoCurrentWord: String? = nil
+    @Published private(set) var autoCurrentIndex: Int = 0
+    @Published private(set) var autoTotalCount: Int = 0
 
     /// 파싱/저장 결과를 요약해서 보여주는 메시지
     @Published var statusMessage: String? = nil
 
     private let wordDS = WordDataSource.shared
     private let formDS = WordFormDataSource.shared
+    private let parser = FormBlocksParser()
+    private let openAIClient = OpenAIClient()
+    private var autoWordsQueue: [WordRead] = []
 
     // Debounce
     private var parseTask: Task<Void, Never>?
     private let debounceNanos: UInt64 = 250_000_000 // 0.25s
 
     private func scheduleAutoParse() {
-        if isSaving { return }
+        if isSaving || isAutoAdding { return }
 
         parseTask?.cancel()
         parseTask = Task { [weak self] in
@@ -70,33 +78,8 @@ final class FormCreateViewModel: ObservableObject {
         statusMessage = nil
         rows.removeAll()
 
-        let blocks = splitIntoBlocks(rawText)
-        let totalBlocks = blocks.count
-
-        var parsed: [DraftRow] = []
-        var skippedBlocks = 0
-        var missingRequired = 0
-
-        for block in blocks {
-            if let row = parseBlock(block) {
-                // required 검사
-                let w = row.word.trimmingCharacters(in: .whitespacesAndNewlines)
-                let f = row.form.trimmingCharacters(in: .whitespacesAndNewlines)
-
-                var r = row
-                if w.isEmpty || f.isEmpty {
-                    r.status = .failed(message: "word/form is required")
-                    missingRequired += 1
-                } else {
-                    r.status = .ready
-                }
-                parsed.append(r)
-            } else {
-                skippedBlocks += 1
-            }
-        }
-
-        rows = parsed
+        let result = parser.parse(rawText: rawText)
+        rows = result.rows
 
         // 파싱 요약 메시지
         let parsedCount = rows.count
@@ -106,71 +89,14 @@ final class FormCreateViewModel: ObservableObject {
         }.count
         let readyCount = rows.filter { $0.status == .ready }.count
 
-        if totalBlocks == 0 {
+        if result.totalBlocks == 0 {
             statusMessage = "Parsing: 입력이 비어있습니다."
         } else {
             statusMessage =
 """
-Parsing: blocks=\(totalBlocks), parsed=\(parsedCount), ready=\(readyCount), invalid=\(failedCount), skipped=\(skippedBlocks)
+Parsing: blocks=\(result.totalBlocks), parsed=\(parsedCount), ready=\(readyCount), invalid=\(failedCount), skipped=\(result.skippedBlocks)
 """
         }
-    }
-
-    private func splitIntoBlocks(_ text: String) -> [String] {
-        let normalized = text
-            .replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\r", with: "\n")
-
-        // 빈 줄 기준 분리
-        let parts = normalized
-            .components(separatedBy: "\n\n")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        // 연속 빈줄 방어
-        return parts.flatMap { part in
-            part
-                .components(separatedBy: "\n\n")
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
-        }
-    }
-
-    private func parseBlock(_ block: String) -> DraftRow? {
-        var dict: [String: String] = [:]
-
-        let lines = block
-            .replacingOccurrences(of: "\r\n", with: "\n")
-            .split(separator: "\n", omittingEmptySubsequences: false)
-            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-
-        for line in lines {
-            if line.isEmpty { continue }
-            guard let idx = line.firstIndex(of: ":") else { continue }
-
-            let key = line[..<idx]
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .lowercased()
-
-            let value = line[line.index(after: idx)...]
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if !key.isEmpty { dict[key] = value }
-        }
-
-        // word/form이 없으면 블록 자체를 스킵
-        guard let word = dict["word"], let form = dict["form"] else { return nil }
-
-        let formType = dict["form_type"]
-        let explainKo = dict["explain_ko"]
-
-        return DraftRow(
-            word: word,
-            form: form,
-            formType: (formType?.isEmpty == true ? nil : formType),
-            explainKo: (explainKo?.isEmpty == true ? nil : explainKo),
-            status: .ready
-        )
     }
 
     // MARK: - Save
@@ -179,6 +105,145 @@ Parsing: blocks=\(totalBlocks), parsed=\(parsedCount), ready=\(readyCount), inva
         // 저장 직전에 디바운스 파싱 대기 중이면 즉시 반영
         parseTask?.cancel()
         parseNow()
+        let result = await saveCurrentRows(stopOnFailure: false)
+
+        // 자동추가 세션에서는 저장 성공 시 다음 단어를 자동 처리
+        if isAutoSessionActive, result.fail == 0, result.success > 0 {
+            await moveToNextWordWithoutSaving()
+        }
+    }
+
+    func autoAddMissingForms() async {
+        guard !isAutoAdding, !isSaving else { return }
+
+        parseTask?.cancel()
+        isAutoAdding = true
+        defer { isAutoAdding = false }
+
+        do {
+            var words = try await fetchWordsWithoutForms(limit: 200)
+            guard !words.isEmpty else {
+                statusMessage = "AutoAdd: 폼이 없는 단어가 없습니다."
+                resetAutoSession()
+                return
+            }
+
+            words = words.filter { !$0.lemma.contains("'") && !$0.lemma.contains(" ") }
+            guard !words.isEmpty else {
+                statusMessage = "AutoAdd: 처리 가능한 단어가 없습니다."
+                resetAutoSession()
+                return
+            }
+
+            autoWordsQueue = words
+            autoTotalCount = words.count
+            isAutoSessionActive = true
+
+            var totalSavedForms = 0
+            var failedWords: [String] = []
+            for idx in autoWordsQueue.indices {
+                autoCurrentIndex = idx
+                autoCurrentWord = autoWordsQueue[idx].lemma.trimmingCharacters(in: .whitespacesAndNewlines)
+                clearDraftForNextWord()
+
+                do {
+                    try await generateAndParseCurrentWord()
+
+                    let saveResult = await saveCurrentRows(stopOnFailure: true)
+                    guard saveResult.fail == 0 else {
+                        throw AutoAddError.saveFailed(word: autoCurrentWord ?? "", reason: "save failure")
+                    }
+                    guard saveResult.success > 0 else {
+                        throw AutoAddError.saveFailed(word: autoCurrentWord ?? "", reason: "no saved rows")
+                    }
+                    totalSavedForms += saveResult.success
+                } catch {
+                    let failedWord = autoCurrentWord ?? "(unknown)"
+                    failedWords.append(failedWord)
+                    statusMessage = "AutoAdd: '\(failedWord)' 실패 - \(error.localizedDescription). 다음 단어를 진행합니다."
+                    continue
+                }
+            }
+
+            statusMessage = "AutoAdd: done ✅ words=\(autoTotalCount), forms=\(totalSavedForms), failed=\(failedWords.count)"
+            resetAutoSession(keepCurrentWord: true)
+        } catch {
+            statusMessage = "AutoAdd: 중단 - \(error.localizedDescription)"
+            resetAutoSession()
+        }
+    }
+
+    func moveToNextWordWithoutSaving() async {
+        guard isAutoSessionActive else { return }
+        guard !isAutoAdding, !isSaving else { return }
+
+        let skippedWord = autoCurrentWord
+        let nextIndex = autoCurrentIndex + 1
+        guard nextIndex < autoWordsQueue.count else {
+            statusMessage = "AutoAdd: 모든 단어 처리를 완료했습니다."
+            resetAutoSession(keepCurrentWord: true)
+            return
+        }
+
+        if let skippedWord {
+            statusMessage = "AutoAdd: '\(skippedWord)' 건너뜀. 다음 단어로 이동합니다."
+        }
+        autoCurrentIndex = nextIndex
+        autoCurrentWord = autoWordsQueue[autoCurrentIndex].lemma.trimmingCharacters(in: .whitespacesAndNewlines)
+        clearDraftForNextWord()
+        statusMessage = "AutoAdd: (\(autoCurrentIndex + 1)/\(autoTotalCount)) '\(autoCurrentWord ?? "")' 준비됨. OpenAI 호출 버튼을 눌러주세요."
+    }
+
+    func callOpenAIForCurrentWord() async {
+        guard isAutoSessionActive else { return }
+        guard !isAutoAdding, !isSaving else { return }
+
+        parseTask?.cancel()
+        isAutoAdding = true
+        defer { isAutoAdding = false }
+
+        do {
+            try await generateAndParseCurrentWord()
+        } catch {
+            statusMessage = "AutoAdd: 중단 - \(error.localizedDescription)"
+        }
+    }
+
+    private func generateAndParseCurrentWord() async throws {
+        guard isAutoSessionActive else { return }
+        guard autoCurrentIndex >= 0, autoCurrentIndex < autoWordsQueue.count else {
+            resetAutoSession()
+            return
+        }
+
+        let word = autoWordsQueue[autoCurrentIndex]
+        let lemma = word.lemma.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !lemma.isEmpty else {
+            throw AutoAddError.invalidWord(message: "empty lemma (wordId=\(word.id))")
+        }
+
+        autoCurrentWord = lemma
+        statusMessage = "AutoAdd: (\(autoCurrentIndex + 1)/\(autoTotalCount)) generating '\(lemma)'"
+
+        let prompt = makePrompt(for: lemma)
+        let generated = try await openAIClient.generateText(prompt: prompt)
+
+        rawText = generated
+        parseTask?.cancel()
+        parseNow()
+
+        let readyCount = rows.filter {
+            if case .ready = $0.status { return true }
+            return false
+        }.count
+        guard readyCount > 0 else {
+            throw AutoAddError.noParsableRows(word: lemma)
+        }
+
+        statusMessage = "AutoAdd: (\(autoCurrentIndex + 1)/\(autoTotalCount)) '\(lemma)' 파싱 완료 (ready=\(readyCount))"
+    }
+
+    private func saveCurrentRows(stopOnFailure: Bool) async -> (success: Int, fail: Int, skipped: Int) {
 
         let indices = rows.indices
 
@@ -205,7 +270,7 @@ Parsing: blocks=\(totalBlocks), parsed=\(parsedCount), ready=\(readyCount), inva
 
         guard !toSave.isEmpty else {
             statusMessage = "Save: 저장할 항목이 없습니다. (ready=0, skipped=\(skipped.count))"
-            return
+            return (0, 0, skipped.count)
         }
 
         isSaving = true
@@ -250,6 +315,7 @@ Parsing: blocks=\(totalBlocks), parsed=\(parsedCount), ready=\(readyCount), inva
             } catch {
                 rows[i].status = .failed(message: error.localizedDescription)
                 fail += 1
+                if stopOnFailure { break }
             }
         }
 
@@ -259,12 +325,96 @@ Parsing: blocks=\(totalBlocks), parsed=\(parsedCount), ready=\(readyCount), inva
         }.count
 
         statusMessage = "Save: done ✅ success=\(success), failed=\(fail), skipped=\(skippedCount)"
+        return (success, fail, skippedCount)
+    }
+
+    private func fetchWordsWithoutForms(limit: Int = 200) async throws -> [WordRead] {
+        try await wordDS.listWordsWithoutForms(limit: limit, offset: 0)
+    }
+
+    private func makePrompt(for word: String) -> String {
+        """
+사용자가 영어 단어를 입력하면, 그 단어의 모든 활용형(form)과 각 형태의 유형(form_type), 한국어 설명(explain_ko)을 출력합니다. 
+출력 형식은 다음과 같이 통일합니다:
+singular은 출력하지마
+
+word:
+form:
+form_type:
+explain_ko:
+
+예시 입력: be
+
+예시 출력:
+word: be
+form: am
+form_type: present_singular_1st
+explain_ko: 1인칭 단수 현재형 (I am) – 나는 …이다/있다
+
+word: be
+form: is
+form_type: present_singular_3rd
+explain_ko: 3인칭 단수 현재형 (he/she/it is) – 그는/그녀는/그것은 …이다/있다
+
+사용자가 입력한 단어에 맞는 모든 form과 form_type, 한국어 설명을 위 형식으로 나열하세요.
+
+\(word)
+"""
+    }
+
+    private enum AutoAddError: LocalizedError {
+        case invalidWord(message: String)
+        case noParsableRows(word: String)
+        case saveFailed(word: String, reason: String)
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidWord(let message):
+                return "invalid word: \(message)"
+            case .noParsableRows(let word):
+                return "no parsable forms for '\(word)'"
+            case .saveFailed(let word, let reason):
+                return "save failed for '\(word)': \(reason)"
+            }
+        }
+    }
+
+    var canMoveNextWord: Bool {
+        isAutoSessionActive && autoCurrentIndex + 1 < autoTotalCount
+    }
+
+    var autoProgressText: String? {
+        guard isAutoSessionActive else { return nil }
+        guard let autoCurrentWord else { return nil }
+        return "\(autoCurrentIndex + 1)/\(autoTotalCount) • \(autoCurrentWord)"
+    }
+
+    var currentWordText: String? {
+        guard isAutoSessionActive else { return nil }
+        guard let autoCurrentWord else { return nil }
+        return "현재 단어: \(autoCurrentWord)"
+    }
+
+    private func clearDraftForNextWord() {
+        parseTask?.cancel()
+        rawText = ""
+        rows = []
+        parseTask?.cancel()
+    }
+
+    private func resetAutoSession(keepCurrentWord: Bool = false) {
+        isAutoSessionActive = false
+        autoWordsQueue = []
+        autoCurrentIndex = 0
+        autoTotalCount = 0
+        if !keepCurrentWord { autoCurrentWord = nil }
     }
 
     // MARK: - Utilities
 
     func clearAll() {
         parseTask?.cancel()
+        resetAutoSession()
         rawText = ""
         rows = []
         statusMessage = nil

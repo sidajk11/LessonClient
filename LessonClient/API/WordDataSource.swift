@@ -196,6 +196,24 @@ extension WordDataSource {
 
         return try await api.request("GET", "admin/words", query: query, as: [WordRead].self)
     }
+
+    /// 폼이 없는 단어 목록 조회 (서버: GET /words/no-forms)
+    func listWordsWithoutForms(
+        limit: Int = 50,
+        offset: Int = 0
+    ) async throws -> [WordRead] {
+        let query: [URLQueryItem] = [
+            .init(name: "limit", value: String(min(max(limit, 1), 200))),
+            .init(name: "offset", value: String(max(offset, 0)))
+        ]
+
+        return try await api.request(
+            "GET",
+            "admin/words/no-forms",
+            query: query,
+            as: [WordRead].self
+        )
+    }
     
     /// 단어 텍스트로 단건 조회 (서버: GET /words/search?word=...)
     func findWord(word: String) async throws -> WordRead {
