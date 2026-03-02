@@ -117,4 +117,10 @@ enum LangCode: String, CaseIterable, Codable {
     case th = "th"     // Thai (Thailand)
     case vi = "vi"     // Vietnamese (Vietnam)
     case id = "id"     // Indonesian (Indonesia)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = (try? container.decode(String.self)) ?? ""
+        self = LangCode(rawValue: raw) ?? .enUS
+    }
 }

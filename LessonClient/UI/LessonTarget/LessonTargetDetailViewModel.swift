@@ -15,9 +15,7 @@ final class LessonTargetDetailViewModel: ObservableObject {
 
     @Published var lessonIdText: String = ""
     @Published var targetType: String = ""
-    @Published var wordIdText: String = ""
-    @Published var formIdText: String = ""
-    @Published var senseIdText: String = ""
+    @Published var vocabularyIdText: String = ""
     @Published var displayText: String = ""
     @Published var sortIndexText: String = "0"
 
@@ -57,9 +55,7 @@ final class LessonTargetDetailViewModel: ObservableObject {
                 id: targetId,
                 lessonId: parseOptionalInt(lessonIdText),
                 targetType: targetType.trimmedNilIfEmpty,
-                wordId: parseOptionalInt(wordIdText),
-                formId: parseOptionalInt(formIdText),
-                senseId: parseOptionalInt(senseIdText),
+                vocabularyId: parseOptionalInt(vocabularyIdText),
                 displayText: displayText.trimmedNilIfEmpty,
                 sortIndex: parseOptionalInt(sortIndexText)
             )
@@ -90,9 +86,7 @@ final class LessonTargetDetailViewModel: ObservableObject {
         item = row
         lessonIdText = String(row.lessonId)
         targetType = row.targetType
-        wordIdText = row.wordId.map(String.init) ?? ""
-        formIdText = row.formId.map(String.init) ?? ""
-        senseIdText = row.senseId.map(String.init) ?? ""
+        vocabularyIdText = row.vocabularyId.map(String.init) ?? ""
         displayText = row.displayText
         sortIndexText = String(row.sortIndex)
     }

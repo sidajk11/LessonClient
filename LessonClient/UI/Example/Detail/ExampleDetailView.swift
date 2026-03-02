@@ -37,16 +37,16 @@ struct ExampleDetailView: View {
 
                     HStack {
                         Button {
-                            Task { await vm.updateAllTokensIfMissing() }
+                            Task { await vm.recreateTokensFromSentence() }
                         } label: {
-                            if vm.isUpdatingAllTokens {
+                            if vm.isRecreatingTokens {
                                 ProgressView()
                             } else {
-                                Text("전체 수정")
+                                Text("토큰 재생성")
                             }
                         }
                         .buttonStyle(.bordered)
-                        .disabled(vm.isUpdatingAllTokens)
+                        .disabled(vm.isRecreatingTokens)
 
                         Button {
                             Task { await vm.copyTokenSummary() }

@@ -9,6 +9,9 @@ struct MainTabView: View {
             VocabularyListView().tabItem { Text("학습 단어") }
             ExamplesSearchView().tabItem { Text("예문") }
             ExerciseSearchView().tabItem { Text("연습문제") }
+            ExerciseAttemptListView().tabItem { Text("시도 기록") }
+            ExerciseQueueListView().tabItem { Text("학습 큐") }
+            UserLessonTargetStateListView().tabItem { Text("목표 상태") }
             WordListView().tabItem { Text("사전 단어") }
             CambridgeWebView().tabItem { Text("Cambridge") }
             FormListView().tabItem { Text("포럼") }

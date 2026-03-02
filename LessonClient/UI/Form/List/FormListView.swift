@@ -47,7 +47,7 @@ struct FormListView: View {
                 .navigationDestination(isPresented: $showCreate) {
                     FormCreateView(
                         onFinished: {
-                            showCreate = false
+                            //showCreate = false
                         }
                     )
                 }

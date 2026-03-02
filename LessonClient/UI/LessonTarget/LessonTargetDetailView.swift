@@ -21,9 +21,7 @@ struct LessonTargetDetailView: View {
             Section("기본 정보") {
                 TextField("lesson_id", text: $vm.lessonIdText)
                 TextField("target_type", text: $vm.targetType)
-                TextField("word_id", text: $vm.wordIdText)
-                TextField("form_id", text: $vm.formIdText)
-                TextField("sense_id", text: $vm.senseIdText)
+                TextField("vocabulary_id", text: $vm.vocabularyIdText)
                 TextField("display_text", text: $vm.displayText)
                 TextField("sort_index", text: $vm.sortIndexText)
             }

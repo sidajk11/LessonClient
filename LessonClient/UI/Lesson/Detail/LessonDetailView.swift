@@ -12,7 +12,6 @@ struct LessonDetailView: View {
     let lessonId: Int
     @StateObject private var vm: LessonDetailViewModel
     @State private var showDeleteAlert: Bool = false
-    @State private var sensePickerRow: LessonTargetRow?
     var onDismiss: (() -> Void)? = nil
 
     init(lessonId: Int, onDismiss: (() -> Void)? = nil) {
@@ -23,7 +22,6 @@ struct LessonDetailView: View {
 
     var body: some View {
         Form {
-            // MARK: 기본 정보
             Section("기본 정보") {
                 TextField("Unit:", text: $vm.unitText)
                 TextField("토픽", text: $vm.topic)
@@ -38,7 +36,7 @@ struct LessonDetailView: View {
                     }
                 }
             }
-            
+
             NavigationLink("+ 새 단어 만들기") {
                 VocabularyCreateView(onCreated: { words in
                     for word in words {
@@ -47,7 +45,6 @@ struct LessonDetailView: View {
                 })
             }
 
-            // MARK: 단어 목록
             List {
                 Section("단어 (\(vm.vocabularys.count))") {
                     ForEach(vm.vocabularys, id: \.id) { w in
@@ -80,9 +77,8 @@ struct LessonDetailView: View {
             .listStyle(.inset)
             .frame(minHeight: 220)
 
-            // MARK: Word 목록
             List {
-                Section("Words (\(vm.wordRows.count))") {
+                Section("LessonTargets (\(vm.wordRows.count))") {
                     if vm.isLoadingWordRows {
                         ProgressView()
                     }
@@ -103,28 +99,20 @@ struct LessonDetailView: View {
                     ForEach(vm.wordRows) { row in
                         HStack(spacing: 8) {
                             NavigationLink {
-                                if let phraseId = row.phraseId {
-                                    PhraseDetailView(phraseId: phraseId)
-                                } else {
-                                    LessonTargetDetailView(targetId: row.id)
-                                }
+                                LessonTargetDetailView(targetId: row.id)
                             } label: {
-                                Text(row.wordDisplayText)
+                                Text(row.displayText)
                             }
                             .buttonStyle(.plain)
 
                             Spacer()
-                            Button(row.selectedSenseCode) {
-                                sensePickerRow = row
-                            }
-                            .buttonStyle(.bordered)
-                            .disabled(row.senses.isEmpty)
+                            Text(row.targetType)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
 
-                            Spacer()
-                            Text(row.translation)
-
-                            Spacer()
-                            Text(row.formId.map(String.init) ?? "-")
+                            Text("vocabulary_id: \(row.vocabularyId.map(String.init) ?? "-")")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 4)
                     }
@@ -133,7 +121,6 @@ struct LessonDetailView: View {
             .listStyle(.inset)
             .frame(minHeight: 220)
 
-            // MARK: 단어 검색 & 연결
             Section("단어 검색 & 연결") {
                 HStack {
                     TextField("검색", text: $vm.wq)
@@ -171,39 +158,6 @@ struct LessonDetailView: View {
         .alert("레슨 삭제?", isPresented: $showDeleteAlert) {
             Button("삭제", role: .destructive) { Task { await vm.remove() } }
             Button("취소", role: .cancel) { }
-        }
-        .sheet(item: $sensePickerRow) { row in
-            NavigationStack {
-                List {
-                    if let currentRow = vm.wordRows.first(where: { $0.id == row.id }) {
-                        ForEach(currentRow.senses) { sense in
-                            Button {
-                                vm.selectSense(wordRowId: row.id, senseId: sense.id)
-                                sensePickerRow = nil
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(sense.senseCode).bold()
-                                    Text(sense.translations.first(where: { $0.lang.lowercased() == "ko" })?.text ?? "-")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Text(sense.examples.first?.sentence ?? "")
-                                }
-                            }
-                        }
-                    } else {
-                        Text("No senses")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(minWidth: 420, minHeight: 320)
-                .navigationTitle("WordSenseList")
-                .toolbar {
-                    ToolbarItem(placement: .automatic) {
-                        Button("닫기") { sensePickerRow = nil }
-                    }
-                }
-            }
-            .frame(minWidth: 420, minHeight: 360)
         }
         .onDisappear {
             onDismiss?()

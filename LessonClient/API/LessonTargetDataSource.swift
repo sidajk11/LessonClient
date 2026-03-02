@@ -26,25 +26,27 @@ final class LessonTargetDataSource {
         if let targetType, !targetType.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             query.append(.init(name: "target_type", value: targetType.trimmingCharacters(in: .whitespacesAndNewlines)))
         }
-        return try await api.request("GET", "admin/lesson-targets", query: query, as: [LessonTargetRead].self)
+
+        return try await api.request(
+            "GET",
+            "admin/lesson-targets",
+            query: query,
+            as: [LessonTargetRead].self
+        )
     }
 
     @discardableResult
     func createLessonTarget(
         lessonId: Int,
         targetType: String,
-        wordId: Int? = nil,
-        formId: Int? = nil,
-        senseId: Int? = nil,
+        vocabularyId: Int? = nil,
         displayText: String,
         sortIndex: Int
     ) async throws -> LessonTargetRead {
         let body = LessonTargetCreate(
             lessonId: lessonId,
             targetType: targetType,
-            wordId: wordId,
-            formId: formId,
-            senseId: senseId,
+            vocabularyId: vocabularyId,
             displayText: displayText,
             sortIndex: sortIndex
         )
@@ -65,18 +67,14 @@ final class LessonTargetDataSource {
         id: Int,
         lessonId: Int? = nil,
         targetType: String? = nil,
-        wordId: Int? = nil,
-        formId: Int? = nil,
-        senseId: Int? = nil,
+        vocabularyId: Int? = nil,
         displayText: String? = nil,
         sortIndex: Int? = nil
     ) async throws -> LessonTargetRead {
         let body = LessonTargetUpdate(
             lessonId: lessonId,
             targetType: targetType,
-            wordId: wordId,
-            formId: formId,
-            senseId: senseId,
+            vocabularyId: vocabularyId,
             displayText: displayText,
             sortIndex: sortIndex
         )
@@ -88,8 +86,48 @@ final class LessonTargetDataSource {
         )
     }
 
+    // Backward-compatible signatures.
+    @discardableResult
+    func createLessonTarget(
+        lessonId: Int,
+        targetType: String,
+        wordId: Int? = nil,
+        formId: Int? = nil,
+        senseId: Int? = nil,
+        displayText: String,
+        sortIndex: Int
+    ) async throws -> LessonTargetRead {
+        try await createLessonTarget(
+            lessonId: lessonId,
+            targetType: targetType,
+            vocabularyId: wordId,
+            displayText: displayText,
+            sortIndex: sortIndex
+        )
+    }
+
+    @discardableResult
+    func updateLessonTarget(
+        id: Int,
+        lessonId: Int? = nil,
+        targetType: String? = nil,
+        wordId: Int? = nil,
+        formId: Int? = nil,
+        senseId: Int? = nil,
+        displayText: String? = nil,
+        sortIndex: Int? = nil
+    ) async throws -> LessonTargetRead {
+        try await updateLessonTarget(
+            id: id,
+            lessonId: lessonId,
+            targetType: targetType,
+            vocabularyId: wordId,
+            displayText: displayText,
+            sortIndex: sortIndex
+        )
+    }
+
     func deleteLessonTarget(id: Int) async throws {
         _ = try await api.request("DELETE", "admin/lesson-targets/\(id)", as: Empty.self)
     }
 }
-

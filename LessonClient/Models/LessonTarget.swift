@@ -11,24 +11,24 @@ struct LessonTargetRead: Codable, Identifiable {
     let id: Int
     let lessonId: Int
     let targetType: String
-    let phraseId: Int?
-    let wordId: Int?
-    let formId: Int?
-    let senseId: Int?
+    let vocabularyId: Int?
     let displayText: String
     let sortIndex: Int
     let createdAt: Date?
     let lastReviewedAt: Date?
     let nextReviewAt: Date?
 
+    // Backward-compatible aliases for older UI references.
+    var wordId: Int? { vocabularyId }
+    var formId: Int? { nil }
+    var senseId: Int? { nil }
+    var phraseId: Int? { nil }
+
     enum CodingKeys: String, CodingKey {
         case id
         case lessonId = "lesson_id"
         case targetType = "target_type"
-        case phraseId = "phrase_id"
-        case wordId = "word_id"
-        case formId = "form_id"
-        case senseId = "sense_id"
+        case vocabularyId = "vocabulary_id"
         case displayText = "display_text"
         case sortIndex = "sort_index"
         case createdAt = "created_at"
@@ -41,12 +41,10 @@ struct LessonTargetRead: Codable, Identifiable {
         id = try c.decode(Int.self, forKey: .id)
         lessonId = try c.decode(Int.self, forKey: .lessonId)
         targetType = try c.decode(String.self, forKey: .targetType)
-        phraseId = try c.decodeIfPresent(Int.self, forKey: .phraseId)
-        wordId = try c.decodeIfPresent(Int.self, forKey: .wordId)
-        formId = try c.decodeIfPresent(Int.self, forKey: .formId)
-        senseId = try c.decodeIfPresent(Int.self, forKey: .senseId)
+        vocabularyId = try c.decodeIfPresent(Int.self, forKey: .vocabularyId)
         displayText = try c.decode(String.self, forKey: .displayText)
         sortIndex = try c.decode(Int.self, forKey: .sortIndex)
+
         let createdAtRaw = try c.decodeIfPresent(String.self, forKey: .createdAt)
         let lastReviewedAtRaw = try c.decodeIfPresent(String.self, forKey: .lastReviewedAt)
         let nextReviewAtRaw = try c.decodeIfPresent(String.self, forKey: .nextReviewAt)
@@ -59,18 +57,47 @@ struct LessonTargetRead: Codable, Identifiable {
 struct LessonTargetCreate: Codable {
     let lessonId: Int
     let targetType: String
-    let wordId: Int?
-    let formId: Int?
-    let senseId: Int?
+    let vocabularyId: Int?
     let displayText: String
     let sortIndex: Int
+
+    init(
+        lessonId: Int,
+        targetType: String,
+        vocabularyId: Int? = nil,
+        displayText: String,
+        sortIndex: Int
+    ) {
+        self.lessonId = lessonId
+        self.targetType = targetType
+        self.vocabularyId = vocabularyId
+        self.displayText = displayText
+        self.sortIndex = sortIndex
+    }
+
+    // Backward-compatible initializer.
+    init(
+        lessonId: Int,
+        targetType: String,
+        wordId: Int? = nil,
+        formId: Int? = nil,
+        senseId: Int? = nil,
+        displayText: String,
+        sortIndex: Int
+    ) {
+        self.init(
+            lessonId: lessonId,
+            targetType: targetType,
+            vocabularyId: wordId,
+            displayText: displayText,
+            sortIndex: sortIndex
+        )
+    }
 
     enum CodingKeys: String, CodingKey {
         case lessonId = "lesson_id"
         case targetType = "target_type"
-        case wordId = "word_id"
-        case formId = "form_id"
-        case senseId = "sense_id"
+        case vocabularyId = "vocabulary_id"
         case displayText = "display_text"
         case sortIndex = "sort_index"
     }
@@ -79,18 +106,47 @@ struct LessonTargetCreate: Codable {
 struct LessonTargetUpdate: Codable {
     let lessonId: Int?
     let targetType: String?
-    let wordId: Int?
-    let formId: Int?
-    let senseId: Int?
+    let vocabularyId: Int?
     let displayText: String?
     let sortIndex: Int?
+
+    init(
+        lessonId: Int? = nil,
+        targetType: String? = nil,
+        vocabularyId: Int? = nil,
+        displayText: String? = nil,
+        sortIndex: Int? = nil
+    ) {
+        self.lessonId = lessonId
+        self.targetType = targetType
+        self.vocabularyId = vocabularyId
+        self.displayText = displayText
+        self.sortIndex = sortIndex
+    }
+
+    // Backward-compatible initializer.
+    init(
+        lessonId: Int? = nil,
+        targetType: String? = nil,
+        wordId: Int? = nil,
+        formId: Int? = nil,
+        senseId: Int? = nil,
+        displayText: String? = nil,
+        sortIndex: Int? = nil
+    ) {
+        self.init(
+            lessonId: lessonId,
+            targetType: targetType,
+            vocabularyId: wordId,
+            displayText: displayText,
+            sortIndex: sortIndex
+        )
+    }
 
     enum CodingKeys: String, CodingKey {
         case lessonId = "lesson_id"
         case targetType = "target_type"
-        case wordId = "word_id"
-        case formId = "form_id"
-        case senseId = "sense_id"
+        case vocabularyId = "vocabulary_id"
         case displayText = "display_text"
         case sortIndex = "sort_index"
     }
@@ -98,17 +154,42 @@ struct LessonTargetUpdate: Codable {
 
 struct LessonTargetUpsertSchema: Codable {
     let targetType: String
-    let wordId: Int?
-    let formId: Int?
-    let senseId: Int?
+    let vocabularyId: Int?
     let displayText: String
     let sortIndex: Int
 
+    init(
+        targetType: String,
+        vocabularyId: Int? = nil,
+        displayText: String,
+        sortIndex: Int
+    ) {
+        self.targetType = targetType
+        self.vocabularyId = vocabularyId
+        self.displayText = displayText
+        self.sortIndex = sortIndex
+    }
+
+    // Backward-compatible initializer.
+    init(
+        targetType: String,
+        wordId: Int? = nil,
+        formId: Int? = nil,
+        senseId: Int? = nil,
+        displayText: String,
+        sortIndex: Int
+    ) {
+        self.init(
+            targetType: targetType,
+            vocabularyId: wordId,
+            displayText: displayText,
+            sortIndex: sortIndex
+        )
+    }
+
     enum CodingKeys: String, CodingKey {
         case targetType = "target_type"
-        case wordId = "word_id"
-        case formId = "form_id"
-        case senseId = "sense_id"
+        case vocabularyId = "vocabulary_id"
         case displayText = "display_text"
         case sortIndex = "sort_index"
     }

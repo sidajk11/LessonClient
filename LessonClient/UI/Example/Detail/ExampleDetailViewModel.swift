@@ -24,7 +24,7 @@ final class ExampleDetailViewModel: ObservableObject {
     @Published var translationText: String = ""   // excluding en
     @Published var isSaving = false
     @Published var isCreatingTokens = false
-    @Published var isUpdatingAllTokens = false
+    @Published var isRecreatingTokens = false
     @Published var isCopyingTokenSummary = false
     @Published var isShowingSenseAssignSheet = false
     @Published var senseAssignText: String = ""
@@ -212,76 +212,34 @@ final class ExampleDetailViewModel: ObservableObject {
         return output
     }
 
-    func updateAllTokensIfMissing() async {
-        guard let tokens = example?.tokens, !tokens.isEmpty else { return }
-        guard !isUpdatingAllTokens else { return }
+    func recreateTokensFromSentence() async {
+        guard let ex = example else { return }
+        guard !isRecreatingTokens else { return }
+        guard !sentence.trimmed.isEmpty else {
+            error = "문장을 입력해 주세요."
+            return
+        }
 
-        isUpdatingAllTokens = true
-        defer { isUpdatingAllTokens = false }
-
-        var updatedCount = 0
-        var phraseCache: [String: Int?] = [:]
-        var formCache: [String: Int?] = [:]
+        isRecreatingTokens = true
+        defer { isRecreatingTokens = false }
 
         do {
-            for token in tokens {
-                let trimmed = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty, !punctuationSet.contains(trimmed) else { continue }
-
-                var phraseId = token.phraseId
-                var formId = token.formId
-
-                if phraseId == nil {
-                    let phraseKey = normalizedTokenKey(trimmed)
-                    if let cached = phraseCache[phraseKey] {
-                        phraseId = cached
-                    } else {
-                        let rows = try? await PhraseDataSource.shared.listPhrases(q: trimmed, limit: 200)
-                        let found = rows?.first(where: { normalizedTokenKey($0.text) == phraseKey })?.id
-                        phraseCache[phraseKey] = found
-                        phraseId = found
-                    }
-                }
-
-                if formId == nil {
-                    let formKey = trimmed.lowercased()
-                    if let cached = formCache[formKey] {
-                        formId = cached
-                    } else {
-                        let rows = try? await WordFormDataSource.shared.listWordFormsByForm(form: trimmed, limit: 50)
-                        let exact = rows?.first(where: { $0.form.lowercased() == formKey })
-                        let found = (exact ?? rows?.first)?.id
-                        formCache[formKey] = found
-                        formId = found
-                    }
-                }
-
-                if phraseId != token.phraseId || formId != token.formId {
-                    _ = try await SentenceTokenDataSource.shared.updateSentenceToken(
-                        id: token.id,
-                        phraseId: phraseId,
-                        formId: formId
-                    )
-                    updatedCount += 1
-                }
+            for token in ex.tokens {
+                try await SentenceTokenDataSource.shared.deleteSentenceToken(id: token.id)
             }
 
-            let refreshed = try await ExampleDataSource.shared.example(id: exampleId)
+            let refreshed = try await ExampleDataSource.shared.example(id: ex.id)
             example = refreshed
             await refreshTokenKoreanTranslations()
-            info = updatedCount > 0
-                ? "토큰 \(updatedCount)개를 업데이트했습니다."
-                : "추가할 phrase/form 정보가 없습니다."
+
+            await createTokensFromSentence()
         } catch {
             self.error = (error as NSError).localizedDescription
         }
     }
 
-    private func normalizedTokenKey(_ text: String) -> String {
-        text.tokenize().map { $0.lowercased() }.joined(separator: " ")
-    }
-
     func copyTokenSummary() async {
+        
         guard let ex = example else { return }
         guard !isCopyingTokenSummary else { return }
 
@@ -303,40 +261,19 @@ final class ExampleDetailViewModel: ObservableObject {
                 return token.phraseId == nil && !trimmed.isEmpty && !punctuationSet.contains(trimmed)
             }
 
-        var sensesByLemmaCache: [String: [WordSenseRead]] = [:]
-        var wordByFormIdCache: [Int: WordRead] = [:]
         var sensesById: [Int: (lemma: String, sense: WordSenseRead)] = [:]
 
         for token in searchableTokens {
             let surface = token.surface
-            let key = surface.lowercased()
-            var senses: [WordSenseRead]
+            var senses = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: surface, limit: 100)) ?? []
             var lemmaForOutput = surface
 
-            if let cached = sensesByLemmaCache[key] {
-                senses = cached
-            } else {
-                let rows = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: surface, limit: 100)) ?? []
-                sensesByLemmaCache[key] = rows
-                senses = rows
-            }
-
-            if senses.isEmpty, let formId = token.formId {
-                let word: WordRead?
-                if let cached = wordByFormIdCache[formId] {
-                    word = cached
-                } else if let form = try? await WordFormDataSource.shared.wordForm(id: formId),
-                          let loaded = try? await WordDataSource.shared.word(id: form.wordId) {
-                    wordByFormIdCache[formId] = loaded
-                    word = loaded
-                } else {
-                    word = nil
-                }
-
-                if let word {
-                    senses = word.senses
-                    lemmaForOutput = word.lemma
-                }
+            if senses.isEmpty,
+               let formId = token.formId,
+               let form = try? await WordFormDataSource.shared.wordForm(id: formId),
+               let word = try? await WordDataSource.shared.word(id: form.wordId) {
+                senses = word.senses
+                lemmaForOutput = word.lemma
             }
 
             for sense in senses {
