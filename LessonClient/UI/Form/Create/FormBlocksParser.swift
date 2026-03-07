@@ -26,11 +26,6 @@ final class FormBlocksParser {
                 let word = row.word.trimmingCharacters(in: .whitespacesAndNewlines)
                 let form = row.form.trimmingCharacters(in: .whitespacesAndNewlines)
 
-                if word.caseInsensitiveCompare(form) == .orderedSame {
-                    skippedBlocks += 1
-                    continue
-                }
-
                 var draft = row
                 if word.isEmpty || form.isEmpty {
                     draft.status = .failed(message: "word/form is required")

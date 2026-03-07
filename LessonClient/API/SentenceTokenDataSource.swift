@@ -12,6 +12,11 @@ final class SentenceTokenDataSource {
     private let api = APIClient.shared
     private init() {}
 
+    private func jsonNullable<T>(_ value: T?) -> Any {
+        if let value { return value }
+        return NSNull()
+    }
+
     func listSentenceTokens(
         exampleId: Int? = nil,
         phraseId: Int? = nil,
@@ -110,6 +115,42 @@ final class SentenceTokenDataSource {
             "PUT",
             "admin/sentence-tokens/\(id)",
             jsonBody: body.toDict(),
+            as: SentenceTokenRead.self
+        )
+    }
+
+    /// Replace token fields with nullable payload (`null` 포함 PUT).
+    /// recreateTokensFromSentence 같은 전체 재계산 흐름에서 사용.
+    @discardableResult
+    func replaceSentenceToken(
+        id: Int,
+        exampleId: Int,
+        tokenIndex: Int,
+        surface: String,
+        phraseId: Int? = nil,
+        wordId: Int? = nil,
+        formId: Int? = nil,
+        senseId: Int? = nil,
+        pos: String? = nil,
+        startIndex: Int? = nil,
+        endIndex: Int? = nil
+    ) async throws -> SentenceTokenRead {
+        let body: [String: Any] = [
+            "example_id": exampleId,
+            "token_index": tokenIndex,
+            "surface": surface,
+            "phrase_id": jsonNullable(phraseId),
+            "word_id": jsonNullable(wordId),
+            "form_id": jsonNullable(formId),
+            "sense_id": jsonNullable(senseId),
+            "pos": jsonNullable(pos),
+            "start_index": jsonNullable(startIndex),
+            "end_index": jsonNullable(endIndex)
+        ]
+        return try await api.request(
+            "PUT",
+            "admin/sentence-tokens/\(id)",
+            jsonBody: body,
             as: SentenceTokenRead.self
         )
     }

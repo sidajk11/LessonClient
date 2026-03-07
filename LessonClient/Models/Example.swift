@@ -8,6 +8,8 @@ struct Example: Codable, Identifiable {
     let lessonTargetId: Int?
     let phraseId: Int?
     let wordText: String?
+    let phraseText: String?
+    let unit: Int?
     let translations: [ExampleTranslation]
     let exercises: [Exercise]
     let tokens: [SentenceTokenRead]
@@ -19,6 +21,8 @@ struct Example: Codable, Identifiable {
         case lessonTargetId = "lesson_target_id"
         case phraseId = "phrase_id"
         case wordText = "vocabulary_text"
+        case phraseText = "phrase_text"
+        case unit
         case translations
         case exercises
         case tokens
@@ -32,6 +36,8 @@ struct Example: Codable, Identifiable {
         lessonTargetId = try c.decodeIfPresent(Int.self, forKey: .lessonTargetId)
         phraseId = try c.decodeIfPresent(Int.self, forKey: .phraseId)
         wordText = try c.decodeIfPresent(String.self, forKey: .wordText)
+        phraseText = try c.decodeIfPresent(String.self, forKey: .phraseText)
+        unit = try c.decodeIfPresent(Int.self, forKey: .unit)
         translations = try c.decodeIfPresent([ExampleTranslation].self, forKey: .translations) ?? []
         exercises = try c.decodeIfPresent([Exercise].self, forKey: .exercises) ?? []
         tokens = try c.decodeIfPresent([SentenceTokenRead].self, forKey: .tokens) ?? []

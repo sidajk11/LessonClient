@@ -121,7 +121,7 @@ Parsing: blocks=\(result.totalBlocks), parsed=\(parsedCount), ready=\(readyCount
         defer { isAutoAdding = false }
 
         do {
-            var words = try await fetchWordsWithoutForms(limit: 200)
+            var words = try await fetchWordsWithoutForms(limit: 200, offset: 20)
             guard !words.isEmpty else {
                 statusMessage = "AutoAdd: 폼이 없는 단어가 없습니다."
                 resetAutoSession()
@@ -129,11 +129,13 @@ Parsing: blocks=\(result.totalBlocks), parsed=\(parsedCount), ready=\(readyCount
             }
 
             words = words.filter { !$0.lemma.contains("'") && !$0.lemma.contains(" ") }
+            words = words.filter { NL.getLemma(of: $0.lemma) == $0.lemma }
             guard !words.isEmpty else {
                 statusMessage = "AutoAdd: 처리 가능한 단어가 없습니다."
                 resetAutoSession()
                 return
             }
+            
 
             autoWordsQueue = words
             autoTotalCount = words.count
@@ -328,33 +330,23 @@ Parsing: blocks=\(result.totalBlocks), parsed=\(parsedCount), ready=\(readyCount
         return (success, fail, skippedCount)
     }
 
-    private func fetchWordsWithoutForms(limit: Int = 200) async throws -> [WordRead] {
-        try await wordDS.listWordsWithoutForms(limit: limit, offset: 0)
+    private func fetchWordsWithoutForms(limit: Int = 200, offset: Int = 0) async throws -> [WordRead] {
+        try await wordDS.listWordsWithoutForms(limit: limit, offset: offset)
     }
 
     private func makePrompt(for word: String) -> String {
         """
 사용자가 영어 단어를 입력하면, 그 단어의 모든 활용형(form)과 각 형태의 유형(form_type), 한국어 설명(explain_ko)을 출력합니다. 
-출력 형식은 다음과 같이 통일합니다:
+
 singular은 출력하지마
+없으면 출력하지마
 
-word:
-form:
-form_type:
-explain_ko:
+출력 형식에 맞게 출력해줘
 
-예시 입력: be
-
-예시 출력:
-word: be
-form: am
-form_type: present_singular_1st
-explain_ko: 1인칭 단수 현재형 (I am) – 나는 …이다/있다
-
-word: be
-form: is
-form_type: present_singular_3rd
-explain_ko: 3인칭 단수 현재형 (he/she/it is) – 그는/그녀는/그것은 …이다/있다
+word: <단어>
+form: <활용형>
+form_type: <형태 유형>
+explain_ko: <한국어 설명>
 
 사용자가 입력한 단어에 맞는 모든 form과 form_type, 한국어 설명을 위 형식으로 나열하세요.
 

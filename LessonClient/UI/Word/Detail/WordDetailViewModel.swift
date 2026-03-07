@@ -28,6 +28,11 @@ final class WordDetailViewModel: ObservableObject {
     @Published var addTranslationsText: String = ""
     @Published var isAddingTranslations: Bool = false
 
+    // sense 추가용
+    @Published var showAddSenseSheet: Bool = false
+    @Published var addSenseText: String = ""
+    @Published var isAddingSense: Bool = false
+
     init(wordId: Int, dataSource: WordDataSource = .shared) {
         self.wordId = wordId
         self.dataSource = dataSource
@@ -45,15 +50,91 @@ final class WordDetailViewModel: ObservableObject {
             self.senses = word.senses
             senseCellList = senses.map { sense in
                 WordViewData.Sense(
+                    wordId: sense.wordId,
                     senseCode: sense.senseCode,
                     tr1: sense.translations.first?.text ?? "",
                     tr2: sense.translations.first(where: { $0.lang == "ja" })?.text ?? "",
                     pos: sense.pos?.uppercased() ?? "",
-                    explain: sense.translations.first(where: { $0.lang == "ko" })?.explain ?? ""
+                    explain: sense.translations.first(where: { $0.lang == "ko" })?.explain ?? "",
+                    examples: sense.examples
+                        .map(\.sentence)
+                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty }
                 )
             }
         } catch {
             self.errorMessage = error.localizedDescription
+        }
+    }
+
+    /// 단일 sense 입력을 현재 단어에 추가
+    /// - Returns: 성공 여부 (sheet 닫을지 판단용)
+    func addSenseToCurrentWord() async -> Bool {
+        guard !isAddingSense else { return false }
+        guard let word else {
+            errorMessage = "단어 정보를 먼저 불러와 주세요."
+            return false
+        }
+
+        let raw = addSenseText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else {
+            errorMessage = "입력값이 비어 있습니다."
+            return false
+        }
+
+        isAddingSense = true
+        errorMessage = nil
+        defer { isAddingSense = false }
+
+        do {
+            let parsed = try SenseBulkParser.parse(raw)
+            guard parsed.items.count == 1 else {
+                errorMessage = "한 번에 sense 1개만 추가할 수 있어요."
+                return false
+            }
+            guard let item = parsed.items.first else {
+                errorMessage = "sense 블록을 찾지 못했어요."
+                return false
+            }
+
+            let inputWord = parsed.head.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let currentWord = word.lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            guard inputWord == currentWord else {
+                errorMessage = "입력 word(\(parsed.head))가 현재 단어(\(word.lemma))와 다릅니다."
+                return false
+            }
+
+            let nextSenseCode = "s\(senses.count + 1)"
+            let createdSense = try await dataSource.createWordSense(
+                wordId: word.id,
+                senseCode: nextSenseCode,
+                explain: item.sense,
+                pos: item.pos,
+                cefr: item.cefr.uppercased(),
+                translations: [
+                    .init(lang: "ko", text: item.ko, explain: item.sense)
+                ]
+            )
+
+            let exampleText = item.example.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !exampleText.isEmpty && exampleText != "-" {
+                let createdExample = try await ExampleDataSource.shared.createExample(
+                    sentence: exampleText,
+                    vocabularyId: word.id
+                )
+                _ = try await dataSource.attachExampleToWordSense(
+                    senseId: createdSense.id,
+                    exampleId: createdExample.id,
+                    isPrime: true
+                )
+            }
+
+            await load()
+            addSenseText = ""
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
         }
     }
 
@@ -233,4 +314,3 @@ extension WordDetailViewModel {
         return text
     }
 }
-

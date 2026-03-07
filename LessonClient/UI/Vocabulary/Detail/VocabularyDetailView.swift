@@ -102,11 +102,11 @@ struct VocabularyDetailView: View {
 
                             Spacer()
 
-                            // 항상 보이는 삭제 버튼
-                            Button(role: .destructive) {
-                                Task { await vm.deleteExample(example.id) }
+                            // 항상 보이는 detach 버튼
+                            Button {
+                                Task { await vm.detachExample(example.id) }
                             } label: {
-                                Label("삭제", systemImage: "trash")
+                                Label("detatch", systemImage: "link.badge.minus")
                                     .labelStyle(.titleAndIcon)
                             }
                             .buttonStyle(.bordered)
@@ -145,4 +145,3 @@ struct VocabularyDetailView: View {
         }
     }
 }
-

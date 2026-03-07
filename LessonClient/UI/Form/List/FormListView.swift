@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct FormListView: View {
     @StateObject private var vm: FormListViewModel
     @State private var showCreate = false
@@ -60,6 +58,30 @@ struct FormListView: View {
     // 기존 Table UI 그대로 분리
     private var content: some View {
         VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                TextField("Form 검색", text: $vm.query)
+                    .textFieldStyle(.roundedBorder)
+                    .submitLabel(.search)
+                    .onSubmit {
+                        Task { await vm.refresh() }
+                    }
+
+                Button("검색") {
+                    Task { await vm.refresh() }
+                }
+                .buttonStyle(.borderedProminent)
+
+                if !vm.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Button("초기화") {
+                        vm.query = ""
+                        Task { await vm.refresh() }
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 8)
 
             if let msg = vm.errorMessage {
                 Text(msg)
@@ -69,10 +91,23 @@ struct FormListView: View {
 
             Table(vm.items, selection: $vm.selection) {
                 TableColumn("Form") { item in
-                    Text(item.form)
-                        .task {
-                            await vm.loadMoreIfNeeded(currentItem: item)
+                    HStack(spacing: 8) {
+                        Text(item.form)
+                        Spacer(minLength: 0)
+                        Button(role: .destructive) {
+                            Task { await vm.delete(item) }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.red)
                         }
+                        .buttonStyle(.plain)
+                        .help("Delete")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .task {
+                        await vm.loadMoreIfNeeded(currentItem: item)
+                    }
                 }
 
                 TableColumn("Type") { item in

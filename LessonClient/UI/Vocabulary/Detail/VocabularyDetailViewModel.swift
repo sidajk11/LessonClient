@@ -169,15 +169,14 @@ final class VocabularyDetailViewModel: ObservableObject {
         }
     }
 
-    func deleteExample(_ id: Int) async {
+    func detachExample(_ id: Int) async {
         do {
-            try await ExampleDataSource.shared.deleteExample(id: id)
+            _ = try await ExampleDataSource.shared.detachExampleFromVocabulary(id: id)
             examples.removeAll { $0.id == id }
-            info = "예문이 삭제되었습니다."
+            info = "예문 연결이 해제되었습니다."
         } catch {
             self.error = (error as NSError).localizedDescription
         }
     }
 }
-
 

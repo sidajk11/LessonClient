@@ -58,7 +58,7 @@ struct ExampleDetailView: View {
                             }
                         }
                         .buttonStyle(.bordered)
-                        .disabled(vm.isCopyingTokenSummary)
+                        .disabled(vm.isCopyingTokenSummary || vm.isDeletingTokens)
 
                         Button("번역 할 토큰 복사") {
                             vm.copyTokenTranslationSummary()
@@ -74,30 +74,47 @@ struct ExampleDetailView: View {
                             vm.openTokenTranslationSheet()
                         }
                         .buttonStyle(.bordered)
+                        
+                        Button(role: .destructive) {
+                            Task { await vm.deleteAllTokens() }
+                        } label: {
+                            if vm.isDeletingTokens {
+                                ProgressView()
+                            } else {
+                                Text("토큰삭제")
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(vm.isDeletingTokens || vm.isRecreatingTokens)
+                        
                         Spacer()
                     }
 
                     ForEach(tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })) { token in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(token.tokenIndex). \(token.surface)")
-                                .font(.body)
-                            Text("phrase:\(token.phraseId.map(String.init) ?? "-") word:\(token.wordId.map(String.init) ?? "-") form:\(token.formId.map(String.init) ?? "-") sense:\(token.senseId.map(String.init) ?? "-")")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            if let ko = vm.tokenKoreanById[token.id], !ko.isEmpty {
-                                Text("ko: \(ko)")
+                        NavigationLink {
+                            SentenceTokenDetailView(tokenId: token.id)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(token.tokenIndex). \(token.surface)")
+                                    .font(.body)
+                                Text("tokenId:\(token.id) phrase:\(token.phraseId.map(String.init) ?? "-") word:\(token.wordId.map(String.init) ?? "-") form:\(token.formId.map(String.init) ?? "-") sense:\(token.senseId.map(String.init) ?? "-")")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                if let ko = vm.tokenKoreanById[token.id], !ko.isEmpty {
+                                    Text("ko: \(ko)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                let tokenKoTranslation = token.translations.first(where: {
+                                    let lang = $0.lang.lowercased()
+                                    return lang == "ko" || lang.hasPrefix("ko-")
+                                })?.text ?? "-"
+                                Text("문장에서 번역: \(tokenKoTranslation)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                            let tokenKoTranslation = token.translations.first(where: {
-                                let lang = $0.lang.lowercased()
-                                return lang == "ko" || lang.hasPrefix("ko-")
-                            })?.text ?? "-"
-                            Text("문장에서 번역: \(tokenKoTranslation)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            .padding(.vertical, 2)
                         }
-                        .padding(.vertical, 2)
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 8) {

@@ -25,6 +25,7 @@ final class ExampleDetailViewModel: ObservableObject {
     @Published var isSaving = false
     @Published var isCreatingTokens = false
     @Published var isRecreatingTokens = false
+    @Published var isDeletingTokens = false
     @Published var isCopyingTokenSummary = false
     @Published var isShowingSenseAssignSheet = false
     @Published var senseAssignText: String = ""
@@ -36,12 +37,14 @@ final class ExampleDetailViewModel: ObservableObject {
     @Published var error: String?
     @Published var info: String?
 
+    /// 뷰모델의 대상 예문/문맥 정보를 설정합니다.
     init(exampleId: Int, lesson: Lesson?, word: Vocabulary?) {
         self.exampleId = exampleId
         self.lesson = lesson
         self.word = word
     }
 
+    /// 예문 상세를 조회하고 화면 편집 상태를 초기화합니다.
     func load() async {
         do {
             let ex = try await ExampleDataSource.shared.example(id: exampleId)
@@ -62,6 +65,7 @@ final class ExampleDetailViewModel: ObservableObject {
         }
     }
 
+    /// 현재 입력된 문장/번역을 예문에 저장합니다.
     func save() async {
         guard !sentence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             error = "문장을 입력해 주세요."
@@ -86,6 +90,7 @@ final class ExampleDetailViewModel: ObservableObject {
         }
     }
 
+    /// 문장을 기준으로 토큰을 새로 생성합니다.
     func createTokensFromSentence() async {
         guard let ex = example else { return }
         guard ex.tokens.isEmpty else { return }
@@ -121,6 +126,7 @@ final class ExampleDetailViewModel: ObservableObject {
         }
     }
 
+    /// 토큰 배열에서 구문(phrase) 매칭을 우선 적용해 병합합니다.
     private func mergeTokensWithPhrases(_ tokens: [String]) async -> [TokenDraft] {
         let queryTokens = Array(
             Set(
@@ -182,6 +188,7 @@ final class ExampleDetailViewModel: ObservableObject {
         return merged
     }
 
+    /// 각 토큰 표면형에 대응하는 formId를 조회해 채웁니다.
     private func fillFormIds(in drafts: [TokenDraft]) async -> [TokenDraft] {
         var cache: [String: Int?] = [:]
         var output: [TokenDraft] = []
@@ -212,6 +219,7 @@ final class ExampleDetailViewModel: ObservableObject {
         return output
     }
 
+    /// 기존 토큰을 문장 기준으로 다시 정렬/치환합니다.
     func recreateTokensFromSentence() async {
         guard let ex = example else { return }
         guard !isRecreatingTokens else { return }
@@ -224,6 +232,66 @@ final class ExampleDetailViewModel: ObservableObject {
         defer { isRecreatingTokens = false }
 
         do {
+            if ex.tokens.isEmpty {
+                await createTokensFromSentence()
+                return
+            }
+
+            let rawParts = sentence.trimmed.tokenize()
+            let mergedDrafts = await mergeTokensWithPhrases(rawParts)
+            let drafts = await fillFormIds(in: mergedDrafts)
+            guard !drafts.isEmpty else {
+                error = "토큰화할 문장이 없습니다."
+                return
+            }
+
+            let existing = ex.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
+            let updateCount = min(existing.count, drafts.count)
+
+            var updatedCount = 0
+
+            if updateCount > 0 {
+                for idx in 0..<updateCount {
+                    let token = existing[idx]
+                    let draft = drafts[idx]
+                    _ = try await SentenceTokenDataSource.shared.replaceSentenceToken(
+                        id: token.id,
+                        exampleId: ex.id,
+                        tokenIndex: idx,
+                        surface: draft.surface,
+                        phraseId: token.phraseId ?? draft.phraseId,
+                        wordId: nil,
+                        formId: token.formId ?? draft.formId,
+                        senseId: token.senseId,
+                        pos: nil,
+                        startIndex: nil,
+                        endIndex: nil
+                    )
+                    updatedCount += 1
+                }
+            }
+
+            let refreshed = try await ExampleDataSource.shared.example(id: ex.id)
+            example = refreshed
+            await refreshTokenKoreanTranslations()
+            let untouchedExisting = max(existing.count - updateCount, 0)
+            let ignoredDrafts = max(drafts.count - updateCount, 0)
+            info = "토큰 갱신 완료 (updated=\(updatedCount), untouched=\(untouchedExisting), ignored=\(ignoredDrafts))"
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
+    }
+
+    /// 현재 예문의 모든 토큰을 삭제합니다.
+    func deleteAllTokens() async {
+        guard !isDeletingTokens else { return }
+        guard let ex = example else { return }
+        guard !ex.tokens.isEmpty else { return }
+
+        isDeletingTokens = true
+        defer { isDeletingTokens = false }
+
+        do {
             for token in ex.tokens {
                 try await SentenceTokenDataSource.shared.deleteSentenceToken(id: token.id)
             }
@@ -231,26 +299,36 @@ final class ExampleDetailViewModel: ObservableObject {
             let refreshed = try await ExampleDataSource.shared.example(id: ex.id)
             example = refreshed
             await refreshTokenKoreanTranslations()
-
-            await createTokensFromSentence()
+            info = "토큰 \(ex.tokens.count)개가 삭제되었습니다."
         } catch {
             self.error = (error as NSError).localizedDescription
         }
     }
 
+    /// 전체 복사
     func copyTokenSummary() async {
-        
-        guard let ex = example else { return }
-        guard !isCopyingTokenSummary else { return }
+        guard let text = await tokenSummary() else { return }
+        copyToPasteboard(text)
+    }
+    
+    func tokenSummary() async -> String? {
+        guard let ex = example else { return nil }
+        guard !isCopyingTokenSummary else { return nil }
 
         isCopyingTokenSummary = true
         defer { isCopyingTokenSummary = false }
 
+        let text = await makeTokenSummaryText(example: ex)
+        return text
+    }
+
+    /// 토큰/센스 요약 문자열을 생성합니다.
+    private func makeTokenSummaryText(example ex: Example) async -> String {
         let sortedTokens = ex.tokens.sorted { $0.tokenIndex < $1.tokenIndex }
         let tokenLines = sortedTokens
             .filter { token in
                 let trimmed = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
-                return token.phraseId == nil && !trimmed.isEmpty && !punctuationSet.contains(trimmed)
+                return !trimmed.isEmpty && !punctuationSet.contains(trimmed)
             }
             .map { token in
                 "token_id:\(token.id) \(token.surface)"
@@ -258,38 +336,71 @@ final class ExampleDetailViewModel: ObservableObject {
         let searchableTokens = sortedTokens
             .filter { token in
                 let trimmed = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
-                return token.phraseId == nil && !trimmed.isEmpty && !punctuationSet.contains(trimmed)
+                return !trimmed.isEmpty && !punctuationSet.contains(trimmed)
             }
 
         var sensesById: [Int: (lemma: String, sense: WordSenseRead)] = [:]
 
         for token in searchableTokens {
             let surface = token.surface
-            var senses = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: surface, limit: 100)) ?? []
+            let sensesSurface = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: surface, limit: 100)) ?? []
             var lemmaForOutput = surface
-
-            if senses.isEmpty,
-               let formId = token.formId,
+            
+            var sensesForm: [WordSenseRead] = []
+            if let formId = token.formId,
                let form = try? await WordFormDataSource.shared.wordForm(id: formId),
                let word = try? await WordDataSource.shared.word(id: form.wordId) {
-                senses = word.senses
+                sensesForm = word.senses
                 lemmaForOutput = word.lemma
             }
-
-            for sense in senses {
+            
+            let lemma = NL.getLemma(of: surface)
+            var sensesLemma: [WordSenseRead] = []
+            if sensesForm.isEmpty {
+                sensesLemma = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: lemma, limit: 100)) ?? []
+            }
+            
+            for sense in sensesSurface {
+                sensesById[sense.id] = (lemma: surface, sense: sense)
+            }
+            for sense in sensesForm {
                 sensesById[sense.id] = (lemma: lemmaForOutput, sense: sense)
+            }
+            for sense in sensesLemma {
+                sensesById[sense.id] = (lemma: lemma, sense: sense)
             }
         }
 
-        let sensesLines = sensesById.values
-            .sorted { $0.sense.id < $1.sense.id }
-            .map { row in
-                "sense_id:\(row.sense.id) \(row.lemma) (\(row.sense.senseCode)): \(row.sense.explain)"
+        var senseDetailCache: [Int: WordSenseRead] = [:]
+        var sensesLines: [String] = []
+        for row in sensesById.values.sorted(by: { $0.sense.id < $1.sense.id }) {
+            let sense: WordSenseRead
+            if !row.sense.examples.isEmpty {
+                sense = row.sense
+            } else if let cached = senseDetailCache[row.sense.id] {
+                sense = cached
+            } else if let loaded = try? await WordDataSource.shared.wordSense(senseId: row.sense.id) {
+                senseDetailCache[row.sense.id] = loaded
+                sense = loaded
+            } else {
+                sense = row.sense
             }
 
+            let examplesText = sense.examples
+                .map(\.sentence)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " | ")
+
+            let line = """
+sense_id:\(sense.id) \(row.lemma) (\(sense.senseCode)): \(sense.explain)
+sense_examples: \(examplesText.isEmpty ? "-" : examplesText)
+"""
+            sensesLines.append(line)
+        }
+
         let text = """
-        sentence:
-        \(ex.sentence)
+        sentence: \(ex.sentence)
 
         tokens:
         \(tokenLines.isEmpty ? "-" : tokenLines.joined(separator: "\n"))
@@ -297,8 +408,7 @@ final class ExampleDetailViewModel: ObservableObject {
         senses:
         \(sensesLines.isEmpty ? "-" : sensesLines.joined(separator: "\n"))
         """
-
-        copyToPasteboard(text)
+        return text
 
 //        let instruction = """
 //
@@ -321,6 +431,12 @@ final class ExampleDetailViewModel: ObservableObject {
 //        }
     }
 
+    /// 외부 입력 텍스트를 token_id/sense_id 쌍으로 파싱합니다.
+    func parseSenseAssignmentsText(_ raw: String) throws -> [(tokenId: Int, senseId: Int)] {
+        try parseSenseAssignments(from: raw)
+    }
+
+    /// 토큰 번역 작업용 요약 텍스트를 클립보드에 복사합니다.
     func copyTokenTranslationSummary() {
         guard let ex = example else { return }
 
@@ -345,6 +461,7 @@ final class ExampleDetailViewModel: ObservableObject {
         copyToPasteboard(text)
     }
 
+    /// 문자열을 플랫폼별 클립보드에 복사합니다.
     private func copyToPasteboard(_ text: String) {
 #if canImport(AppKit)
         NSPasteboard.general.clearContents()
@@ -354,15 +471,18 @@ final class ExampleDetailViewModel: ObservableObject {
 #endif
     }
 
+    /// sense 일괄 지정 시트를 엽니다.
     func openSenseAssignSheet() {
         isShowingSenseAssignSheet = true
     }
 
+    /// 토큰 번역 일괄 입력 시트를 엽니다.
     func openTokenTranslationSheet() {
         tokenTranslationText = ""
         isShowingTokenTranslationSheet = true
     }
 
+    /// 입력된 토큰 번역을 파싱해 서버에 반영합니다.
     func applyTokenTranslations() async {
         guard !isApplyingTokenTranslations else { return }
         guard let ex = example else {
@@ -419,6 +539,7 @@ final class ExampleDetailViewModel: ObservableObject {
         }
     }
 
+    /// 입력된 sense 할당 정보를 토큰에 반영합니다.
     func applySenseAssignments() async {
         guard let ex = example else { return }
         guard !isApplyingSenseAssign else { return }
@@ -469,6 +590,7 @@ final class ExampleDetailViewModel: ObservableObject {
         }
     }
 
+    /// token_id/sense_id 텍스트 블록을 파싱합니다.
     private func parseSenseAssignments(from raw: String) throws -> [(tokenId: Int, senseId: Int)] {
         enum ParseError: LocalizedError {
             case invalidLine(String)
@@ -525,6 +647,7 @@ final class ExampleDetailViewModel: ObservableObject {
         return rows
     }
 
+    /// token_id 기준 다국어 번역 텍스트를 파싱합니다.
     private func parseTokenTranslations(from raw: String) throws -> [(tokenId: Int, translations: [String: String])] {
         enum ParseError: LocalizedError {
             case invalidLine(String)
@@ -544,6 +667,7 @@ final class ExampleDetailViewModel: ObservableObject {
         var tokenId: Int?
         var translations: [String: String] = [:]
 
+        // 빈 줄 단위로 현재 토큰 번역 블록을 확정합니다.
         func flush() {
             if let tokenId, !translations.isEmpty {
                 output.append((tokenId: tokenId, translations: translations))
@@ -580,6 +704,7 @@ final class ExampleDetailViewModel: ObservableObject {
         return output
     }
 
+    /// 토큰별 한국어 뜻을 sense/phrase 기준으로 다시 계산합니다.
     private func refreshTokenKoreanTranslations() async {
         guard let tokens = example?.tokens, !tokens.isEmpty else {
             tokenKoreanById = [:]
@@ -629,6 +754,7 @@ final class ExampleDetailViewModel: ObservableObject {
         tokenKoreanById = koByTokenId
     }
 
+    /// sense 번역 목록에서 한국어 텍스트를 추출합니다.
     private func koreanText(from sense: WordSenseRead) -> String? {
         if let text = sense.translations.first(where: { isKorean($0.lang) })?.text.trimmed, !text.isEmpty {
             return text
@@ -636,6 +762,7 @@ final class ExampleDetailViewModel: ObservableObject {
         return nil
     }
 
+    /// phrase 번역 목록에서 한국어 텍스트를 추출합니다.
     private func koreanText(from phrase: PhraseRead) -> String? {
         if let text = phrase.translations.first(where: { isKorean($0.lang) })?.text.trimmed, !text.isEmpty {
             return text
@@ -643,6 +770,7 @@ final class ExampleDetailViewModel: ObservableObject {
         return nil
     }
 
+    /// 언어 코드가 한국어 계열인지 판단합니다.
     private func isKorean(_ lang: String) -> Bool {
         let lowered = lang.lowercased()
         return lowered == "ko" || lowered.hasPrefix("ko-")

@@ -28,12 +28,30 @@ struct WordDetailView: View {
                             .font(.title3)
                             .fontWeight(.semibold)
 
-                        Button {
-                            vm.showAddTranslationsSheet = true
-                        } label: {
-                            Label("번역추가", systemImage: "plus.bubble")
+                        HStack(spacing: 8) {
+                            Button {
+                                vm.showAddTranslationsSheet = true
+                            } label: {
+                                Label("번역추가", systemImage: "plus.bubble")
+                            }
+                            .buttonStyle(.bordered)
+
+                            Button {
+                                vm.addSenseText = """
+                                word: \(word.lemma)
+                                sense:
+                                pos:
+                                cefr:
+                                ko:
+                                example:
+                                """
+                                vm.showAddSenseSheet = true
+                            } label: {
+                                Label("sense추가", systemImage: "plus")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(vm.isAddingSense)
                         }
-                        .buttonStyle(.bordered)
                     }
                 }
             }
@@ -68,9 +86,26 @@ struct WordDetailView: View {
                                 Text(cellData.pos)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
+
+                                Text("wordId: \(cellData.wordId)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
                             }
 
                             Text(cellData.explain)
+
+                            if !cellData.examples.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Examples")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    ForEach(Array(cellData.examples.enumerated()), id: \.offset) { _, sentence in
+                                        Text("• \(sentence)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
                         }
                         .padding(.vertical, 4)
                     }
@@ -112,7 +147,7 @@ struct WordDetailView: View {
             }
 
             ToolbarItem(placement: .status) {
-                if vm.isDeletingAll || vm.isAddingTranslations {
+                if vm.isDeletingAll || vm.isAddingTranslations || vm.isAddingSense {
                     ProgressView()
                 }
             }
@@ -167,6 +202,41 @@ struct WordDetailView: View {
                 }
             }
         }
+        .sheet(isPresented: $vm.showAddSenseSheet) {
+            NavigationStack {
+                VStack(spacing: 12) {
+                    Text("아래 형식으로 입력하면 현재 단어에 sense가 추가됩니다.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    TextEditor(text: $vm.addSenseText)
+                        .font(.system(.body, design: .monospaced))
+                        .padding(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.secondary.opacity(0.25))
+                        )
+                        .frame(minHeight: 260)
+                }
+                .padding()
+                .navigationTitle("sense 추가")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("취소") { vm.showAddSenseSheet = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("추가") {
+                            Task {
+                                let ok = await vm.addSenseToCurrentWord()
+                                if ok { vm.showAddSenseSheet = false }
+                            }
+                        }
+                        .disabled(vm.isAddingSense || vm.addSenseText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+            }
+        }
         .overlay(alignment: .top) {
             if showCopyToast {
                 Text(copyStatus)
@@ -181,4 +251,3 @@ struct WordDetailView: View {
         .task { await vm.load() }
     }
 }
-

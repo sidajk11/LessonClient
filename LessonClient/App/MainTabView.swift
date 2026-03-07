@@ -1,6 +1,12 @@
 // MainTabView.swift
 import SwiftUI
 
+struct HomeView: View {
+    var body: some View {
+        MainTabView()
+    }
+}
+
 struct MainTabView: View {
     @EnvironmentObject var app: AppState
     var body: some View {
@@ -22,5 +28,15 @@ struct MainTabView: View {
         .toolbar {
             Button("로그아웃") { app.logout() }
         }
+    }
+}
+
+@MainActor
+struct HomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        let app = AppState()
+        app.user = User(id: 1, email: "preview@example.com")
+        return HomeView()
+            .environmentObject(app)
     }
 }

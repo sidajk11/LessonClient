@@ -205,10 +205,6 @@ explain: 3인칭 단수 현재형 (he/she/it is) – 그는/그녀는/그것은 
     }
 
     private var previewRows: [FormCreateViewModel.DraftRow] {
-        vm.rows.filter { row in
-            let word = row.word.trimmingCharacters(in: .whitespacesAndNewlines)
-            let form = row.form.trimmingCharacters(in: .whitespacesAndNewlines)
-            return word.caseInsensitiveCompare(form) != .orderedSame
-        }
+        vm.rows
     }
 }

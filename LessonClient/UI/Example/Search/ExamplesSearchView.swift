@@ -37,6 +37,16 @@ struct ExamplesSearchView: View {
                         .onSubmit { Task { await vm.search() } }
 
                     Button("검색") { Task { await vm.search() } }
+
+                    Button("전체 생성") {
+                        Task { await vm.recreateAllTokens() }
+                    }
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isAddingSenses || vm.items.isEmpty)
+
+                    Button("sense 추가") {
+                        Task { await vm.addSensesForAllExamples() }
+                    }
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isAddingSenses || vm.items.isEmpty)
                 }
                 .padding(.horizontal)
 
@@ -44,45 +54,117 @@ struct ExamplesSearchView: View {
                     ProgressView().padding(.top, 8)
                 }
 
+                if vm.isRecreatingAllTokens {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text(vm.bulkProgressText ?? "전체 생성 중...")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                } else if let message = vm.bulkProgressText, !message.isEmpty {
+                    HStack {
+                        Text(message)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                }
+
+                if vm.isAddingSenses {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text(vm.senseProgressText ?? "sense 추가 중...")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                } else if let message = vm.senseProgressText, !message.isEmpty {
+                    HStack {
+                        Text(message)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                }
+
                 // 결과 리스트
-                List(vm.items) { row in
-                    VStack(alignment: .leading, spacing: 6) {
-                        NavigationLink {
-                            ExampleDetailView(exampleId: row.id, lesson: nil, word: nil)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(row.sentence)
-                                    .font(.body)
+                List {
+                    ForEach(vm.items) { row in
+                        VStack(alignment: .leading, spacing: 6) {
+                            NavigationLink {
+                                ExampleDetailView(exampleId: row.id, lesson: nil, word: nil)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                        Text(vm.unitBadgeText(for: row))
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.secondary.opacity(0.15))
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
 
-                                Text(row.translations.toString())
+                                        Text(row.sentence)
+                                            .font(.body)
+                                    }
 
-                                Text("단어: \(row.wordText ?? (row.vocabularyId.map { "#\($0)" } ?? "-"))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    Text(row.translations.toString())
 
-                                let sortedTokens = row.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
-                                let checkTargets = sortedTokens.filter { token in
-                                    !punctuationSet.contains(token.surface)
-                                }
-                                let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
-                                    token.senseId != nil || token.phraseId != nil
-                                }
-
-                                if isTokenReady {
-                                    Text("tokens: \(sortedTokens.map(\.surface).joinTokens())")
+                                    Text("단어: \(row.wordText ?? (row.vocabularyId.map { "#\($0)" } ?? "-"))")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
-                                } else {
-                                    Text("tokens 수정 필요")
-                                        .font(.caption)
-                                        .foregroundStyle(.orange)
-                                }
-                            }
-                            .padding(.vertical, 2)
-                        }
 
+                                    let sortedTokens = row.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
+                                    let checkTargets = sortedTokens.filter { token in
+                                        !punctuationSet.contains(token.surface)
+                                    }
+                                    let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
+                                        token.senseId != nil || token.phraseId != nil
+                                    }
+
+                                    if isTokenReady {
+                                        Text("tokens: \(sortedTokens.map(\.surface).joinTokens())")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    } else {
+                                        Text("tokens 수정 필요")
+                                            .font(.caption)
+                                            .foregroundStyle(.orange)
+                                    }
+
+                                    let senseTokens = checkTargets.map { token -> String in
+                                        guard let senseId = token.senseId else {
+                                            return "\(token.surface):-"
+                                        }
+                                        let senseCode = vm.senseCodeBySenseId[senseId] ?? "#\(senseId)"
+                                        let cefr = vm.senseCefrBySenseId[senseId] ?? "-"
+                                        return "\(senseCode)(\(cefr))"
+                                    }
+                                    if !senseTokens.isEmpty {
+                                        Text("senses: \(senseTokens.joined(separator: ", "))")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .padding(.vertical, 2)
+                            }
+
+                        }
+                        .padding(.vertical, 2)
                     }
-                    .padding(.vertical, 2)
+
+                    if vm.isLoading && !vm.items.isEmpty {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                    }
                 }
             }
             .navigationTitle("예문")

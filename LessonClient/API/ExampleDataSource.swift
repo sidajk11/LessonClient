@@ -12,6 +12,11 @@ final class ExampleDataSource {
     private let api = APIClient.shared
     private init() {}
 
+    private func jsonNullable<T>(_ value: T?) -> Any {
+        if let value { return value }
+        return NSNull()
+    }
+
     // MARK: - Public API
 
     /// 예문 생성
@@ -76,6 +81,20 @@ final class ExampleDataSource {
         _ = try await api.request("DELETE", "admin/examples/\(id)", as: Empty.self)
     }
 
+    /// 예문을 특정 단어(vocabulary)와의 연결만 해제 (예문 자체는 유지)
+    @discardableResult
+    func detachExampleFromVocabulary(id: Int) async throws -> Example {
+        let body: [String: Any] = [
+            "vocabulary_id": jsonNullable(Optional<Int>.none)
+        ]
+        return try await api.request(
+            "PUT",
+            "admin/examples/\(id)",
+            jsonBody: body,
+            as: Example.self
+        )
+    }
+
     // MARK: - Search
 
     /// 예문 검색
@@ -83,7 +102,7 @@ final class ExampleDataSource {
     ///   - q: 부분검색(문장/번역 등)
     ///   - level: lesson.level
     ///   - unit: lesson.unit
-    ///   - limit: 최대 개수(1...200)
+    ///   - limit: 최대 개수(1...400)
     func search(
         q: String = "",
         level: Int? = nil,
@@ -93,7 +112,7 @@ final class ExampleDataSource {
         let trimmedQ = q.trimmingCharacters(in: .whitespacesAndNewlines)
         var query: [URLQueryItem] = [
             .init(name: "q", value: trimmedQ),
-            .init(name: "limit", value: "\(min(max(limit, 1), 200))")
+            .init(name: "limit", value: "\(min(max(limit, 1), 400))")
         ]
         if let level { query.append(.init(name: "level", value: "\(level)")) }
         if let unit { query.append(.init(name: "unit", value: "\(unit)")) }

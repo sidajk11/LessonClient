@@ -70,6 +70,9 @@ struct WordListView: View {
                                     Text(w.lemma)
                                         .font(.headline)
                                     Spacer()
+                                    Text("wordId: \(w.id)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                     if let p = w.senses.first(where: { $0.isPrimary })?.pos, !p.isEmpty {
                                         Text(p)
                                             .font(.caption)
