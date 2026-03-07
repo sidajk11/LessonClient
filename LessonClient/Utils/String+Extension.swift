@@ -45,9 +45,7 @@ extension String {
         }
 
         parts.append("(?:a\\.m\\.|p\\.m\\.)")
-        //parts.append("[A-Za-z]+(?:['’][A-Za-z]+)?")
-        //parts.append("[\\p{L}\\p{M}]+(?:['’][\\p{L}\\p{M}]+)?")
-        parts.append("[\\p{L}\\p{M}]+(?:[\\p{Pd}'’][\\p{L}\\p{M}]+)*")
+        parts.append("[\\p{L}\\p{M}]+(?:[\\p{Pd}'’][\\p{L}\\p{M}]+)*(?:['’])?")
         parts.append("\\d+(?:\\.\\d+)?")
         parts.append("[.,!?;:()\\[\\]{}\"']")
 
