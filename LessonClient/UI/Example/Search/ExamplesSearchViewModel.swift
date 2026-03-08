@@ -215,21 +215,6 @@ final class ExamplesSearchViewModel: ObservableObject {
 """
     }
 
-    private func makeSensePrompt(copyText: String) -> String {
-        """
-입력한 tokens들이 문장에서 해당되는 senseid를 출력
-내용에 해당되는 sense_id없으면 비워줘 (the, on, get, in, make, take, have, so는 가장 비슷한것 찾아줘)
-다른 설명 없이 아래 출력방식만 반복해서 출력
-
-출력방식
-token:
-token_id:
-sense_id:
-
-\(copyText)
-"""
-    }
-
     func addSensesForAllExamples() async {
         guard !isAddingSenses else { return }
         guard !isRecreatingAllTokens else { return }
@@ -279,7 +264,7 @@ sense_id:
                 continue
             }
 
-            let prompt = makeSensePrompt(copyText: tokenSummary)
+            let prompt = Prompt.makeSensePrompt(copyText: tokenSummary)
 
             do {
                 let result = try await openAIClient.generateText(prompt: prompt)

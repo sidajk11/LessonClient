@@ -36,6 +36,8 @@ final class ExampleDetailViewModel: ObservableObject {
     @Published var tokenKoreanById: [Int: String] = [:]
     @Published var error: String?
     @Published var info: String?
+    
+    private let tokenPhraseMerger = SentenceTokenPhraseMerger()
 
     /// 뷰모델의 대상 예문/문맥 정보를 설정합니다.
     init(exampleId: Int, lesson: Lesson?, word: Vocabulary?) {
@@ -96,7 +98,8 @@ final class ExampleDetailViewModel: ObservableObject {
         guard ex.tokens.isEmpty else { return }
 
         let rawParts = sentence.trimmed.tokenize()
-        let mergedDrafts = await mergeTokensWithPhrases(rawParts)
+        let mergedTokens = await tokenPhraseMerger.merge(tokens: rawParts)
+        let mergedDrafts = mergedTokens.map { TokenDraft(surface: $0.surface, phraseId: $0.phraseId, formId: nil) }
         let drafts = await fillFormIds(in: mergedDrafts)
         guard !drafts.isEmpty else {
             error = "토큰화할 문장이 없습니다."
@@ -124,68 +127,6 @@ final class ExampleDetailViewModel: ObservableObject {
         } catch {
             self.error = (error as NSError).localizedDescription
         }
-    }
-
-    /// 토큰 배열에서 구문(phrase) 매칭을 우선 적용해 병합합니다.
-    private func mergeTokensWithPhrases(_ tokens: [String]) async -> [TokenDraft] {
-        let queryTokens = Array(
-            Set(
-                tokens
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                    .filter { !$0.isEmpty && !punctuationSet.contains($0) }
-                    .map { $0.lowercased() }
-            )
-        )
-        guard !queryTokens.isEmpty else {
-            return tokens.map { TokenDraft(surface: $0, phraseId: nil, formId: nil) }
-        }
-
-        var phraseById: [Int: PhraseRead] = [:]
-        for token in queryTokens {
-            if let rows = try? await PhraseDataSource.shared.listPhrases(q: token, limit: 200) {
-                for row in rows {
-                    phraseById[row.id] = row
-                }
-            }
-        }
-
-        let phrasePatterns: [(id: Int, tokens: [String])] = phraseById.values
-            .map { (id: $0.id, tokens: $0.text.tokenize()) }
-            .filter { $0.tokens.count >= 2 }
-            .sorted { lhs, rhs in lhs.tokens.count > rhs.tokens.count }
-
-        guard !phrasePatterns.isEmpty else {
-            return tokens.map { TokenDraft(surface: $0, phraseId: nil, formId: nil) }
-        }
-
-        var merged: [TokenDraft] = []
-        var i = 0
-        while i < tokens.count {
-            var matched: (id: Int, tokens: [String])? = nil
-
-            for pattern in phrasePatterns {
-                guard i + pattern.tokens.count <= tokens.count else { continue }
-
-                let window = Array(tokens[i..<(i + pattern.tokens.count)])
-                let isSame = zip(window, pattern.tokens).allSatisfy { a, b in
-                    a.lowercased() == b.lowercased()
-                }
-                if isSame {
-                    matched = (id: pattern.id, tokens: window)
-                    break
-                }
-            }
-
-            if let matched {
-                merged.append(.init(surface: matched.tokens.joinTokens(), phraseId: matched.id, formId: nil))
-                i += matched.tokens.count
-            } else {
-                merged.append(.init(surface: tokens[i], phraseId: nil, formId: nil))
-                i += 1
-            }
-        }
-
-        return merged
     }
 
     /// 각 토큰 표면형에 대응하는 formId를 조회해 채웁니다.
@@ -238,7 +179,8 @@ final class ExampleDetailViewModel: ObservableObject {
             }
 
             let rawParts = sentence.trimmed.tokenize()
-            let mergedDrafts = await mergeTokensWithPhrases(rawParts)
+            let mergedTokens = await tokenPhraseMerger.merge(tokens: rawParts)
+            let mergedDrafts = mergedTokens.map { TokenDraft(surface: $0.surface, phraseId: $0.phraseId, formId: nil) }
             let drafts = await fillFormIds(in: mergedDrafts)
             guard !drafts.isEmpty else {
                 error = "토큰화할 문장이 없습니다."
