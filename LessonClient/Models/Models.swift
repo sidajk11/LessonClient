@@ -78,17 +78,24 @@ struct Vocabulary: Codable, Identifiable {
     let id: Int
     var text: String
     var lessonId: Int?   // detach 허용 시 서버 nullable
-    var lessonTargetId: Int?
-    var lessonTarget: LessonTargetRead?
+    var wordId: Int?
+    var formId: Int?
+    var senseId: Int?
+    var phraseId: Int?
     var translations: [VocabularyTranslation]
     var examples: [Example]?
+
+    var lessonTargetId: Int? { nil }
+    var lessonTarget: LessonTargetRead? { nil }
 
     enum CodingKeys: String, CodingKey {
         case id
         case text
         case lessonId = "lesson_id"
-        case lessonTargetId = "lesson_target_id"
-        case lessonTarget = "lesson_target"
+        case wordId = "word_id"
+        case formId = "form_id"
+        case senseId = "sense_id"
+        case phraseId = "phrase_id"
         case translations
         case examples
     }
@@ -98,8 +105,10 @@ struct Vocabulary: Codable, Identifiable {
         id = try c.decode(Int.self, forKey: .id)
         text = try c.decode(String.self, forKey: .text)
         lessonId = try c.decodeIfPresent(Int.self, forKey: .lessonId)
-        lessonTargetId = try c.decodeIfPresent(Int.self, forKey: .lessonTargetId)
-        lessonTarget = try c.decodeIfPresent(LessonTargetRead.self, forKey: .lessonTarget)
+        wordId = try c.decodeIfPresent(Int.self, forKey: .wordId)
+        formId = try c.decodeIfPresent(Int.self, forKey: .formId)
+        senseId = try c.decodeIfPresent(Int.self, forKey: .senseId)
+        phraseId = try c.decodeIfPresent(Int.self, forKey: .phraseId)
         translations = try c.decodeIfPresent([VocabularyTranslation].self, forKey: .translations) ?? []
         examples = try c.decodeIfPresent([Example].self, forKey: .examples)
     }
@@ -118,17 +127,37 @@ struct VocabularyTranslation: Codable {
 struct VocabularyUpdate: Codable {
     let text: String?
     let lessonId: Int?           // ✅ lesson_id 선택적
+    let wordId: Int?
+    let formId: Int?
+    let senseId: Int?
+    let phraseId: Int?
     let translations: [VocabularyTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case text
         case lessonId = "lesson_id"
+        case wordId = "word_id"
+        case formId = "form_id"
+        case senseId = "sense_id"
+        case phraseId = "phrase_id"
         case translations
     }
     
-    init(text: String? = nil, lessonId: Int? = nil, translations: [VocabularyTranslation]? = nil) {
+    init(
+        text: String? = nil,
+        lessonId: Int? = nil,
+        wordId: Int? = nil,
+        formId: Int? = nil,
+        senseId: Int? = nil,
+        phraseId: Int? = nil,
+        translations: [VocabularyTranslation]? = nil
+    ) {
         self.text = text
         self.lessonId = lessonId
+        self.wordId = wordId
+        self.formId = formId
+        self.senseId = senseId
+        self.phraseId = phraseId
         self.translations = translations
     }
 }

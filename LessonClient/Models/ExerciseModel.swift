@@ -9,7 +9,9 @@ import Foundation
 
 struct Exercise: Codable, Identifiable {
     let id: Int
-    let exampleId: Int
+    let exampleId: Int?
+    let vocabularyId: Int?
+    let vocabularyIds: [Int]
 
     let type: ExerciseType
 
@@ -24,10 +26,15 @@ struct Exercise: Codable, Identifiable {
 
     let expectedAnswers: [ExpectedAnswer]
     let translations: [ExerciseTranslation]
+    let vocabularies: [Vocabulary]
+
+    var lessonTargetId: Int? { vocabularyId }
 
     enum CodingKeys: String, CodingKey {
         case id
         case exampleId = "example_id"
+        case vocabularyId = "vocabulary_id"
+        case vocabularyIds = "vocabulary_ids"
         case type
         case prompt
         case explanation
@@ -37,12 +44,15 @@ struct Exercise: Codable, Identifiable {
         case expectedAnswers = "expected_answers"
         case correctOptions = "correct_options"
         case translations
+        case vocabularies
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
-        exampleId = try c.decode(Int.self, forKey: .exampleId)
+        exampleId = try c.decodeIfPresent(Int.self, forKey: .exampleId)
+        vocabularyId = try c.decodeIfPresent(Int.self, forKey: .vocabularyId)
+        vocabularyIds = try c.decodeIfPresent([Int].self, forKey: .vocabularyIds) ?? []
         type = try c.decode(ExerciseType.self, forKey: .type)
         prompt = try c.decodeIfPresent(String.self, forKey: .prompt)
         explanation = try c.decodeIfPresent(String.self, forKey: .explanation)
@@ -52,6 +62,7 @@ struct Exercise: Codable, Identifiable {
         expectedAnswers = try c.decodeIfPresent([ExpectedAnswer].self, forKey: .expectedAnswers) ?? []
         correctOptions = try c.decodeIfPresent([ExerciseCorrectOption].self, forKey: .correctOptions) ?? []
         translations = try c.decodeIfPresent([ExerciseTranslation].self, forKey: .translations) ?? []
+        vocabularies = try c.decodeIfPresent([Vocabulary].self, forKey: .vocabularies) ?? []
     }
 }
 
@@ -59,7 +70,9 @@ struct Exercise: Codable, Identifiable {
 
 struct ExerciseCreate: Codable {
     var exampleId: Int?
+    var vocabularyId: Int?
     var type: ExerciseType
+    var vocabularyIds: [Int]?
 
     var prompt: String?
     var explanation: String?
@@ -76,7 +89,9 @@ struct ExerciseCreate: Codable {
 
     enum CodingKeys: String, CodingKey {
         case exampleId = "example_id"
+        case vocabularyId = "vocabulary_id"
         case type
+        case vocabularyIds = "vocabulary_ids"
         case prompt
         case explanation
         case timeLimitSec = "time_limit_sec"
@@ -91,8 +106,10 @@ struct ExerciseCreate: Codable {
 
 struct ExerciseUpdate: Codable {
     var exampleId: Int?
+    var vocabularyId: Int?
 
     var type: ExerciseType?
+    var vocabularyIds: [Int]?
     var prompt: String?
     var explanation: String?
     var timeLimitSec: Int?
@@ -108,7 +125,9 @@ struct ExerciseUpdate: Codable {
 
     enum CodingKeys: String, CodingKey {
         case exampleId = "example_id"
+        case vocabularyId = "vocabulary_id"
         case type
+        case vocabularyIds = "vocabulary_ids"
         case prompt
         case explanation
         case timeLimitSec = "time_limit_sec"
@@ -314,9 +333,9 @@ struct ExpectedAnswer: Codable {
     let langCode: LangCode
     let answerText: String
     let normalizedAnswer: String?
-    let altAnswersJson: [String]?
-    let gradingRule: GradingRule?
-    let gradingConfigJson: JSONValue?
+    let altAnswersJson: [String]
+    let gradingRule: GradingRule
+    let gradingConfigJson: JSONValue
 
     enum CodingKeys: String, CodingKey {
         case langCode = "lang_code"
@@ -325,6 +344,16 @@ struct ExpectedAnswer: Codable {
         case altAnswersJson = "alt_answers_json"
         case gradingRule = "grading_rule"
         case gradingConfigJson = "grading_config_json"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        langCode = try c.decode(LangCode.self, forKey: .langCode)
+        answerText = try c.decode(String.self, forKey: .answerText)
+        normalizedAnswer = try c.decodeIfPresent(String.self, forKey: .normalizedAnswer)
+        altAnswersJson = try c.decodeIfPresent([String].self, forKey: .altAnswersJson) ?? []
+        gradingRule = try c.decodeIfPresent(GradingRule.self, forKey: .gradingRule) ?? .exact
+        gradingConfigJson = try c.decodeIfPresent(JSONValue.self, forKey: .gradingConfigJson) ?? .object([:])
     }
 }
 

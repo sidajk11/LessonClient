@@ -17,16 +17,24 @@ struct MainTabView: View {
             ExerciseSearchView().tabItem { Text("연습문제") }
             ExerciseAttemptListView().tabItem { Text("시도 기록") }
             ExerciseQueueListView().tabItem { Text("학습 큐") }
-            UserLessonTargetStateListView().tabItem { Text("목표 상태") }
+            UserVocabularyStateListView().tabItem { Text("단어 상태") }
             WordListView().tabItem { Text("사전 단어") }
             CambridgeWebView().tabItem { Text("Cambridge") }
             FormListView().tabItem { Text("포럼") }
             PhraseListView().tabItem { Text("구문") }
             PronounciationListView().tabItem { Text("발음법") }
             TTSView().tabItem { Text("TTS") }
+            SenseListView().tabItem { Text("Sense") }
         }
         .toolbar {
             Button("로그아웃") { app.logout() }
+        }
+        .task {
+            do {
+                _ = try await PhraseDataSource.shared.loadPhases()
+            } catch {
+                print("Failed to load phrases: \(error)")
+            }
         }
     }
 }

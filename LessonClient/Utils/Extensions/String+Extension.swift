@@ -7,7 +7,7 @@
 
 import Foundation
 
-let punctuationSet: [String] = [",", ".", "!", "?"]
+let punctuationSet: [String] = [",", ".", "!", "?", ":"]
 
 let expressions = [
     "Christmas Day", "New Year's Eve", "Christmas Eve", "New Year's Day",
@@ -85,7 +85,9 @@ extension String {
 
 extension String {
     func isSameWord(word: String) -> Bool {
-        let result = NL.getLemma(of: self).lowercased() == NL.getLemma(of: word).lowercased()
+        let wordA = NL.getLemma(of: self)?.lowercased() ?? self
+        let wordB = NL.getLemma(of: word)?.lowercased() ?? word
+        let result = wordA == wordB
         if !result, word.contains(self) {
             if word == self + "s" {
                 return true

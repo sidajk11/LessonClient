@@ -14,11 +14,24 @@ final class ExerciseDataSource {
 
     // MARK: - Public API
 
-    /// 목록 조회 (예문별 필터 가능)
-    func list(exampleId: Int? = nil, limit: Int = 50) async throws -> [Exercise] {
+    /// 목록 조회 (예문 / vocabulary 필터 가능)
+    func list(
+        exampleId: Int? = nil,
+        vocabularyId: Int? = nil,
+        limit: Int = 50
+    ) async throws -> [Exercise] {
         var query: [URLQueryItem] = [.init(name: "limit", value: "\(min(max(limit, 1), 200))")]
         if let exampleId { query.append(.init(name: "example_id", value: "\(exampleId)")) }
+        if let vocabularyId { query.append(.init(name: "vocabulary_id", value: "\(vocabularyId)")) }
         return try await api.request("GET", "admin/exercises", query: query, as: [Exercise].self)
+    }
+
+    func listByLessonTarget(
+        exampleId: Int? = nil,
+        lessonTargetId: Int,
+        limit: Int = 50
+    ) async throws -> [Exercise] {
+        try await list(exampleId: exampleId, vocabularyId: lessonTargetId, limit: limit)
     }
 
     /// 단건 조회
@@ -118,4 +131,3 @@ final class ExerciseDataSource {
         )
     }
 }
-

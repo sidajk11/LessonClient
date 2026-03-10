@@ -7,10 +7,10 @@
 
 import Foundation
 
-struct UserLessonTargetStateRead: Codable, Identifiable {
+struct UserVocabularyStateRead: Codable, Identifiable {
     let id: Int
     let userId: Int
-    let lessonTargetId: Int
+    let vocabularyId: Int
     let attempts: Int
     let correctAttempts: Int
     let wrongStreak: Int
@@ -19,10 +19,12 @@ struct UserLessonTargetStateRead: Codable, Identifiable {
     let nextReviewAt: Date?
     let updatedAt: Date?
 
+    var lessonTargetId: Int { vocabularyId }
+
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
-        case lessonTargetId = "lesson_target_id"
+        case vocabularyId = "vocabulary_id"
         case attempts
         case correctAttempts = "correct_attempts"
         case wrongStreak = "wrong_streak"
@@ -36,7 +38,7 @@ struct UserLessonTargetStateRead: Codable, Identifiable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
         userId = try c.decode(Int.self, forKey: .userId)
-        lessonTargetId = try c.decode(Int.self, forKey: .lessonTargetId)
+        vocabularyId = try c.decode(Int.self, forKey: .vocabularyId)
         attempts = try c.decode(Int.self, forKey: .attempts)
         correctAttempts = try c.decode(Int.self, forKey: .correctAttempts)
         wrongStreak = try c.decode(Int.self, forKey: .wrongStreak)
@@ -46,16 +48,16 @@ struct UserLessonTargetStateRead: Codable, Identifiable {
         let nextReviewAtRaw = try c.decodeIfPresent(String.self, forKey: .nextReviewAt)
         let updatedAtRaw = try c.decodeIfPresent(String.self, forKey: .updatedAt)
 
-        lastAttemptAt = UserLessonTargetStateDateParser.parse(lastAttemptAtRaw)
-        lastCorrectAt = UserLessonTargetStateDateParser.parse(lastCorrectAtRaw)
-        nextReviewAt = UserLessonTargetStateDateParser.parse(nextReviewAtRaw)
-        updatedAt = UserLessonTargetStateDateParser.parse(updatedAtRaw)
+        lastAttemptAt = UserVocabularyStateDateParser.parse(lastAttemptAtRaw)
+        lastCorrectAt = UserVocabularyStateDateParser.parse(lastCorrectAtRaw)
+        nextReviewAt = UserVocabularyStateDateParser.parse(nextReviewAtRaw)
+        updatedAt = UserVocabularyStateDateParser.parse(updatedAtRaw)
     }
 }
 
-struct UserLessonTargetStateCreate: Codable {
+struct UserVocabularyStateCreate: Codable {
     let userId: Int
-    let lessonTargetId: Int
+    let vocabularyId: Int
     let attempts: Int
     let correctAttempts: Int
     let wrongStreak: Int
@@ -65,7 +67,7 @@ struct UserLessonTargetStateCreate: Codable {
 
     init(
         userId: Int,
-        lessonTargetId: Int,
+        vocabularyId: Int,
         attempts: Int = 0,
         correctAttempts: Int = 0,
         wrongStreak: Int = 0,
@@ -74,7 +76,7 @@ struct UserLessonTargetStateCreate: Codable {
         nextReviewAt: Date? = nil
     ) {
         self.userId = userId
-        self.lessonTargetId = lessonTargetId
+        self.vocabularyId = vocabularyId
         self.attempts = attempts
         self.correctAttempts = correctAttempts
         self.wrongStreak = wrongStreak
@@ -85,7 +87,7 @@ struct UserLessonTargetStateCreate: Codable {
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
-        case lessonTargetId = "lesson_target_id"
+        case vocabularyId = "vocabulary_id"
         case attempts
         case correctAttempts = "correct_attempts"
         case wrongStreak = "wrong_streak"
@@ -95,9 +97,9 @@ struct UserLessonTargetStateCreate: Codable {
     }
 }
 
-struct UserLessonTargetStateUpdate: Codable {
+struct UserVocabularyStateUpdate: Codable {
     let userId: Int?
-    let lessonTargetId: Int?
+    let vocabularyId: Int?
     let attempts: Int?
     let correctAttempts: Int?
     let wrongStreak: Int?
@@ -107,7 +109,7 @@ struct UserLessonTargetStateUpdate: Codable {
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
-        case lessonTargetId = "lesson_target_id"
+        case vocabularyId = "vocabulary_id"
         case attempts
         case correctAttempts = "correct_attempts"
         case wrongStreak = "wrong_streak"
@@ -117,7 +119,11 @@ struct UserLessonTargetStateUpdate: Codable {
     }
 }
 
-private enum UserLessonTargetStateDateParser {
+typealias UserLessonTargetStateRead = UserVocabularyStateRead
+typealias UserLessonTargetStateCreate = UserVocabularyStateCreate
+typealias UserLessonTargetStateUpdate = UserVocabularyStateUpdate
+
+private enum UserVocabularyStateDateParser {
     static func parse(_ raw: String?) -> Date? {
         guard let raw, !raw.isEmpty else { return nil }
         return iso8601WithFractional.date(from: raw) ?? iso8601.date(from: raw)

@@ -8,15 +8,15 @@
 import Foundation
 
 @MainActor
-final class UserLessonTargetStateListViewModel: ObservableObject {
-    @Published var items: [UserLessonTargetStateRead] = []
+final class UserVocabularyStateListViewModel: ObservableObject {
+    @Published var items: [UserVocabularyStateRead] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
     @Published var userIdText: String = ""
-    @Published var lessonTargetIdText: String = ""
+    @Published var vocabularyIdText: String = ""
 
-    private let ds = UserLessonTargetStateDataSource.shared
+    private let ds = UserVocabularyStateDataSource.shared
     private let limit: Int = 100
     private var offset: Int = 0
     private var hasMore: Bool = true
@@ -25,7 +25,7 @@ final class UserLessonTargetStateListViewModel: ObservableObject {
         errorMessage = nil
 
         guard let userId = parsedIdAllowingEmpty(from: userIdText, label: "userId"),
-              let lessonTargetId = parsedIdAllowingEmpty(from: lessonTargetIdText, label: "lessonTargetId") else {
+              let vocabularyId = parsedIdAllowingEmpty(from: vocabularyIdText, label: "vocabularyId") else {
             return
         }
 
@@ -36,9 +36,9 @@ final class UserLessonTargetStateListViewModel: ObservableObject {
         hasMore = true
 
         do {
-            let result = try await ds.listUserLessonTargetStates(
+            let result = try await ds.listUserVocabularyStates(
                 userId: userId,
-                lessonTargetId: lessonTargetId,
+                vocabularyId: vocabularyId,
                 limit: limit,
                 offset: offset
             )
@@ -50,12 +50,12 @@ final class UserLessonTargetStateListViewModel: ObservableObject {
         }
     }
 
-    func loadMoreIfNeeded(current item: UserLessonTargetStateRead) async {
+    func loadMoreIfNeeded(current item: UserVocabularyStateRead) async {
         guard !isLoading, hasMore else { return }
         guard item.id == items.last?.id else { return }
 
         guard let userId = parsedIdAllowingEmpty(from: userIdText, label: "userId"),
-              let lessonTargetId = parsedIdAllowingEmpty(from: lessonTargetIdText, label: "lessonTargetId") else {
+              let vocabularyId = parsedIdAllowingEmpty(from: vocabularyIdText, label: "vocabularyId") else {
             return
         }
 
@@ -63,9 +63,9 @@ final class UserLessonTargetStateListViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let result = try await ds.listUserLessonTargetStates(
+            let result = try await ds.listUserVocabularyStates(
                 userId: userId,
-                lessonTargetId: lessonTargetId,
+                vocabularyId: vocabularyId,
                 limit: limit,
                 offset: offset
             )
@@ -77,10 +77,10 @@ final class UserLessonTargetStateListViewModel: ObservableObject {
         }
     }
 
-    func delete(_ item: UserLessonTargetStateRead) async {
+    func delete(_ item: UserVocabularyStateRead) async {
         errorMessage = nil
         do {
-            try await ds.deleteUserLessonTargetState(id: item.id)
+            try await ds.deleteUserVocabularyState(id: item.id)
             items.removeAll { $0.id == item.id }
         } catch {
             errorMessage = error.localizedDescription
@@ -102,3 +102,5 @@ final class UserLessonTargetStateListViewModel: ObservableObject {
         return .some(value)
     }
 }
+
+typealias UserLessonTargetStateListViewModel = UserVocabularyStateListViewModel

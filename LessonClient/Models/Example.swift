@@ -5,22 +5,25 @@ struct Example: Codable, Identifiable {
     let id: Int
     let sentence: String
     let vocabularyId: Int?
-    let lessonTargetId: Int?
     let phraseId: Int?
-    let wordText: String?
-    let phraseText: String?
+    let vocabularyText: String
+    let phraseText: String
     let unit: Int?
     let translations: [ExampleTranslation]
     let exercises: [Exercise]
     let tokens: [SentenceTokenRead]
 
+    var wordText: String? {
+        let trimmed = vocabularyText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     enum CodingKeys: String, CodingKey {
         case id
         case sentence
         case vocabularyId = "vocabulary_id"
-        case lessonTargetId = "lesson_target_id"
         case phraseId = "phrase_id"
-        case wordText = "vocabulary_text"
+        case vocabularyText = "vocabulary_text"
         case phraseText = "phrase_text"
         case unit
         case translations
@@ -33,10 +36,9 @@ struct Example: Codable, Identifiable {
         id = try c.decode(Int.self, forKey: .id)
         sentence = try c.decode(String.self, forKey: .sentence)
         vocabularyId = try c.decodeIfPresent(Int.self, forKey: .vocabularyId)
-        lessonTargetId = try c.decodeIfPresent(Int.self, forKey: .lessonTargetId)
         phraseId = try c.decodeIfPresent(Int.self, forKey: .phraseId)
-        wordText = try c.decodeIfPresent(String.self, forKey: .wordText)
-        phraseText = try c.decodeIfPresent(String.self, forKey: .phraseText)
+        vocabularyText = try c.decodeIfPresent(String.self, forKey: .vocabularyText) ?? ""
+        phraseText = try c.decodeIfPresent(String.self, forKey: .phraseText) ?? ""
         unit = try c.decodeIfPresent(Int.self, forKey: .unit)
         translations = try c.decodeIfPresent([ExampleTranslation].self, forKey: .translations) ?? []
         exercises = try c.decodeIfPresent([Exercise].self, forKey: .exercises) ?? []
@@ -47,14 +49,12 @@ struct Example: Codable, Identifiable {
 struct ExampleCreate: Codable {
     let sentence: String
     let vocabularyId: Int?
-    let lessonTargetId: Int?
     let phraseId: Int?
     let translations: [ExampleTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case sentence
         case vocabularyId = "vocabulary_id"
-        case lessonTargetId = "lesson_target_id"
         case phraseId = "phrase_id"
         case translations
     }
@@ -63,14 +63,12 @@ struct ExampleCreate: Codable {
 struct ExampleUpdate: Codable {
     let sentence: String?
     let vocabularyId: Int?
-    let lessonTargetId: Int?
     let phraseId: Int?
     let translations: [ExampleTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case sentence
         case vocabularyId = "vocabulary_id"
-        case lessonTargetId = "lesson_target_id"
         case phraseId = "phrase_id"
         case translations
     }
@@ -78,13 +76,11 @@ struct ExampleUpdate: Codable {
     init(
         sentence: String? = nil,
         vocabularyId: Int? = nil,
-        lessonTargetId: Int? = nil,
         phraseId: Int? = nil,
         translations: [ExampleTranslation]? = nil
     ) {
         self.sentence = sentence
         self.vocabularyId = vocabularyId
-        self.lessonTargetId = lessonTargetId
         self.phraseId = phraseId
         self.translations = translations
     }

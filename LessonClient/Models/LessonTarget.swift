@@ -17,12 +17,7 @@ struct LessonTargetRead: Codable, Identifiable {
     let createdAt: Date?
     let lastReviewedAt: Date?
     let nextReviewAt: Date?
-
-    // Backward-compatible aliases for older UI references.
-    var wordId: Int? { vocabularyId }
-    var formId: Int? { nil }
-    var senseId: Int? { nil }
-    var phraseId: Int? { nil }
+    let exercises: [Exercise]
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -34,6 +29,7 @@ struct LessonTargetRead: Codable, Identifiable {
         case createdAt = "created_at"
         case lastReviewedAt = "last_reviewed_at"
         case nextReviewAt = "next_review_at"
+        case exercises
     }
 
     init(from decoder: Decoder) throws {
@@ -51,6 +47,7 @@ struct LessonTargetRead: Codable, Identifiable {
         createdAt = LessonTargetDateParser.parse(createdAtRaw)
         lastReviewedAt = LessonTargetDateParser.parse(lastReviewedAtRaw)
         nextReviewAt = LessonTargetDateParser.parse(nextReviewAtRaw)
+        exercises = try c.decodeIfPresent([Exercise].self, forKey: .exercises) ?? []
     }
 }
 

@@ -20,7 +20,6 @@ struct PhraseDetailView: View {
         Form {
             Section("기본 정보") {
                 TextField("text", text: $vm.text)
-                TextField("lesson_target_id", text: $vm.lessonTargetIdText)
             }
 
             Section("translations") {

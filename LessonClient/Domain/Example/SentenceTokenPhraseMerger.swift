@@ -19,12 +19,13 @@ struct SentenceTokenPhraseMerger {
             return tokens.map { MergedToken(surface: $0, phraseId: nil) }
         }
 
+        _ = try? await PhraseDataSource.shared.loadPhases()
+
         var phraseById: [Int: PhraseRead] = [:]
         for token in queryTokens {
-            if let rows = try? await PhraseDataSource.shared.listPhrases(q: token, limit: 200) {
-                for row in rows {
-                    phraseById[row.id] = row
-                }
+            let rows = await PhraseDataSource.shared.cachedPhrases(q: token, limit: 200)
+            for row in rows {
+                phraseById[row.id] = row
             }
         }
 

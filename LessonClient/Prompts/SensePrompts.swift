@@ -2,27 +2,31 @@
 //  SensePrompts.swift
 //  LessonClient
 //
-//  Created by 정영민 on 3/8/26.
+//  Created by ym on 3/9/26.
 //
 
 import Foundation
 
-struct Prompt {
-}
-
 extension Prompt {
-    static func makeSensePrompt(copyText: String) -> String {
+    static func makeSensePrompt(for word: String) -> String {
         """
-입력한 tokens들이 문장에서 해당되는 senseid를 출력
-내용에 해당되는 sense_id없으면 비워줘 (the, on, get, in, make, take, have, so는 가장 비슷한것 찾아줘)
-다른 설명 없이 아래 출력방식만 반복해서 출력
+영어 단어의 모든 sense들을 빠짐없이 출력하줘.
 
-출력방식
-token:
-token_id:
-sense_id:
 
-\(copyText)
+pos
+CEFR 레벨 (cambridge 사전이랑 동일)
+번역
+example
+
+출력 형식:  (출력형식에 맞게 출력 부가 설명은 하지 말아줘)
+word:
+sense: 
+pos: 
+cefr:
+ko: 
+example: 
+
+\(word)
 """
     }
 }

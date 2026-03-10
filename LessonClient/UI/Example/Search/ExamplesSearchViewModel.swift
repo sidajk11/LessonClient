@@ -226,7 +226,11 @@ final class ExamplesSearchViewModel: ObservableObject {
         isAddingSenses = true
         defer { isAddingSenses = false }
 
-        let targetItems = items
+        let targetItems = await missingSenseTargetItems()
+        guard !targetItems.isEmpty else {
+            senseProgressText = "sense가 비어 있는 token 예문이 없습니다."
+            return
+        }
         let openAIClient = OpenAIClient()
 
         var successExamples = 0
@@ -264,7 +268,7 @@ final class ExamplesSearchViewModel: ObservableObject {
                 continue
             }
 
-            let prompt = Prompt.makeSensePrompt(copyText: tokenSummary)
+            let prompt = Prompt.makeSentenceTokenSensePrompt(copyText: tokenSummary)
 
             do {
                 let result = try await openAIClient.generateText(prompt: prompt)
@@ -312,5 +316,23 @@ final class ExamplesSearchViewModel: ObservableObject {
 sense 추가 중 일부 실패:
 \(preview)
 """
+    }
+
+    private func missingSenseTargetItems() async -> [Example] {
+        if items.count <= 200,
+           let missingExamples = try? await ExampleDataSource.shared.examplesWithoutSenseTokens(limit: items.count) {
+            let missingIds = Set(missingExamples.map(\.id))
+            return items.filter { missingIds.contains($0.id) }
+        }
+
+        return items.filter { example in
+            let checkTargets = example.tokens.filter { token in
+                !punctuationSet.contains(token.surface)
+            }
+            guard !checkTargets.isEmpty else { return false }
+            return checkTargets.contains { token in
+                token.senseId == nil && token.phraseId == nil
+            }
+        }
     }
 }

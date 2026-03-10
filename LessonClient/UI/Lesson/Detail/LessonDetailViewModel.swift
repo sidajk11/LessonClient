@@ -7,12 +7,17 @@
 
 import Foundation
 
-struct LessonTargetRow: Identifiable {
+struct LessonVocabularyRow: Identifiable {
     let id: Int
-    let vocabularyId: Int?
-    let targetType: String
-    let displayText: String
-    let sortIndex: Int
+    let text: String
+    let translations: [VocabularyTranslation]
+}
+
+struct LessonExerciseRow: Identifiable {
+    let id: Int
+    let title: String
+    let type: String
+    let prompt: String?
 }
 
 @MainActor
@@ -30,9 +35,9 @@ final class LessonDetailViewModel: ObservableObject {
     // Vocabularies
     @Published var vocabularys: [Vocabulary] = []
     @Published var wsearch: [Vocabulary] = []
-    @Published var wordRows: [LessonTargetRow] = []
-    @Published var isLoadingWordRows: Bool = false
-    @Published var isCreatingLessonTargets: Bool = false
+    @Published var vocabularyRows: [LessonVocabularyRow] = []
+    @Published var exerciseRows: [LessonExerciseRow] = []
+    @Published var isLoadingVocabularies: Bool = false
 
     // UI state
     @Published var error: String?
@@ -52,7 +57,7 @@ final class LessonDetailViewModel: ObservableObject {
             grammar = lesson.grammar ?? ""
             topic = lesson.translations.koText()
             vocabularys = lesson.vocabularies
-            await loadWordRows()
+            await reloadDerivedRows()
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -69,12 +74,12 @@ final class LessonDetailViewModel: ObservableObject {
                 unit: unit,
                 level: level,
                 grammar: grammar,
-                lessonTargets: buildLessonTargetUpserts(),
+                vocabularyIds: vocabularys.map(\.id),
                 translations: [LessonTranslation(langCode: .ko, topic: topic)]
             )
             model = updated
             vocabularys = updated.vocabularies
-            await loadWordRows()
+            await reloadDerivedRows()
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -93,7 +98,7 @@ final class LessonDetailViewModel: ObservableObject {
             let updated = try await LessonDataSource.shared.attachVocabulary(lessonId: lessonId, vocabularyId: vocabularyId)
             model = updated
             vocabularys = updated.vocabularies
-            await loadWordRows()
+            await reloadDerivedRows()
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -104,7 +109,7 @@ final class LessonDetailViewModel: ObservableObject {
             let updated = try await LessonDataSource.shared.detachVocabulary(lessonId: lessonId, vocabularyId: vocabularyId)
             model = updated
             vocabularys = updated.vocabularies
-            await loadWordRows()
+            await reloadDerivedRows()
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -122,59 +127,56 @@ final class LessonDetailViewModel: ObservableObject {
         }
     }
 
-    func createLessonTargetsFromVocabularies() async {
-        guard !isCreatingLessonTargets else { return }
-        isCreatingLessonTargets = true
-        defer { isCreatingLessonTargets = false }
+    private func reloadDerivedRows() async {
+        isLoadingVocabularies = true
+        defer { isLoadingVocabularies = false }
 
-        do {
-            let upserts = vocabularys.enumerated().map { index, vocabulary in
-                LessonTargetUpsertSchema(
-                    targetType: "word",
-                    vocabularyId: vocabulary.id,
-                    displayText: vocabulary.text,
-                    sortIndex: index
-                )
+        vocabularyRows = vocabularys.map { vocabulary in
+            LessonVocabularyRow(
+                id: vocabulary.id,
+                text: vocabulary.text,
+                translations: vocabulary.translations
+            )
+        }
+
+        let exercisesFromTargets = (model?.lessonTargets ?? [])
+            .sorted { $0.sortIndex < $1.sortIndex }
+            .flatMap(\.exercises)
+        let exercisesFromVocabularyExamples = vocabularys
+            .flatMap { $0.examples ?? [] }
+            .flatMap(\.exercises)
+        let allExercises = uniqueExercises(from: exercisesFromTargets + exercisesFromVocabularyExamples)
+
+        exerciseRows = allExercises.map { exercise in
+            let vocabularyTexts = exercise.vocabularies
+                .map(\.text)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            let title: String
+            if vocabularyTexts.isEmpty {
+                let prompt = exercise.prompt?.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let prompt, !prompt.isEmpty {
+                    title = prompt
+                } else {
+                    title = exercise.type.rawValue
+                }
+            } else {
+                title = vocabularyTexts.joined(separator: ", ")
             }
 
-            let updated = try await LessonDataSource.shared.updateLesson(
-                id: lessonId,
-                lessonTargets: upserts
-            )
-            model = updated
-            vocabularys = updated.vocabularies
-            await loadWordRows()
-        } catch {
-            self.error = (error as NSError).localizedDescription
-        }
-    }
-
-    private func buildLessonTargetUpserts() -> [LessonTargetUpsertSchema] {
-        wordRows.enumerated().map { index, row in
-            LessonTargetUpsertSchema(
-                targetType: row.targetType,
-                vocabularyId: row.vocabularyId,
-                displayText: row.displayText,
-                sortIndex: index
+            return LessonExerciseRow(
+                id: exercise.id,
+                title: title,
+                type: exercise.type.rawValue,
+                prompt: exercise.prompt
             )
         }
     }
 
-    private func loadWordRows() async {
-        isLoadingWordRows = true
-        defer { isLoadingWordRows = false }
-
-        let lessonTargets = (model?.lessonTargets ?? []).sorted { $0.sortIndex < $1.sortIndex }
-        wordRows = lessonTargets.map { target in
-            let displayTextFromVocabulary = target.vocabularyId
-                .flatMap { vocabularyId in vocabularys.first(where: { $0.id == vocabularyId })?.text }
-            return LessonTargetRow(
-                id: target.id,
-                vocabularyId: target.vocabularyId,
-                targetType: target.targetType,
-                displayText: displayTextFromVocabulary ?? target.displayText,
-                sortIndex: target.sortIndex
-            )
+    private func uniqueExercises(from exercises: [Exercise]) -> [Exercise] {
+        var seen = Set<Int>()
+        return exercises.filter { exercise in
+            seen.insert(exercise.id).inserted
         }
     }
 }

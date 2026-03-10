@@ -14,7 +14,6 @@ final class PhraseDetailViewModel: ObservableObject {
     @Published var phrase: PhraseRead?
 
     @Published var text: String = ""
-    @Published var lessonTargetIdText: String = ""
     @Published var translationsText: String = ""
 
     @Published var isLoading: Bool = false
@@ -52,7 +51,6 @@ final class PhraseDetailViewModel: ObservableObject {
             let updated = try await PhraseDataSource.shared.updatePhrase(
                 id: phraseId,
                 text: text.trimmedNilIfEmpty,
-                lessonTargetId: parseOptionalInt(lessonTargetIdText),
                 translations: parseTranslations(from: translationsText)
             )
             apply(row: updated)
@@ -81,16 +79,9 @@ final class PhraseDetailViewModel: ObservableObject {
     private func apply(row: PhraseRead) {
         phrase = row
         text = row.text
-        lessonTargetIdText = row.lessonTargetId.map(String.init) ?? ""
         translationsText = row.translations
             .map { "\($0.lang): \($0.text)" }
             .joined(separator: "\n")
-    }
-
-    private func parseOptionalInt(_ raw: String) -> Int? {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return nil }
-        return Int(trimmed)
     }
 
     private func parseTranslations(from raw: String) -> [PhraseTranslationSchema]? {

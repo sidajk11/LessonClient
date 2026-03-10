@@ -14,8 +14,24 @@ final class VocabularyDataSource {
 
     // MARK: - Create Vocabulary
     @discardableResult
-    func createVocabulary(text: String, lessonId: Int? = nil, translations: [VocabularyTranslation]? = nil) async throws -> Vocabulary {
-        let body = VocabularyUpdate(text: text, lessonId: lessonId, translations: translations)
+    func createVocabulary(
+        text: String,
+        lessonId: Int? = nil,
+        wordId: Int? = nil,
+        formId: Int? = nil,
+        senseId: Int? = nil,
+        phraseId: Int? = nil,
+        translations: [VocabularyTranslation]? = nil
+    ) async throws -> Vocabulary {
+        let body = VocabularyUpdate(
+            text: text,
+            lessonId: lessonId,
+            wordId: wordId,
+            formId: formId,
+            senseId: senseId,
+            phraseId: phraseId,
+            translations: translations
+        )
         return try await api.request("POST", "admin/vocabularies", jsonBody: body.toDict(), as: Vocabulary.self)
     }
 
@@ -93,8 +109,25 @@ final class VocabularyDataSource {
 
     // MARK: - Update Vocabulary
     @discardableResult
-    func updateVocabulary(id: Int, text: String? = nil, lessonId: Int? = nil, translations: [VocabularyTranslation]? = nil) async throws -> Vocabulary {
-        let body = VocabularyUpdate(text: text, lessonId: lessonId, translations: translations)
+    func updateVocabulary(
+        id: Int,
+        text: String? = nil,
+        lessonId: Int? = nil,
+        wordId: Int? = nil,
+        formId: Int? = nil,
+        senseId: Int? = nil,
+        phraseId: Int? = nil,
+        translations: [VocabularyTranslation]? = nil
+    ) async throws -> Vocabulary {
+        let body = VocabularyUpdate(
+            text: text,
+            lessonId: lessonId,
+            wordId: wordId,
+            formId: formId,
+            senseId: senseId,
+            phraseId: phraseId,
+            translations: translations
+        )
         return try await api.request("PUT", "admin/vocabularies/\(id)", jsonBody: body.toDict(), as: Vocabulary.self)
     }
 

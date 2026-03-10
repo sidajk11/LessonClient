@@ -16,7 +16,6 @@ struct PhraseRead: Codable, Identifiable {
     let id: Int
     let text: String
     let normalized: String
-    let lessonTargetId: Int?
     let createdAt: String?
     let translations: [PhraseTranslationSchema]
 
@@ -24,7 +23,6 @@ struct PhraseRead: Codable, Identifiable {
         case id
         case text
         case normalized
-        case lessonTargetId = "lesson_target_id"
         case createdAt = "created_at"
         case translations
     }
@@ -32,25 +30,20 @@ struct PhraseRead: Codable, Identifiable {
 
 struct PhraseCreate: Codable {
     let text: String
-    let lessonTargetId: Int?
     let translations: [PhraseTranslationSchema]?
 
     enum CodingKeys: String, CodingKey {
         case text
-        case lessonTargetId = "lesson_target_id"
         case translations
     }
 }
 
 struct PhraseUpdate: Codable {
     let text: String?
-    let lessonTargetId: Int?
     let translations: [PhraseTranslationSchema]?
 
     enum CodingKeys: String, CodingKey {
         case text
-        case lessonTargetId = "lesson_target_id"
         case translations
     }
 }
-

@@ -296,7 +296,7 @@ final class ExampleDetailViewModel: ObservableObject {
                 lemmaForOutput = word.lemma
             }
             
-            let lemma = NL.getLemma(of: surface)
+            let lemma = NL.getLemma(of: surface, in: ex.sentence) ?? NL.getLemma(of: surface) ?? surface
             var sensesLemma: [WordSenseRead] = []
             if sensesForm.isEmpty {
                 sensesLemma = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: lemma, limit: 100)) ?? []

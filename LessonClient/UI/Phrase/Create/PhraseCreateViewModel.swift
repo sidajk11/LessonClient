@@ -45,7 +45,6 @@ final class PhraseCreateViewModel: ObservableObject {
             do {
                 let phrase = try await PhraseDataSource.shared.createPhrase(
                     text: block.phrase,
-                    lessonTargetId: nil,
                     translations: block.translations.isEmpty ? nil : block.translations
                 )
                 created.append(phrase)

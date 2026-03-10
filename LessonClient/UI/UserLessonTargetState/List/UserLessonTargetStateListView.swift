@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct UserLessonTargetStateListView: View {
-    @StateObject private var vm = UserLessonTargetStateListViewModel()
+struct UserVocabularyStateListView: View {
+    @StateObject private var vm = UserVocabularyStateListViewModel()
 
     var body: some View {
         NavigationStack {
@@ -18,7 +18,7 @@ struct UserLessonTargetStateListView: View {
                         .textFieldStyle(.roundedBorder)
                         .frame(maxWidth: 120)
 
-                    TextField("lessonTargetId", text: $vm.lessonTargetIdText)
+                    TextField("vocabularyId", text: $vm.vocabularyIdText)
                         .textFieldStyle(.roundedBorder)
                         .frame(maxWidth: 140)
 
@@ -42,7 +42,7 @@ struct UserLessonTargetStateListView: View {
 
                 List {
                     if vm.items.isEmpty && !vm.isLoading && vm.errorMessage == nil {
-                        Text("등록된 user lesson target state가 없습니다.")
+                        Text("등록된 user vocabulary state가 없습니다.")
                             .foregroundStyle(.secondary)
                     }
 
@@ -54,7 +54,7 @@ struct UserLessonTargetStateListView: View {
                                     .foregroundStyle(.secondary)
                                 Spacer()
                                 Text("userId: \(state.userId)")
-                                Text("targetId: \(state.lessonTargetId)")
+                                Text("vocabularyId: \(state.vocabularyId)")
                             }
 
                             HStack {
@@ -111,7 +111,7 @@ struct UserLessonTargetStateListView: View {
                     await vm.refresh()
                 }
             }
-            .navigationTitle("User Target States")
+            .navigationTitle("User Vocabulary States")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -129,3 +129,5 @@ struct UserLessonTargetStateListView: View {
         }
     }
 }
+
+typealias UserLessonTargetStateListView = UserVocabularyStateListView

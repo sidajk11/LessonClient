@@ -23,7 +23,6 @@ final class ExampleDataSource {
     /// - Parameters:
     ///   - sentence: 예문 원문
     ///   - vocabularyId: 연결할 단어 ID
-    ///   - lessonTargetId: 연결할 레슨 타겟 ID
     ///   - phraseId: 연결할 구문 ID
     ///   - translations: 예문 번역(전체 치환 정책). en/ko 등 언어별 텍스트
     /// - Returns: 생성된 Example
@@ -31,14 +30,12 @@ final class ExampleDataSource {
     func createExample(
         sentence: String,
         vocabularyId: Int?,
-        lessonTargetId: Int? = nil,
         phraseId: Int? = nil,
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleCreate(
             sentence: sentence,
             vocabularyId: vocabularyId,
-            lessonTargetId: lessonTargetId,
             phraseId: phraseId,
             translations: translations
         )
@@ -54,7 +51,6 @@ final class ExampleDataSource {
     /// - Parameters:
     ///   - id: 예문 ID
     ///   - vocabularyId: 변경할 단어 ID(옵션)
-    ///   - lessonTargetId: 변경할 레슨 타겟 ID(옵션)
     ///   - phraseId: 변경할 구문 ID(옵션)
     ///   - translations: 전달 시 해당 예문의 번역을 전체 치환
     @discardableResult
@@ -62,14 +58,12 @@ final class ExampleDataSource {
         id: Int,
         sentence: String?,
         vocabularyId: Int? = nil,
-        lessonTargetId: Int? = nil,
         phraseId: Int? = nil,
         translations: [ExampleTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleUpdate(
             sentence: sentence,
             vocabularyId: vocabularyId,
-            lessonTargetId: lessonTargetId,
             phraseId: phraseId,
             translations: translations
         )
@@ -164,6 +158,19 @@ final class ExampleDataSource {
         return try await api.request(
             "GET",
             "admin/examples/by-phrase/\(phraseId)",
+            query: query,
+            as: [Example].self
+        )
+    }
+
+    /// sense가 비어 있는 token이 포함된 예문 목록 조회
+    func examplesWithoutSenseTokens(limit: Int = 100) async throws -> [Example] {
+        let query: [URLQueryItem] = [
+            .init(name: "limit", value: String(min(max(limit, 1), 200)))
+        ]
+        return try await api.request(
+            "GET",
+            "admin/examples/without-sense-tokens",
             query: query,
             as: [Example].self
         )

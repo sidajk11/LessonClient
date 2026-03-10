@@ -45,74 +45,70 @@ struct LessonDetailView: View {
                 })
             }
 
-            List {
-                Section("단어 (\(vm.vocabularys.count))") {
-                    ForEach(vm.vocabularys, id: \.id) { w in
-                        NavigationLink {
-                            VocabularyDetailView(wordId: w.id, lesson: vm.model)
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(w.text).bold()
-
-                                    if !w.translations.isEmpty {
-                                        let langs = w.translations.map { $0.langCode.rawValue }.joined(separator: ", ")
-                                        Text("[\(langs)]")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    } else {
-                                        Text("번역 없음")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
+            if !vm.exerciseRows.isEmpty {
+                List {
+                    Section("Exercises (\(vm.exerciseRows.count))") {
+                        ForEach(vm.exerciseRows) { row in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(alignment: .top, spacing: 8) {
+                                    Text(row.title)
+                                        .bold()
+                                    Spacer()
+                                    Text(row.type)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-                                Spacer()
-                                Button("제거") { Task { await vm.detach(w.id) } }
-                                    .buttonStyle(.bordered)
+
+                                if let prompt = row.prompt?.trimmingCharacters(in: .whitespacesAndNewlines),
+                                   !prompt.isEmpty,
+                                   prompt != row.title {
+                                    Text(prompt)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
+                            .padding(.vertical, 4)
                         }
                     }
                 }
+                .listStyle(.inset)
+                .frame(minHeight: 160)
             }
-            .listStyle(.inset)
-            .frame(minHeight: 220)
 
             List {
-                Section("LessonTargets (\(vm.wordRows.count))") {
-                    if vm.isLoadingWordRows {
+                Section("Vocabularies (\(vm.vocabularyRows.count))") {
+                    if vm.isLoadingVocabularies {
                         ProgressView()
                     }
 
-                    if vm.wordRows.isEmpty && !vm.vocabularys.isEmpty {
-                        Button {
-                            Task { await vm.createLessonTargetsFromVocabularies() }
-                        } label: {
-                            if vm.isCreatingLessonTargets {
-                                ProgressView()
-                            } else {
-                                Text("LessonTargets 생성")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
+                    if vm.vocabularyRows.isEmpty {
+                        Text("연결된 단어가 없습니다.")
+                            .foregroundStyle(.secondary)
                     }
 
-                    ForEach(vm.wordRows) { row in
+                    ForEach(vm.vocabularyRows) { row in
                         HStack(spacing: 8) {
                             NavigationLink {
-                                LessonTargetDetailView(targetId: row.id)
+                                VocabularyDetailView(wordId: row.id, lesson: vm.model)
                             } label: {
-                                Text(row.displayText)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(row.text)
+
+                                    if !row.translations.isEmpty {
+                                        Text(row.translations.toString())
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(2)
+                                    }
+                                }
                             }
                             .buttonStyle(.plain)
 
                             Spacer()
-                            Text(row.targetType)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-
-                            Text("vocabulary_id: \(row.vocabularyId.map(String.init) ?? "-")")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            Button("해제") {
+                                Task { await vm.detach(row.id) }
+                            }
+                            .buttonStyle(.bordered)
                         }
                         .padding(.vertical, 4)
                     }

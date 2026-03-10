@@ -131,12 +131,48 @@ struct NL {
         return true
     }
     
-    static func getLemma(of word: String) -> String {
+    static func getLemma(of word: String) -> String? {
+        if word.contains("Thank") {
+            print("123")
+        }
         let tagger = NLTagger(tagSchemes: [.lemma])
         tagger.string = word
+        
         let range = word.startIndex..<word.endIndex
-        let (lemma, _) = tagger.tag(at: range.lowerBound, unit: .word, scheme: .lemma)
-        return lemma?.rawValue ?? word
+        tagger.setLanguage(.english, range: range)
+
+        let (tag, _) = tagger.tag(at: word.startIndex, unit: .word, scheme: .lemma)
+        return tag?.rawValue
+    }
+    
+    static func getLemma(of targetWord: String, in sentence: String) -> String? {
+        if targetWord.contains("Thank") {
+            print("123")
+        }
+        let tagger = NLTagger(tagSchemes: [.lemma])
+        tagger.string = sentence
+        
+        let fullRange = sentence.startIndex..<sentence.endIndex
+        tagger.setLanguage(.english, range: fullRange)
+        
+        var result: String? = nil
+        
+        tagger.enumerateTags(
+            in: fullRange,
+            unit: .word,
+            scheme: .lemma,
+            options: [.omitWhitespace, .omitPunctuation]
+        ) { tag, tokenRange in
+            let token = String(sentence[tokenRange])
+            
+            if token.caseInsensitiveCompare(targetWord) == .orderedSame {
+                result = tag?.rawValue ?? token
+                return false
+            }
+            return true
+        }
+        
+        return result
     }
 }
 
