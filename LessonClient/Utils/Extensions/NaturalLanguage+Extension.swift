@@ -132,9 +132,6 @@ struct NL {
     }
     
     static func getLemma(of word: String) -> String? {
-        if word.contains("Thank") {
-            print("123")
-        }
         let tagger = NLTagger(tagSchemes: [.lemma])
         tagger.string = word
         
@@ -146,9 +143,6 @@ struct NL {
     }
     
     static func getLemma(of targetWord: String, in sentence: String) -> String? {
-        if targetWord.contains("Thank") {
-            print("123")
-        }
         let tagger = NLTagger(tagSchemes: [.lemma])
         tagger.string = sentence
         
