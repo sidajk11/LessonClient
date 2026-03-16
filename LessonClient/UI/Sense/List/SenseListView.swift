@@ -9,6 +9,8 @@ import SwiftUI
 
 struct SenseListView: View {
     @StateObject private var vm = SenseListViewModel()
+    @State private var isPresentingAutoGenerateSheet = false
+    @State private var autoGenerateInput = ""
 
     var body: some View {
         NavigationStack {
@@ -27,13 +29,19 @@ struct SenseListView: View {
                         Task { await vm.loadMissingLemmas() }
                     }
                     .buttonStyle(.bordered)
-                    .disabled(vm.isLoading || vm.isLoadingMissingLemmas || vm.isAddingMissingSenses)
+                    .disabled(vm.isBusy)
 
                     Button("누락된 Sense추가") {
                         Task { await vm.addMissingSenses() }
                     }
                     .buttonStyle(.bordered)
-                    .disabled(vm.isLoading || vm.isLoadingMissingLemmas || vm.isAddingMissingSenses)
+                    .disabled(vm.isBusy)
+
+                    Button("Sense자동 생성(단어)") {
+                        isPresentingAutoGenerateSheet = true
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(vm.isBusy)
 
                     Spacer()
 
@@ -43,7 +51,7 @@ struct SenseListView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                     .buttonStyle(.bordered)
-                    .disabled(vm.isLoading || vm.isLoadingMissingLemmas || vm.isAddingMissingSenses)
+                    .disabled(vm.isBusy)
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
@@ -71,10 +79,10 @@ struct SenseListView: View {
                         .padding(.horizontal)
                 }
 
-                if vm.isLoadingMissingLemmas || vm.isAddingMissingSenses {
+                if vm.isLoadingMissingLemmas || vm.isAddingMissingSenses || vm.isAutoGeneratingSenses {
                     HStack(spacing: 8) {
                         ProgressView()
-                        Text(vm.progressMessage ?? "누락된 sense 처리 중...")
+                        Text(vm.progressMessage ?? "sense 처리 중...")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -167,6 +175,44 @@ struct SenseListView: View {
             .task {
                 if vm.items.isEmpty {
                     await vm.refresh()
+                }
+            }
+            .sheet(isPresented: $isPresentingAutoGenerateSheet) {
+                NavigationStack {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("쉼표 또는 줄바꿈으로 단어/구문을 입력하세요. 먼저 lemma로 정규화한 뒤 각 lemma의 sense를 생성합니다.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+
+                        TextEditor(text: $autoGenerateInput)
+                            .frame(minHeight: 180)
+                            .padding(8)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.secondary.opacity(0.25))
+                            }
+
+                        Spacer()
+                    }
+                    .padding()
+                    .navigationTitle("Sense 자동 생성")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("취소") {
+                                isPresentingAutoGenerateSheet = false
+                            }
+                        }
+
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("생성") {
+                                let input = autoGenerateInput
+                                autoGenerateInput = ""
+                                isPresentingAutoGenerateSheet = false
+                                Task { await vm.autoGenerateSenses(from: input) }
+                            }
+                            .disabled(autoGenerateInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isBusy)
+                        }
+                    }
                 }
             }
         }

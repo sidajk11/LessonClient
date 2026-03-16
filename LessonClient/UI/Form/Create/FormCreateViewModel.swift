@@ -23,7 +23,6 @@ final class FormCreateViewModel: ObservableObject {
         var word: String
         var form: String
         var formType: String?
-        var explainKo: String?
         var status: Status = .ready
     }
 
@@ -292,12 +291,6 @@ Parsing: blocks=\(result.totalBlocks), parsed=\(parsedCount), ready=\(readyCount
             let form = rows[i].form.trimmingCharacters(in: .whitespacesAndNewlines)
             let formType = rows[i].formType?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-            let explainKo = rows[i].explainKo?.trimmingCharacters(in: .whitespacesAndNewlines)
-            let translations: [WordFormTranslationSchema]? = {
-                guard let explainKo, !explainKo.isEmpty else { return nil }
-                return [WordFormTranslationSchema(lang: "ko", explain: explainKo)]
-            }()
-
             do {
                 // 1) word -> word_id 조회
                 let wordRead = try await wordDS.getWord(word: word)
@@ -309,7 +302,7 @@ Parsing: blocks=\(result.totalBlocks), parsed=\(parsedCount), ready=\(readyCount
                     derivedWordId: derivedWordId,
                     form: form,
                     formType: (formType?.isEmpty == true ? nil : formType),
-                    translations: translations
+                    translations: nil
                 )
 
                 rows[i].status = .saved(formId: created.id)

@@ -88,13 +88,11 @@ final class FormBlocksParser {
         guard let word = dict["word"], let form = dict["form"] else { return nil }
 
         let formType = dict["form_type"]
-        let explainKo = dict["explain_ko"]
 
         return FormCreateViewModel.DraftRow(
             word: word,
             form: form,
             formType: (formType?.isEmpty == true ? nil : formType),
-            explainKo: (explainKo?.isEmpty == true ? nil : explainKo),
             status: .ready
         )
     }

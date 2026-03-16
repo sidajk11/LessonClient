@@ -143,13 +143,6 @@ struct FormCreateView: View {
                         }
                         .width(min: 160, ideal: 220)
 
-                        TableColumn("Explain (ko)") { row in
-                            Text(row.explainKo ?? "")
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                        .width(min: 240, ideal: 360)
-
                         TableColumn("Status") { row in
                             statusView(row.status)
                         }
