@@ -390,7 +390,7 @@ final class SenseListViewModel: ObservableObject {
                 )
                 let parsed = try SenseBulkParser.parse(generated)
                 let parsedHead = parsed.head.trimmed
-                if !parsedHead.isEmpty, parsedHead.lowercased() != lemma.lowercased() {
+                if !parsedHead.isEmpty, parsedHead.lowercased().replacingOccurrences(of: "-", with: " ") != lemma.lowercased().replacingOccurrences(of: "’", with: "'") {
                     throw AutoGenerateError.mismatchedHead(expected: lemma, actual: parsedHead)
                 }
 

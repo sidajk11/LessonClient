@@ -43,25 +43,31 @@ struct LessonListView: View {
                         }
                     }
                     .disabled(vm.isCopying)
-                    
-                    // ===== 플로팅 버튼들 =====
-                    VStack(spacing: 12) {
-                        NavigationLink {
-                            LessonCreateView { newLesson in
-                                // Insert at top after create
-                                vm.items.insert(newLesson, at: 0)
-                            }
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.title)
-                                .padding()
-                                .background(Color.accentColor)
-                                .foregroundColor(.white)
-                                .clipShape(Circle())
-                                .shadow(radius: 4)
+
+                    Spacer()
+
+                    NavigationLink {
+                        LessonBulkCreateView { newLessons in
+                            vm.items.insert(contentsOf: newLessons, at: 0)
                         }
+                    } label: {
+                        Text("일괄추가")
                     }
-                    .padding()
+                    .buttonStyle(.borderedProminent)
+
+                    NavigationLink {
+                        LessonCreateView { newLesson in
+                            vm.items.insert(newLesson, at: 0)
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.title3)
+                            .padding(10)
+                            .background(Color.accentColor)
+                            .foregroundColor(.white)
+                            .clipShape(Circle())
+                            .shadow(radius: 4)
+                    }
                 }
                 .padding(.horizontal)
 

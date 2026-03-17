@@ -43,11 +43,7 @@ final class LessonCreateViewModel: ObservableObject {
         
         Task {
             do {
-                let lesson = try await LessonDataSource.shared.lessons().first
-                if let lesson {
-                    unitText = "\(lesson.unit + 1)"
-                }
-                
+                unitText = "\(try await LessonDataSource.shared.nextUnit())"
             } catch {
                 self.error = (error as NSError).localizedDescription
             }

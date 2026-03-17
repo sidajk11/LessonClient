@@ -20,6 +20,10 @@ final class VocabularyDetailViewModel: ObservableObject {
     @Published var word: Vocabulary?
     @Published var translationText: String = ""
     @Published var examples: [Example] = []
+    @Published var currentSense: WordSenseRead?
+    @Published var availableSenses: [WordSenseRead] = []
+    @Published var isSenseListExpanded: Bool = false
+    @Published var isUpdatingSense: Bool = false
 
     // New example input (bulk translation as text)
     @Published var newSentence: String = ""
@@ -44,6 +48,21 @@ final class VocabularyDetailViewModel: ObservableObject {
         return !(sentenceOK || hasAnyTr)
     }
 
+    var senseCodeText: String {
+        currentSense?.senseCode ?? "-"
+    }
+
+    var canChangeSense: Bool {
+        (word?.wordId ?? currentSense?.wordId) != nil
+    }
+
+    func koreanText(for sense: WordSenseRead) -> String {
+        sense.translations.first {
+            let lang = $0.lang.lowercased()
+            return lang == "ko" || lang.hasPrefix("ko-")
+        }?.text ?? "-"
+    }
+
     init(wordId: Int, lesson: Lesson?) {
         self.wordId = wordId
         self.lesson = lesson
@@ -58,6 +77,7 @@ final class VocabularyDetailViewModel: ObservableObject {
             word = w
             translationText = w.translations.toString()
             examples = try await ExampleDataSource.shared.examples(wordId: wordId)
+            try await loadSenseMetadata(for: w)
             
             if lesson == nil, let lessonId = w.lessonId {
                 lesson = try await LessonDataSource.shared.lesson(id: lessonId)
@@ -75,10 +95,16 @@ final class VocabularyDetailViewModel: ObservableObject {
             translations.append(VocabularyTranslation(langCode: .enUS, text: e.text))
             let updated = try await VocabularyDataSource.shared.updateVocabulary(
                 id: e.id,
+                text: e.text,
                 lessonId: e.lessonId,
-                translations: [VocabularyTranslation].parse(from: translationText)
+                wordId: e.wordId,
+                formId: e.formId,
+                senseId: e.senseId,
+                phraseId: e.phraseId,
+                translations: translations
             )
             word = updated
+            try await loadSenseMetadata(for: updated)
             info = "기본 텍스트 저장 완료"
         } catch {
             self.error = (error as NSError).localizedDescription
@@ -178,5 +204,75 @@ final class VocabularyDetailViewModel: ObservableObject {
             self.error = (error as NSError).localizedDescription
         }
     }
-}
 
+    func toggleSenseList() async {
+        guard let vocabulary = word else { return }
+
+        do {
+            try await loadSenseMetadata(for: vocabulary)
+            guard availableSenses.isEmpty == false else {
+                error = "선택 가능한 sense가 없습니다."
+                return
+            }
+            isSenseListExpanded.toggle()
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
+    }
+
+    func updateSense(to sense: WordSenseRead) async {
+        guard let vocabulary = word else { return }
+        guard isUpdatingSense == false else { return }
+
+        do {
+            isUpdatingSense = true
+            defer { isUpdatingSense = false }
+
+            let updated = try await VocabularyDataSource.shared.updateVocabulary(
+                id: vocabulary.id,
+                text: vocabulary.text,
+                lessonId: vocabulary.lessonId,
+                wordId: vocabulary.wordId ?? sense.wordId,
+                formId: vocabulary.formId,
+                senseId: sense.id,
+                phraseId: vocabulary.phraseId,
+                translations: vocabulary.translations
+            )
+            word = updated
+            currentSense = sense
+            if updated.wordId == nil {
+                word?.wordId = sense.wordId
+            }
+            info = "sense가 변경되었습니다."
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
+    }
+
+    private func loadSenseMetadata(for vocabulary: Vocabulary) async throws {
+        var resolvedCurrentSense: WordSenseRead?
+
+        if let senseId = vocabulary.senseId {
+            resolvedCurrentSense = try await WordDataSource.shared.wordSense(senseId: senseId)
+        }
+
+        let resolvedWordId = vocabulary.wordId ?? resolvedCurrentSense?.wordId
+        if let resolvedWordId {
+            availableSenses = try await WordDataSource.shared.listWordSenses(wordId: resolvedWordId, limit: 200)
+                .sorted { lhs, rhs in
+                    if lhs.senseCode == rhs.senseCode {
+                        return lhs.id < rhs.id
+                    }
+                    return lhs.senseCode.localizedStandardCompare(rhs.senseCode) == .orderedAscending
+                }
+        } else {
+            availableSenses = []
+        }
+
+        if resolvedCurrentSense == nil, let currentSenseId = vocabulary.senseId {
+            resolvedCurrentSense = availableSenses.first(where: { $0.id == currentSenseId })
+        }
+
+        currentSense = resolvedCurrentSense
+    }
+}

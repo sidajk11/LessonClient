@@ -57,6 +57,8 @@ struct VocabularyDetailView: View {
                     Button("연결") { Task { await vm.attachToLesson() } }
                 }
             }
+            metadataSection(for: e)
+            senseListSection
             
             // + 새 예문 추가 네비게이션 (필요 시 유지)
             NavigationLink {
@@ -143,5 +145,89 @@ struct VocabularyDetailView: View {
                     .disabled(vm.isCreateDisabled)
             }
         }
+    }
+
+    private func metadataRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private func metadataSection(for word: Vocabulary) -> some View {
+        Section("메타데이터") {
+            metadataRow(title: "sense_id", value: word.senseId.map(String.init) ?? "-")
+
+            HStack {
+                Text("sense_code")
+                Spacer()
+                Button(vm.senseCodeText) {
+                    Task { await vm.toggleSenseList() }
+                }
+                .buttonStyle(.link)
+                .disabled(!vm.canChangeSense)
+            }
+
+            metadataRow(title: "form_id", value: word.formId.map(String.init) ?? "-")
+            metadataRow(title: "phrase_id", value: word.phraseId.map(String.init) ?? "-")
+        }
+    }
+
+    @ViewBuilder
+    private var senseListSection: some View {
+        if vm.isSenseListExpanded {
+            Section("Sense 리스트") {
+                if vm.availableSenses.isEmpty {
+                    Text("선택 가능한 sense가 없습니다.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(vm.availableSenses) { sense in
+                        senseRow(sense)
+                    }
+
+                    if vm.isUpdatingSense {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func senseRow(_ sense: WordSenseRead) -> some View {
+        Button {
+            Task { await vm.updateSense(to: sense) }
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: vm.word?.senseId == sense.id ? "largecircle.fill.circle" : "circle")
+                    .foregroundStyle(vm.word?.senseId == sense.id ? Color.accentColor : Color.secondary)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text("sense_id: \(sense.id)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(sense.senseCode)
+                            .font(.headline)
+                    }
+
+                    Text(vm.koreanText(for: sense))
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer()
+            }
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+        .disabled(vm.isUpdatingSense)
     }
 }

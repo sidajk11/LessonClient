@@ -64,6 +64,12 @@ extension LessonDataSource {
         try await api.request("GET", "admin/lessons/\(id)", as: Lesson.self)
     }
 
+    func nextUnit(limit: Int = 1) async throws -> Int {
+        let items = try await lessons(limit: limit)
+        let maxUnit = items.map(\.unit).max() ?? 0
+        return maxUnit + 1
+    }
+
     /// 레슨 수정 (전달한 필드만 갱신, translation/vocabularyIds는 전체 치환 정책)
     @discardableResult
     func updateLesson(

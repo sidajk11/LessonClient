@@ -1,200 +1,199 @@
+1. 취미 소개 / 서로 관심사 알아보기
 
-1. 취미 이야기 (Hobbies & Interests)
+like to, love to, photography, photograph, ballet, comic book, drawing, artist, painter, paintbrush, blog, get into, interest, opera, musician, guide, explore, adventure, incredible, fantastic, memory, creative, design
 
-like to, love to, photography, ballet, explore, sightseeing, guide, view, series, episode, comic book, drawing, painter, artist, gallery, sculpture
+2. 같이 운동하자고 제안 / 활동 정하기
 
-2. 스포츠 & 운동 대화
+ping pong, climb, let's do it, work out, keep fit, skateboard, competition, tournament, field, play against, runner, uniform, score a goal, match, stadium, exercise machine, advanced, average, in pairs, won, quick, as usual
 
-ping pong, exercise machine, climb, skateboard, keep fit, work out, field, tournament, play against, runner, score a goal, uniform, stadium, match, competition, advanced
+3. 센터/수업 등록 / 프로그램 신청
 
-3. 커뮤니티 센터 활동
+rec center, monthly, fee, staff, beginner, sign up, cancel, able to, class, activity, bingo, all right, intermediate, schedule, can make it, do you mind if, don't forget to, if you like, cannot, just a minute
 
-rec center, monthly, beginner, staff, fee, bingo, cancel, all right, able to, exercise machine, photography, club, activity, class, program
+4. 아이 맡기기 / 돌봄 상황 설명
 
-4. 어린이와 가족 활동
+day care, playground, teenager, look after, grow up, child, family, relative, adorable, great-grandmother, granddaughter, grandson, nephew, niece, childhood, boy, girl, everybody, honey, parent, age
 
-day care, playground, adorable, teenager, granddaughter, grandson, great-grandmother, nephew, niece, child, childhood, family, relative, couple, spouse
+5. 미래 계획 말하기 / 진로 이야기
 
-5. 미래 계획 대화
+in the future, dream, apply, career, decision, become, became, successful, graduation, hopefully, began, begun, retire, full-time, part-time, education, engineering, certificate, diploma, opportunity, accept
 
-in the future, dream, career, apply, decision, plan, goal, hope, hopefully, become, success, successful, possibility, opportunity, future
+6. 여행 경험 공유 / 가본 곳 말하기
 
-6. 숫자와 날짜 말하기
+been to, been, foreign, traveler, airplane, ship, abroad, continent, solo, visitor, homesick, for the first time, Australian, Canadian, left, driven, ridden, slept, drunk, land, arrival, fare, reserve
 
-eighty, tenth, sixth, seventh, twentieth, thirty-seven, forty-five, hundred, million, nineteen ninety, two thousand seven, twenty fifteen, th, rd, st, nd
+7. 공항/이동 / 이동 방법 설명
 
-7. 여행 경험 이야기
+baggage, visa, passport, identification, get on, get off, platform, public transportation, passenger, driver's license, shuttle, transportation, get in, exit, security, reserve, reservations, sign, traveler, fare, located
 
-been to, foreign, airplane, ship, traveler, arrival, reserve, fare, shuttle, solo, for the first time, continent, abroad, visa, baggage
+8. 길 묻기 / 길 설명하기
 
-8. 여행지 관광 대화
+turn, straight, crosswalk, block, corner, across from, opposite, nearby, highway, east, west, north, south, square, farther, farthest, ahead, beside, into, down, pass, through, way, on foot
 
-castle, desert, temple, ancient, theater, entrance, gallery, national, famous for, palace, fountain, view, sightseeing, explore, guide
+9. 관광하기 / 장소 설명하기
 
-9. 여행 교통 대화
+castle, temple, ancient, gallery, museum, palace, famous for, sightseeing, theater, enter, entrance, sculpture, national, fountain, synagogue, village, postcard, souvenir, prepared, eager, lucky, identification
 
-get on, get off, public transportation, platform, elevator, highway, crosswalk, turn, straight, block, corner, transportation, located, nearby, opposite
+10. 자연 이야기 / 풍경 묘사
 
-10. 자연과 풍경 이야기
+cloud, sea, hill, woods, sunset, sunrise, wind, tree, grass, desert, bird, star, top, stream, sun, leaf, earth, stone, jungle, wild, outdoors, get dark, view, deep
 
-cloud, bird, sea, hill, woods, sunset, sunrise, wind, leaf, grass, stream, earth, jungle, stone, tree
+11. 동물 이야기 / 특징 설명
 
-11. 동물 이야기
+horse, duck, elephant, lion, zebra, dolphin, giraffe, penguin, sheep, pig, owl, mouse, mice, parrot, tiger, monkey, fed, poor, quietly, loudly
 
-horse, duck, elephant, lion, zebra, dolphin, giraffe, penguin, tiger, monkey, pig, owl, sheep, mouse, mice
+12. 날씨 이야기 / 상태 설명
 
-12. 날씨 이야기
+rainy, icy, thunderstorm, fog, wind, sunny, cloudy, thunder, wet, get dark, bad luck, weather, outdoors, indoors, sunrise, sunset
 
-thunderstorm, thunder, fog, rainy, icy, wind, storm, weather, cold, hot, sunny, cloudy, temperature, climate, season
+13. 식당에서 주문 / 음식 선택
 
-13. 음식과 요리 대화
+menu, order, serve, table, reservation, dish, drink, dessert, delivery, cheeseburger, mustard, brownie, whipped cream, muffin, alcohol, leftovers, piece, each, full of, not bad, all about
 
-salmon, omelet, bagel, lettuce, blueberry, coconut, tuna, sausage, pickle, peanut butter, cream cheese, pineapple, corn, flavor, sour
+14. 음식 설명 / 맛 표현
 
-14. 음식 맛 표현
+taste, smell, yummy, sour, sweet, flavor, beverage, bad for you, allergic, allergic to, real, at least, nearly, a bit, few, fewer, full of, probably, think of
 
-taste, smell, yummy, delicious, sour, sweet, spicy, fresh, beverage, drink, coffee, tea, snack, dessert, brownie
+15. 요리하기 / 재료 설명
 
-15. 캠핑과 야외 활동
+salmon, omelet, bagel, lettuce, coconut, peanut butter, cream cheese, tuna, pineapple, blueberry, sausage, pickle, spinach, corn, jar, grill, cut, cookbook, utensils, container
 
-campfire, roast, woods, outdoors, view, change of clothes, tent, adventure, wild, hill, sunrise, sunset, hiking, trail, nature
+16. 캠핑 / 야외 활동 이야기
 
-16. 집 구조 이야기
+campfire, roast, outdoors, wild, hiking, view, change of clothes, take a walk, sea, woods, hill, top, stream, sun, get dark, for a while, away, spot, camp, photograph
 
-home, apartment building, refrigerator, ceiling, shelf, shelves, curtain, elevator, roof, heater, kitchen, room, door, window, floor
+17. 집 구조 설명 / 공간 소개
 
-17. 집 수리와 공구
+home, apartment building, refrigerator, ceiling, shelf, shelves, curtain, elevator, roof, patio, heater, hall, dorm, bookshelf, in here, cozy, cover, middle, sheet, indoors
 
-repair, hammer, hole, glue, fix, build, tool, screw, nail, ladder, drill, repairman, maintenance, broken, replace
+18. 집 수리 / 문제 해결
 
-18. 집안일
+repair, hammer, hole, glue, fix, replace, electricity, wooden, wood, fence, destroy, object, common, made of, tire, engine, machine, electric, mechanic, shut
 
-housework, clean up, mop, garbage, lock, hide, spill, by hand, neat, responsible for, wash, dry, sweep, dust, organize
+19. 집안일 / 역할 나누기
 
-19. 감정 표현
+clean up, mop, garbage, dust, lock, hide, spill, by hand, responsible for, neat, take out, throw away, put away, trash can, swept, hidden, hid, dislike, make sure, housework
 
-annoyed, embarrassed, serious, calm, mood, feeling, surprised, lucky, stressed, happy, sad, angry, excited, nervous, relaxed
+20. 옷 쇼핑 / 옷 고르기
 
-20. 건강 문제 대화
+try on, fitting room, fashion, sweatshirt, shorts, suit, bathing suit, flip-flop, gift card, tag, cap, tights, underwear, sleeve, quality, cotton, pair, shop for, not too, way too, middle
 
-toothache, headache, dizzy, weak, sneeze, bleed, sore, heart attack, breathe, operation, aspirin, tissue, pain, medicine, doctor
+21. 옷 입기 / 착용 설명
 
-21. 응급 상황
+put on, take off, pocket, button, tight, soft, get dressed, thin, uncomfortable, wet, selfie, afterward, checkout, real, difference, round, named, known, curly, bald, haircut, barber
 
-fall down, woke up, fell down, in pain, blood, stand up, hold, push, help, call, emergency, accident, injury, hospital, ambulance
+22. 계산 / 결제하기
 
-22. 직장 이야기
+pay, paid, pay back, cash register, checkout, receipt, sold, percent, give back, exchange, deposit, withdraw, account, payment, quarter past, quarter to, rent, fee, price, piece
 
-employee, salary, promotion, raise, benefits, insurance, yearly, businesswoman, businessman, flexible, full-time, part-time, career, office, company
+23. 공부 계획 / 학습 방법
 
-23. 직장 문제 대화
+tutor, vocabulary, planner, review, highlight, dictionary, remind, binder, notes, literature, studies, interest, sort, meaning, all about, these days, click, search, know how, slowly, first of all, underline
 
-lazy, deserve, low salary, quit, decision, stress, boss, coworker, responsibility, project, deadline, meeting, task, workload, evaluation
+24. 수업 참여 / 학습 활동
 
-24. 공부와 학교
+write down, compare, translate, research, laboratory, whiteboard, similar, various, research, case, row, chapter, beginning, description, principal, writing, understand, understood, level, matter, include, including
 
-tutor, vocabulary, literature, planner, binder, review, highlight, dictionary, studies, education, engineering, laboratory, research, certificate, diploma
+25. 시험 / 성적 이야기
 
-25. 시험과 성적
+report card, exam, grade, pass, cheat, score, hundred, hundreds, million, billion, sixth, seventh, tenth, twentieth, th, st, nd, rd, eighty, thirty-seven, forty-five, nineteen ninety, two thousand seven, twenty fifteen
 
-report card, principal, writing, cheat, compare, exam, grade, pass, fail, test, homework, assignment, score, result, evaluation
+26. 학교 생활 / 캠퍼스 이야기
 
-26. 옷 쇼핑 대화
+campus, dorm, classroom, hall, studies, lunchtime, weekday, off, agenda, row, campus life, certificate, diploma, principal, report card, classmate, study, planner, notes
 
-try on, fitting room, fashion, sweatshirt, pocket, button, flip-flop, tight, shorts, suit, tag, gift card, take off, put on, clothes
+27. 직장 소개 / 일 설명
 
-27. 쇼핑 대화
+employee, salary, promotion, benefits, insurance, office, businesswoman, businessman, flexible, benefit, raise, yearly, annual, time off, reliable, responsible, do business, accountant, career, employee's, s'
 
-pay back, sold, paid, cash register, checkout, percent, sale, receipt, price, discount, customer, store, purchase, refund, exchange
+28. 직장 문제 / 상담
 
-28. 온라인 대화 & 기술
+quit, boss, coworker, responsibility, stress, decision, deserve, low, lazy, flexible, retire, matter, responsible for, deserve, time off, stressed, issue, problem, offer, accept
 
-app, record, delete, search, technology, web, social, communicate, connection, private, attachment, issue, effect, internet, account
+29. 자기소개 / 사람 소개
 
-29. 온라인 회의
+introduce, yourself, myself, name, job, hobby, himself, herself, itself, themselves, ourselves, yourselves, woman, man, have got, has got, age, outgoing, clever, forgetful, strict, careless
 
-mute, unmute, speaker, introduce, connection, restart, noise, channel, meeting, presentation, microphone, camera, audio, video, call
+30. 온라인 수업 / 회의 진행
 
-30. 자기 소개
+mute, unmute, speaker, connection, restart, channel, noise, listen, record, communicate, just a minute, make sure, can you hear me, issue, private, attachment, technology, app, web
 
-introduce, yourself, myself, himself, herself, ourselves, yourselves, themselves, name, age, job, hobby, hometown, interest, personality
+31. 인터넷 사용 / 디지털 활동
 
-31. TV와 엔터테인먼트
+app, search, delete, record, technology, web, private, attachment, communicate, click, blog, social, in general, issue, effect, none, completely, advertisement, channel, search for, notes
 
-television, Reality TV, entertaining, latest, episode, series, final, show, program, actor, actress, drama, comedy, movie, channel
+32. TV/영상 이야기 / 콘텐츠 평가
 
-32. 영화와 이야기
+television, Reality TV, episode, series, entertaining, latest, opinion, fantastic, continue, final, die, actress, show, program, television series, actor, by the way, honestly, probably, can you believe it
 
-adventure, mystery, monster, dragon, hero, villain, bad guy, fight, brave, princess, prince, story, character, plot, scene
+33. 영화/이야기 설명 / 줄거리 말하기
 
-33. 역사 이야기
+adventure, mystery, monster, hero, bad guy, story, princess, prince, dragon, fight, brave, dead, beginning, complicated, drew, drawn, said, fought, kicked, caught, rose, scene, chapter
 
-century, ancient, soldier, war, king, queen, empire, battle, history, past, museum, artifact, dynasty, monument, civilization
+34. 역사 이야기 / 과거 설명
 
-34. 범죄 뉴스
+war, king, queen, century, soldier, in the past, eighteen seventy, most, because of, anniversary, past, religion, history, till, used to, king's, queen's, fought, stood
 
-spy, rob, gun, bomb, jail, court, enemy, government, border, security, crime, police, investigation, suspect, trial
+35. 뉴스 이야기 / 사회 문제
 
-35. 뉴스와 사회
+government, leader, citizen, tax, headline, spy, border, enemy, gun, rob, jail, court, bomb, crash, false, expect, though, however, religion, security, issue, reason
 
-headline, government, leader, tax, citizen, billion, policy, election, economy, law, politics, society, media, report, event
+36. 친구 관계 / 갈등 해결
 
-36. 방향 설명
+get along, argument, make up, trust, joke, you guys, what's up, stay away from, feel about, mood, feeling, embarrassed, calm, serious, suddenly, honest, honestly, offer, end up, gotten together, nightclub, nightlife
 
-turn, straight, crosswalk, block, corner, across from, opposite, north, south, east, west, map, street, direction, intersection
+37. 연애 / 관계 이야기
 
-37. 시간 표현
+married to, couple, relationship, love, date, engaged, spouse, marriage, divorced, hug, kiss, honey, gay, lesbian, relative, get together, romance, partner, feel about
 
-until, at the moment, just now, for a while, the whole time, before bed, lunchtime, weekday, off, moment, soon, later, early, late, schedule
+38. 결혼식 / 행사 참여
 
-38. 관계 이야기
+bride, groom, wedding, anniversary, celebration, candle, deliver, wave, shiny, musician, greet, rose, cheek, vase, instead of, guest, invitation, cheers, flower, honeymoon
 
-married to, engaged, divorced, marriage, spouse, couple, relationship, love, break up, date, wedding, family, partner, husband, wife
+39. 외출 계획 / 일정 정하기
 
-39. 결혼 행사
+go out, plan, activity, spare time, weekend, the day after tomorrow, until, till, at the moment, just now, the whole time, for a while, before bed, can make it, hurry up, about to, weekday, moment, immediately
 
-bride, groom, celebration, anniversary, wedding, hug, kiss, flower, rose, party, invitation, guest, ceremony, reception, honeymoon
+40. 일상 행동 / 동작 설명
 
-40. 친구 관계
+pick up, put away, throw away, stand up, sit down, come back, go back, wake up, woke up, fell down, take out, hold, push, touch, cover, carry, back, down, into, up
 
-get along, make up, argument, stay away from, trust, joke, friend, hang out, talk, share, support, help, respect, conflict, friendship
+41. 사고/문제 발생 / 해결하기
 
-41. 성격 표현
+by accident, problem, mistake, fix, solution, reason, end up, matter, case, issue, crash, bad luck, confusing, unusual, common, figure, guess, or not, or something, such as
 
-outgoing, shy, lazy, clever, brave, calm, strict, forgetful, serious, responsible, funny, kind, honest, confident, polite
+42. 건강 문제 / 증상 설명
 
-42. 행동 동사
+toothache, headache, dizzy, weak, pain, heart, heart attack, sneeze, breathe, operation, sore, aspirin, tissue, smoke, poor, get hurt, badly, blind, cough, symptom
 
-throw away, pick up, put away, write down, take out, stand up, sit down, go out, come back, go back, move, carry, hold, drop, lift
+43. 응급 상황 / 도움 요청
 
-43. 사고와 실수
+fall down, blood, in pain, help, hospital, push, hold, until then, nobody, immediately, fortunately, firefighter, guard, security camera, hit, caught, shoulder, toe, cheek
 
-by accident, mistake, crash, bad luck, delay, problem, trouble, damage, broken, fix, repair, recover, apologize, forgive, solution
+44. 개인 위생 / 몸 관리
 
-44. 기술과 발명
+take a bath, go to the bathroom, shave, wake up, comb, asleep, awake, fall asleep, ring, rang, rung, before bed, make sure, haircut, barber, cigarette, tissue, felt
 
-engine, electric, machine, electricity, device, system, invention, innovation, tool, computer, program, software, hardware, automation, robot
+45. 감정 표현 / 반응 말하기
 
-45. 여행 문제 상황
+happy, annoyed, embarrassed, serious, calm, happy to, eager, lucky, bad at, surprising, bothered, feeling, mood, certainly, anyway, really, not bad, I don't mind, possibly, luckily
 
-lost baggage, delay, cancel, reservation, passport, embassy, customs, security, airport, ticket, immigration, travel issue, complaint, refund, help desk
+46. 감각 표현 / 상태 묘사
 
-46. 감각 표현
+see, hear, smell, taste, feel, soft, touch, loudly, quietly, wide, deep, round, tiny, unusual, common, beautiful, incredible, fantastic, full of, made of
 
-see, hear, smell, taste, touch, feel, sound, look, bright, dark, soft, loud, quiet, smooth, rough
+47. 은행 / 돈 관리
 
-47. 자연 탐험
+ATM, account, deposit, withdraw, payment, exchange, fee, salary, raise, rent, quarter past, quarter to, do business, percent, hundred, million, billion, yearly, annual
 
-explore, adventure, discover, jungle, mountain, river, wildlife, hiking, climbing, camping, trail, map, guide, expedition, survival
+48. 쇼핑 일반 / 물건 구매
 
-48. 돈과 은행
+store, product, price, buy, sell, donate, sold, gift card, tag, quality, real, object, pair, common, unusual, piece, the rest, each, include, delivery, customer
 
-ATM, account, deposit, withdraw, bank, loan, credit card, interest, balance, payment, transfer, transaction, finance, currency, exchange
+49. 여행 중 문제 / 도움 요청
 
-49. 식당 대화
+delay, lost baggage, embassy, security, problem, passport, visa, baggage, border, guard, stolen, spare, false, expect, complaint, security camera, get in, exit, identification
 
-menu, order, serve, waiter, bill, tip, table, reservation, restaurant, dish, drink, dessert, kitchen, chef, customer
+50. 일반 회화 표현 / 자연스럽게 말하기
 
-50. 일상 대화 표현
-
-anyway, by the way, honestly, probably, certainly, maybe, guess, think of, not bad, I don't mind, of course, sure, okay, really, actually
+have a good day, certainly, anyway, by the way, first of all, because of, including, especially, except, besides, however, probably, possibly, I don't mind, if you like, Lv141, till, until then, whatever, good job, it'll
