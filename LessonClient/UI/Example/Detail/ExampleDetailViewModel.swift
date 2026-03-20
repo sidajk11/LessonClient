@@ -9,12 +9,6 @@ import UIKit
 
 @MainActor
 final class ExampleDetailViewModel: ObservableObject {
-    private struct TokenDraft {
-        let surface: String
-        let phraseId: Int?
-        let formId: Int?
-    }
-
     let exampleId: Int
     let lesson: Lesson?
     let word: Vocabulary?
@@ -37,7 +31,7 @@ final class ExampleDetailViewModel: ObservableObject {
     @Published var error: String?
     @Published var info: String?
     
-    private let tokenPhraseMerger = SentenceTokenPhraseMerger()
+    private let sentenceUseCase = SentenceUseCase.shared
 
     /// 뷰모델의 대상 예문/문맥 정보를 설정합니다.
     init(exampleId: Int, lesson: Lesson?, word: Vocabulary?) {
@@ -97,67 +91,22 @@ final class ExampleDetailViewModel: ObservableObject {
         guard let ex = example else { return }
         guard ex.tokens.isEmpty else { return }
 
-        let rawParts = sentence.trimmed.tokenize()
-        let mergedTokens = await tokenPhraseMerger.merge(tokens: rawParts)
-        let mergedDrafts = mergedTokens.map { TokenDraft(surface: $0.surface, phraseId: $0.phraseId, formId: nil) }
-        let drafts = await fillFormIds(in: mergedDrafts)
-        guard !drafts.isEmpty else {
-            error = "토큰화할 문장이 없습니다."
-            return
-        }
-
         do {
             isCreatingTokens = true
             defer { isCreatingTokens = false }
 
-            for (idx, draft) in drafts.enumerated() {
-                _ = try await SentenceTokenDataSource.shared.createSentenceToken(
-                    exampleId: ex.id,
-                    tokenIndex: idx,
-                    surface: draft.surface,
-                    phraseId: draft.phraseId,
-                    formId: draft.formId
-                )
-            }
+            let created = try await sentenceUseCase.createTokensFromSentence(
+                exampleId: ex.id,
+                sentence: sentence
+            )
 
             let refreshed = try await ExampleDataSource.shared.example(id: ex.id)
             example = refreshed
             await refreshTokenKoreanTranslations()
-            info = "토큰 \(drafts.count)개가 생성되었습니다."
+            info = "토큰 \(created.count)개가 생성되었습니다."
         } catch {
             self.error = (error as NSError).localizedDescription
         }
-    }
-
-    /// 각 토큰 표면형에 대응하는 formId를 조회해 채웁니다.
-    private func fillFormIds(in drafts: [TokenDraft]) async -> [TokenDraft] {
-        var cache: [String: Int?] = [:]
-        var output: [TokenDraft] = []
-        output.reserveCapacity(drafts.count)
-
-        for draft in drafts {
-            let trimmed = draft.surface.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty || punctuationSet.contains(trimmed) {
-                output.append(draft)
-                continue
-            }
-
-            let key = trimmed.lowercased()
-            let formId: Int?
-            if let cached = cache[key] {
-                formId = cached
-            } else {
-                let rows = try? await WordFormDataSource.shared.listWordFormsByForm(form: trimmed, limit: 50)
-                let exact = rows?.first(where: { $0.form.lowercased() == key })
-                let picked = exact ?? rows?.first
-                formId = picked?.id
-                cache[key] = formId
-            }
-
-            output.append(.init(surface: draft.surface, phraseId: draft.phraseId, formId: formId))
-        }
-
-        return output
     }
 
     /// 기존 토큰을 문장 기준으로 다시 정렬/치환합니다.
@@ -178,14 +127,7 @@ final class ExampleDetailViewModel: ObservableObject {
                 return
             }
 
-            let rawParts = sentence.trimmed.tokenize()
-            let mergedTokens = await tokenPhraseMerger.merge(tokens: rawParts)
-            let mergedDrafts = mergedTokens.map { TokenDraft(surface: $0.surface, phraseId: $0.phraseId, formId: nil) }
-            let drafts = await fillFormIds(in: mergedDrafts)
-            guard !drafts.isEmpty else {
-                error = "토큰화할 문장이 없습니다."
-                return
-            }
+            let drafts = try await sentenceUseCase.buildTokenDrafts(from: sentence)
 
             let existing = ex.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
             let updateCount = min(existing.count, drafts.count)
@@ -219,6 +161,47 @@ final class ExampleDetailViewModel: ObservableObject {
             let untouchedExisting = max(existing.count - updateCount, 0)
             let ignoredDrafts = max(drafts.count - updateCount, 0)
             info = "토큰 갱신 완료 (updated=\(updatedCount), untouched=\(untouchedExisting), ignored=\(ignoredDrafts))"
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
+    }
+
+    /// 기존 토큰을 모두 삭제한 뒤 phrase 없이 전체 재생성합니다.
+    func recreateTokensWithoutPhrases() async {
+        await recreateAllTokensFromSentence(includePhrases: false)
+    }
+
+    /// 기존 토큰을 모두 삭제한 뒤 문장 기준으로 전체 재생성합니다.
+    func recreateAllTokensFromSentence(includePhrases: Bool = true) async {
+        guard let ex = example else { return }
+        guard !isRecreatingTokens else { return }
+        guard !sentence.trimmed.isEmpty else {
+            error = "문장을 입력해 주세요."
+            return
+        }
+
+        isRecreatingTokens = true
+        defer { isRecreatingTokens = false }
+
+        do {
+            for token in ex.tokens {
+                try await SentenceTokenDataSource.shared.deleteSentenceToken(id: token.id)
+            }
+
+            let created = try await sentenceUseCase.createTokensFromSentence(
+                exampleId: ex.id,
+                sentence: sentence,
+                includePhrases: includePhrases
+            )
+
+            let refreshed = try await ExampleDataSource.shared.example(id: ex.id)
+            example = refreshed
+            await refreshTokenKoreanTranslations()
+            if includePhrases {
+                info = "구문 우선으로 토큰 \(created.count)개를 다시 생성했습니다."
+            } else {
+                info = "phrase 없이 토큰 \(created.count)개를 다시 생성했습니다."
+            }
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -512,11 +495,22 @@ sense_examples: \(examplesText.isEmpty ? "-" : examplesText)
         do {
             var updated = 0
             var latestByTokenId: [Int: Int] = [:]
+            var wordIdBySenseId: [Int: Int] = [:]
             for row in assignments { latestByTokenId[row.tokenId] = row.senseId }
 
             for (tokenId, senseId) in latestByTokenId {
+                let wordId: Int
+                if let cached = wordIdBySenseId[senseId] {
+                    wordId = cached
+                } else {
+                    let sense = try await WordDataSource.shared.wordSense(senseId: senseId)
+                    wordId = sense.wordId
+                    wordIdBySenseId[senseId] = wordId
+                }
+
                 _ = try await SentenceTokenDataSource.shared.updateSentenceToken(
                     id: tokenId,
+                    wordId: wordId,
                     senseId: senseId
                 )
                 updated += 1

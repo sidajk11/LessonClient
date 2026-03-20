@@ -16,7 +16,7 @@ final class OpenAIClient {
     }
 
     // MARK: - Public API
-    func generateText(prompt: String, model: String = "gpt-5.2") async throws -> String {
+    func generateText(prompt: String, model: String = "gpt-5.4") async throws -> String {
         let url = URL(string: "https://api.openai.com/v1/responses")!
 
         var request = URLRequest(url: url)

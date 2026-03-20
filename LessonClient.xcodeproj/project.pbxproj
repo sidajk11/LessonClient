@@ -14,6 +14,7 @@
 /* Begin PBXFileReference section */
 		644CA1902E607629000D9495 /* LessonClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LessonClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		990F33712F4BE00B0075F68E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		9986ECDF2F6A22160040DB0D /* Character.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Character.md; sourceTree = "<group>"; };
 		99C982FA2F63B91F005F6A1A /* B1Words.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = B1Words.md; sourceTree = "<group>"; };
 		99E334A92F4D3F4A00399A2E /* ModelRelations.md */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelRelations.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -56,6 +57,7 @@
 			children = (
 				990F33712F4BE00B0075F68E /* README.md */,
 				99E334A92F4D3F4A00399A2E /* ModelRelations.md */,
+				9986ECDF2F6A22160040DB0D /* Character.md */,
 				99C982FA2F63B91F005F6A1A /* B1Words.md */,
 				644CA1922E607629000D9495 /* LessonClient */,
 				644CA1912E607629000D9495 /* Products */,

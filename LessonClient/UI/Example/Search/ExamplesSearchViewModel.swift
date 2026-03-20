@@ -13,6 +13,7 @@ final class ExamplesSearchViewModel: ObservableObject {
     @Published var q: String = ""
     @Published var levelText: String = ""   // numeric-only text
     @Published var unitText: String = ""    // numeric-only text
+    @Published var showOnlyUnresolvableVocabulary: Bool = false
 
     // State
     @Published var items: [Example] = []
@@ -23,9 +24,20 @@ final class ExamplesSearchViewModel: ObservableObject {
     @Published var senseProgressText: String?
     @Published var senseCodeBySenseId: [Int: String] = [:]
     @Published var senseCefrBySenseId: [Int: String] = [:]
+    @Published var hasUnresolvableVocabularyByExampleId: [Int: Bool] = [:]
+    @Published var unresolvableVocabularyWordByExampleId: [Int: String] = [:]
+    @Published var highestUnitByExampleId: [Int: Int] = [:]
+    @Published var highestUnitWordByExampleId: [Int: String] = [:]
     @Published var error: String?
     private let searchLimit: Int = 400
     private var searchGeneration: Int = 0
+    private let sentenceUseCase = SentenceUseCase.shared
+    private let tokenVocabularyStatusLoader = ExampleTokenVocabularyStatusLoader()
+
+    var displayItems: [Example] {
+        guard showOnlyUnresolvableVocabulary else { return items }
+        return items.filter { hasUnresolvableVocabularyByExampleId[$0.id] == true }
+    }
 
     func sanitizeLevelInput(_ value: String) {
         levelText = value.filter { $0.isNumber }
@@ -79,11 +91,18 @@ final class ExamplesSearchViewModel: ObservableObject {
             guard generation == searchGeneration else { return }
             items = result
             sortItemsByUnitAscending()
+            hasUnresolvableVocabularyByExampleId = [:]
+            unresolvableVocabularyWordByExampleId = [:]
+            highestUnitByExampleId = [:]
+            highestUnitWordByExampleId = [:]
 
             guard !result.isEmpty else { return }
 
             Task { [weak self] in
                 await self?.loadSenseCodes(for: result, generation: generation)
+            }
+            Task { [weak self] in
+                await self?.loadSentenceStatuses(for: result, generation: generation)
             }
         } catch {
             guard generation == searchGeneration else { return }
@@ -134,11 +153,52 @@ final class ExamplesSearchViewModel: ObservableObject {
         }
     }
 
+    private func loadSentenceStatuses(for examples: [Example], generation: Int) async {
+        guard generation == searchGeneration else { return }
+        let batch = await tokenVocabularyStatusLoader.load(for: examples)
+
+        guard generation == searchGeneration else { return }
+        hasUnresolvableVocabularyByExampleId = batch.hasUnresolvableVocabularyByExampleId
+        unresolvableVocabularyWordByExampleId = batch.unresolvableVocabularyWordByExampleId
+        highestUnitByExampleId = batch.highestUnitByExampleId
+        highestUnitWordByExampleId = batch.highestUnitWordByExampleId
+    }
+
     func unitBadgeText(for example: Example) -> String {
         if let unit = example.unit {
             return "U\(unit)"
         }
         return "U-"
+    }
+
+    func sentenceStatusText(for example: Example) -> String? {
+        if hasUnresolvableVocabularyByExampleId[example.id] == true {
+            if let word = unresolvableVocabularyWordByExampleId[example.id], !word.isEmpty {
+                return "미학습 단어 포함 (\(word))"
+            }
+            return "미학습 단어 포함"
+        }
+        if let highestUnit = highestUnitByExampleId[example.id] {
+            if isHighestUnitAboveExampleUnit(for: example),
+               let word = highestUnitWordByExampleId[example.id],
+               !word.isEmpty {
+                return "최고 unit: \(highestUnit) (\(word))"
+            }
+            return "최고 unit: \(highestUnit)"
+        }
+        return nil
+    }
+
+    func hasUnresolvableVocabulary(for example: Example) -> Bool {
+        hasUnresolvableVocabularyByExampleId[example.id] == true
+    }
+
+    func isHighestUnitAboveExampleUnit(for example: Example) -> Bool {
+        guard let highestUnit = highestUnitByExampleId[example.id],
+              let exampleUnit = example.unit else {
+            return false
+        }
+        return highestUnit > exampleUnit
     }
 
     private func sortItemsByUnitAscending() {
@@ -155,15 +215,14 @@ final class ExamplesSearchViewModel: ObservableObject {
 
     func recreateAllTokens() async {
         guard !isRecreatingAllTokens else { return }
-        guard !items.isEmpty else {
+        let targetItems = displayItems
+        guard !targetItems.isEmpty else {
             error = "재생성할 예문이 없습니다."
             return
         }
 
         isRecreatingAllTokens = true
         defer { isRecreatingAllTokens = false }
-
-        let targetItems = items
         var successCount = 0
         var skippedByTokenReady = 0
         var failedRows: [String] = []
@@ -178,12 +237,17 @@ final class ExamplesSearchViewModel: ObservableObject {
                 continue
             }
 
+            let phraseDrafts = try? await sentenceUseCase.buildTokenDrafts(from: detailVM.sentence)
+            let hasPhraseDraft = phraseDrafts?.contains(where: { $0.phraseId != nil }) == true
+
             if let tokens = detailVM.example?.tokens {
                 let checkTargets = tokens.filter { token in
                     !punctuationSet.contains(token.surface)
                 }
-                let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
-                    token.senseId != nil || token.phraseId != nil
+                let isTokenReady = !hasPhraseDraft &&
+                    !checkTargets.isEmpty &&
+                    checkTargets.allSatisfy { token in
+                        token.senseId != nil
                 }
                 if isTokenReady {
                     skippedByTokenReady += 1
@@ -191,7 +255,11 @@ final class ExamplesSearchViewModel: ObservableObject {
                 }
             }
 
-            await detailVM.recreateTokensFromSentence()
+            if hasPhraseDraft {
+                await detailVM.recreateAllTokensFromSentence()
+            } else {
+                await detailVM.recreateTokensFromSentence()
+            }
             if let recreateError = detailVM.error, !recreateError.isEmpty {
                 failedRows.append("#\(row.id) recreate: \(recreateError)")
                 continue
@@ -218,7 +286,8 @@ final class ExamplesSearchViewModel: ObservableObject {
     func addSensesForAllExamples() async {
         guard !isAddingSenses else { return }
         guard !isRecreatingAllTokens else { return }
-        guard !items.isEmpty else {
+        let visibleItems = displayItems
+        guard !visibleItems.isEmpty else {
             error = "sense를 추가할 예문이 없습니다."
             return
         }
@@ -226,7 +295,7 @@ final class ExamplesSearchViewModel: ObservableObject {
         isAddingSenses = true
         defer { isAddingSenses = false }
 
-        let targetItems = await missingSenseTargetItems()
+        let targetItems = missingSenseTargetItems(in: visibleItems)
         guard !targetItems.isEmpty else {
             senseProgressText = "sense가 비어 있는 token 예문이 없습니다."
             return
@@ -254,7 +323,7 @@ final class ExamplesSearchViewModel: ObservableObject {
                     !punctuationSet.contains(token.surface)
                 }
                 let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
-                    token.senseId != nil || token.phraseId != nil
+                    token.senseId != nil
                 }
                 if isTokenReady {
                     skippedByExistingSense += 1
@@ -318,20 +387,14 @@ sense 추가 중 일부 실패:
 """
     }
 
-    private func missingSenseTargetItems() async -> [Example] {
-        if items.count <= 200,
-           let missingExamples = try? await ExampleDataSource.shared.examplesWithoutSenseTokens(limit: items.count) {
-            let missingIds = Set(missingExamples.map(\.id))
-            return items.filter { missingIds.contains($0.id) }
-        }
-
-        return items.filter { example in
+    private func missingSenseTargetItems(in examples: [Example]) -> [Example] {
+        return examples.filter { example in
             let checkTargets = example.tokens.filter { token in
                 !punctuationSet.contains(token.surface)
             }
             guard !checkTargets.isEmpty else { return false }
             return checkTargets.contains { token in
-                token.senseId == nil && token.phraseId == nil
+                token.senseId == nil
             }
         }
     }

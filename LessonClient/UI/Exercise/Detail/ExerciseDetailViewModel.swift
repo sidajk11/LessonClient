@@ -95,7 +95,7 @@ final class ExerciseDetailViewModel: ObservableObject {
         do {
             // create 화면과 동일한 로직 재사용
             if let vocabularyId = example.vocabularyId {
-                let w = try await VocabularyDataSource.shared.word(id: vocabularyId)
+                let w = try await VocabularyDataSource.shared.vocabulary(id: vocabularyId)
                 if let lessonId = w.lessonId {
                     let lesson = try await LessonDataSource.shared.lesson(id: lessonId)
                     self.wordsLearned = try await VocabularyDataSource.shared.wordsLessThan(unit: lesson.unit)

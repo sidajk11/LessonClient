@@ -37,7 +37,7 @@ final class ExampleCreateViewModel: ObservableObject {
             examples.append(example)
         }
         
-        let word = try await VocabularyDataSource.shared.word(id: wordId)
+        let word = try await VocabularyDataSource.shared.vocabulary(id: wordId)
         
         for example in examples {
             await autoGenerateCombine(example: example, word: word)

@@ -41,6 +41,22 @@ struct VocabularyDetailView: View {
                     set: { vm.word?.text = $0 }
                 ))
 
+                Toggle(
+                    "exampleExercise",
+                    isOn: Binding(
+                        get: { vm.word?.exampleExercise ?? true },
+                        set: { vm.word?.exampleExercise = $0 }
+                    )
+                )
+
+                Toggle(
+                    "vocabularyExercise",
+                    isOn: Binding(
+                        get: { vm.word?.vocabularyExercise ?? true },
+                        set: { vm.word?.vocabularyExercise = $0 }
+                    )
+                )
+
                 HStack {
                     Button("기본 텍스트 저장") { Task { await vm.saveVocabulary() } }
                         .buttonStyle(.borderedProminent)
@@ -59,6 +75,7 @@ struct VocabularyDetailView: View {
             }
             metadataSection(for: e)
             senseListSection
+            formListSection
             
             // + 새 예문 추가 네비게이션 (필요 시 유지)
             NavigationLink {
@@ -159,7 +176,15 @@ struct VocabularyDetailView: View {
     @ViewBuilder
     private func metadataSection(for word: Vocabulary) -> some View {
         Section("메타데이터") {
-            metadataRow(title: "sense_id", value: word.senseId.map(String.init) ?? "-")
+            TextField("sense_id", text: $vm.senseIdText)
+                .textFieldStyle(.roundedBorder)
+                .disabled(vm.isUpdatingSense)
+
+            Button("sense_id 적용") {
+                Task { await vm.applySenseId() }
+            }
+            .buttonStyle(.bordered)
+            .disabled(vm.isUpdatingSense)
 
             HStack {
                 Text("sense_code")
@@ -172,6 +197,24 @@ struct VocabularyDetailView: View {
             }
 
             metadataRow(title: "form_id", value: word.formId.map(String.init) ?? "-")
+            HStack {
+                Text("form")
+                Spacer()
+                Button(vm.formText) {
+                    Task { await vm.toggleFormList() }
+                }
+                .buttonStyle(.link)
+                .disabled(!vm.canChangeForm)
+
+                if word.formId != nil {
+                    Button("해제") {
+                        Task { await vm.clearForm() }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(vm.isUpdatingForm)
+                }
+            }
             metadataRow(title: "phrase_id", value: word.phraseId.map(String.init) ?? "-")
         }
     }
@@ -189,6 +232,30 @@ struct VocabularyDetailView: View {
                     }
 
                     if vm.isUpdatingSense {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var formListSection: some View {
+        if vm.isFormListExpanded {
+            Section("Form 리스트") {
+                if vm.availableForms.isEmpty {
+                    Text("선택 가능한 form이 없습니다.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(vm.availableForms) { form in
+                        formRow(form)
+                    }
+
+                    if vm.isUpdatingForm {
                         HStack {
                             Spacer()
                             ProgressView()
@@ -229,5 +296,40 @@ struct VocabularyDetailView: View {
         }
         .buttonStyle(.plain)
         .disabled(vm.isUpdatingSense)
+    }
+
+    private func formRow(_ form: WordFormRead) -> some View {
+        Button {
+            Task { await vm.updateForm(to: form) }
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: vm.word?.formId == form.id ? "largecircle.fill.circle" : "circle")
+                    .foregroundStyle(vm.word?.formId == form.id ? Color.accentColor : Color.secondary)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text("form_id: \(form.id)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(form.form)
+                            .font(.headline)
+                    }
+
+                    Text(form.formType ?? "-")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Text(vm.koreanText(for: form))
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer()
+            }
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+        .disabled(vm.isUpdatingForm)
     }
 }

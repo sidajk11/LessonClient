@@ -23,7 +23,7 @@ final class ExerciseListViewModel: ObservableObject {
             // Assumes your data source exposes a list method by example
             let result = try await ExerciseDataSource.shared.list(exampleId: example.id)
             if let vocabularyId = example.vocabularyId {
-                word = try await VocabularyDataSource.shared.word(id: vocabularyId)
+                word = try await VocabularyDataSource.shared.vocabulary(id: vocabularyId)
             }
             
             practices = result

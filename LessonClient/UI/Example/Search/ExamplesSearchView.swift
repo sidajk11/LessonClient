@@ -41,12 +41,19 @@ struct ExamplesSearchView: View {
                     Button("전체 생성") {
                         Task { await vm.recreateAllTokens() }
                     }
-                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isAddingSenses || vm.items.isEmpty)
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isAddingSenses || vm.displayItems.isEmpty)
 
                     Button("sense 추가") {
                         Task { await vm.addSensesForAllExamples() }
                     }
-                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isAddingSenses || vm.items.isEmpty)
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isAddingSenses || vm.displayItems.isEmpty)
+                }
+                .padding(.horizontal)
+
+                HStack {
+                    Toggle("미학습단어 포함만", isOn: $vm.showOnlyUnresolvableVocabulary)
+                        .toggleStyle(.checkbox)
+                    Spacer()
                 }
                 .padding(.horizontal)
 
@@ -94,7 +101,7 @@ struct ExamplesSearchView: View {
 
                 // 결과 리스트
                 List {
-                    ForEach(vm.items) { row in
+                    ForEach(vm.displayItems) { row in
                         VStack(alignment: .leading, spacing: 6) {
                             NavigationLink {
                                 ExampleDetailView(exampleId: row.id, lesson: nil, word: nil)
@@ -118,6 +125,17 @@ struct ExamplesSearchView: View {
                                     Text("단어: \(row.wordText ?? (row.vocabularyId.map { "#\($0)" } ?? "-"))")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
+
+                                    if let sentenceStatus = vm.sentenceStatusText(for: row) {
+                                        Text(sentenceStatus)
+                                            .font(.caption)
+                                            .foregroundStyle(
+                                                vm.hasUnresolvableVocabulary(for: row)
+                                                || vm.isHighestUnitAboveExampleUnit(for: row)
+                                                ? .red
+                                                : .secondary
+                                            )
+                                    }
 
                                     let sortedTokens = row.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
                                     let checkTargets = sortedTokens.filter { token in

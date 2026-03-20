@@ -137,6 +137,15 @@ final class WordDataSource {
             as: Empty.self
         )
     }
+
+    // MARK: - Word 삭제 (DELETE /words/{word_id})
+    func deleteWord(id: Int) async throws {
+        _ = try await api.request(
+            "DELETE",
+            "admin/words/\(id)",
+            as: Empty.self
+        )
+    }
     
     // MARK: - WordSense 예문 연결 (POST /words/senses/{sense_id}/examples)
     @discardableResult
@@ -246,15 +255,51 @@ extension WordDataSource {
         limit: Int = 100,
         offset: Int = 0
     ) async throws -> [WordSenseRead] {
+        try await listWordSensesByLemma(
+            path: "admin/words/senses/by-lemma",
+            lemma: lemma,
+            cefr: nil,
+            limit: limit,
+            offset: offset
+        )
+    }
+
+    /// lemma + CEFR로 sense 목록 조회 (서버: GET /words/senses/by-lemma-cefr?lemma=...&cefr=...)
+    func listWordSensesByLemmaAndCefr(
+        lemma: String,
+        cefr: String,
+        limit: Int = 100,
+        offset: Int = 0
+    ) async throws -> [WordSenseRead] {
+        try await listWordSensesByLemma(
+            path: "admin/words/senses/by-lemma-cefr",
+            lemma: lemma,
+            cefr: cefr,
+            limit: limit,
+            offset: offset
+        )
+    }
+
+    private func listWordSensesByLemma(
+        path: String,
+        lemma: String,
+        cefr: String?,
+        limit: Int,
+        offset: Int
+    ) async throws -> [WordSenseRead] {
         let trimmed = lemma.trimmingCharacters(in: .whitespacesAndNewlines)
-        let query: [URLQueryItem] = [
+        let trimmedCefr = cefr?.trimmingCharacters(in: .whitespacesAndNewlines)
+        var query: [URLQueryItem] = [
             .init(name: "lemma", value: trimmed),
             .init(name: "limit", value: String(min(max(limit, 1), 500))),
             .init(name: "offset", value: String(max(offset, 0)))
         ]
+        if let trimmedCefr, !trimmedCefr.isEmpty {
+            query.append(.init(name: "cefr", value: trimmedCefr.uppercased()))
+        }
         return try await api.request(
             "GET",
-            "admin/words/senses/by-lemma",
+            path,
             query: query,
             as: [WordSenseRead].self
         )

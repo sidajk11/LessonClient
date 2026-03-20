@@ -47,7 +47,7 @@ final class ExerciseCreateViewModel: ObservableObject {
             Task {
                 do {
                     if let vocabularyId = example.vocabularyId {
-                        let word = try await VocabularyDataSource.shared.word(id: vocabularyId)
+                        let word = try await VocabularyDataSource.shared.vocabulary(id: vocabularyId)
                         if let lessonId = word.lessonId {
                             self.lesson = try await LessonDataSource.shared.lesson(id: lessonId)
                             if let lesson = self.lesson {

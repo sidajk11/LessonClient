@@ -10,6 +10,38 @@ import Foundation
 struct SentenceTokenTranslationRead: Codable, Hashable {
     let lang: String
     let text: String
+    let isPrimary: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case lang
+        case text
+        case isPrimary = "is_primary"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        lang = try c.decode(String.self, forKey: .lang)
+        text = try c.decode(String.self, forKey: .text)
+        isPrimary = try c.decodeIfPresent(Bool.self, forKey: .isPrimary) ?? true
+    }
+}
+
+struct SentenceTokenWordSenseRead: Codable, Hashable, Identifiable {
+    let id: Int
+    let wordId: Int
+    let senseCode: String
+    let pos: String?
+    let explain: String
+    let cefr: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case wordId = "word_id"
+        case senseCode = "sense_code"
+        case pos
+        case explain
+        case cefr
+    }
 }
 
 struct SentenceTokenRead: Codable, Identifiable {
@@ -20,12 +52,15 @@ struct SentenceTokenRead: Codable, Identifiable {
     let phraseId: Int?
     let wordId: Int?
     let formId: Int?
-    let senseId: Int?
+    let sense: SentenceTokenWordSenseRead?
     let pos: String?
     let startIndex: Int?
     let endIndex: Int?
     let translations: [SentenceTokenTranslationRead]
     let createdAt: Date?
+    private let rawSenseId: Int?
+
+    var senseId: Int? { sense?.id ?? rawSenseId }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -36,6 +71,7 @@ struct SentenceTokenRead: Codable, Identifiable {
         case wordId = "word_id"
         case formId = "form_id"
         case senseId = "sense_id"
+        case sense
         case pos
         case startIndex = "start_index"
         case endIndex = "end_index"
@@ -52,7 +88,8 @@ struct SentenceTokenRead: Codable, Identifiable {
         phraseId = try c.decodeIfPresent(Int.self, forKey: .phraseId)
         wordId = try c.decodeIfPresent(Int.self, forKey: .wordId)
         formId = try c.decodeIfPresent(Int.self, forKey: .formId)
-        senseId = try c.decodeIfPresent(Int.self, forKey: .senseId)
+        sense = try c.decodeIfPresent(SentenceTokenWordSenseRead.self, forKey: .sense)
+        rawSenseId = try c.decodeIfPresent(Int.self, forKey: .senseId)
         pos = try c.decodeIfPresent(String.self, forKey: .pos)
         startIndex = try c.decodeIfPresent(Int.self, forKey: .startIndex)
         endIndex = try c.decodeIfPresent(Int.self, forKey: .endIndex)
@@ -60,6 +97,24 @@ struct SentenceTokenRead: Codable, Identifiable {
 
         let createdAtRaw = try c.decodeIfPresent(String.self, forKey: .createdAt)
         createdAt = SentenceTokenDateParser.parse(createdAtRaw)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(exampleId, forKey: .exampleId)
+        try c.encode(tokenIndex, forKey: .tokenIndex)
+        try c.encode(surface, forKey: .surface)
+        try c.encodeIfPresent(phraseId, forKey: .phraseId)
+        try c.encodeIfPresent(wordId, forKey: .wordId)
+        try c.encodeIfPresent(formId, forKey: .formId)
+        try c.encodeIfPresent(senseId, forKey: .senseId)
+        try c.encodeIfPresent(sense, forKey: .sense)
+        try c.encodeIfPresent(pos, forKey: .pos)
+        try c.encodeIfPresent(startIndex, forKey: .startIndex)
+        try c.encodeIfPresent(endIndex, forKey: .endIndex)
+        try c.encode(translations, forKey: .translations)
+        try c.encodeIfPresent(createdAt.map(SentenceTokenDateParser.string), forKey: .createdAt)
     }
 }
 
@@ -118,6 +173,13 @@ struct SentenceTokenUpdate: Codable {
 struct SentenceTokenTranslationCreate: Codable {
     let lang: String
     let text: String
+    let isPrimary: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case lang
+        case text
+        case isPrimary = "is_primary"
+    }
 }
 
 private enum SentenceTokenDateParser {
@@ -137,4 +199,8 @@ private enum SentenceTokenDateParser {
         formatter.formatOptions = [.withInternetDateTime]
         return formatter
     }()
+
+    static func string(_ date: Date) -> String {
+        iso8601WithFractional.string(from: date)
+    }
 }

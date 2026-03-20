@@ -115,7 +115,7 @@ struct SenseListView: View {
                 List {
                     ForEach(vm.items) { row in
                         NavigationLink {
-                            WordDetailView(wordId: row.wordId)
+                            SenseDetailView(senseId: row.sense.id)
                         } label: {
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -147,7 +147,7 @@ struct SenseListView: View {
                                         .lineLimit(2)
                                 }
 
-                                Text("wordId: \(row.wordId) • kind: \(row.kind) • examples: \(row.sense.examples.count)")
+                                Text("wordId: \(row.wordId) • senseId: \(row.sense.id) • kind: \(row.kind) • examples: \(row.sense.examples.count)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

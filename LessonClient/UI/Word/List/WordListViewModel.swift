@@ -11,6 +11,7 @@ import Foundation
 final class WordListViewModel: ObservableObject {
     @Published var words: [WordRead] = []
     @Published var isLoading: Bool = false
+    @Published var deletingWordId: Int?
     @Published var errorMessage: String?
 
     // Filters
@@ -65,6 +66,26 @@ final class WordListViewModel: ObservableObject {
             words.append(contentsOf: result)
             offset += result.count
             hasMore = result.count == limit
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteWord(_ word: WordRead) async {
+        guard deletingWordId == nil else { return }
+
+        deletingWordId = word.id
+        errorMessage = nil
+        defer { deletingWordId = nil }
+
+        do {
+            for sense in word.senses {
+                try await ds.deleteWordSense(senseId: sense.id)
+            }
+
+            try await ds.deleteWord(id: word.id)
+            words.removeAll { $0.id == word.id }
+            offset = max(0, offset - 1)
         } catch {
             errorMessage = error.localizedDescription
         }

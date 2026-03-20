@@ -167,9 +167,10 @@ final class SentenceTokenDataSource {
     func upsertSentenceTokenTranslation(
         tokenId: Int,
         lang: String,
-        text: String
+        text: String,
+        isPrimary: Bool = true
     ) async throws -> SentenceTokenRead {
-        let body = SentenceTokenTranslationCreate(lang: lang, text: text)
+        let body = SentenceTokenTranslationCreate(lang: lang, text: text, isPrimary: isPrimary)
         return try await api.request(
             "PUT",
             "admin/sentence-tokens/\(tokenId)/translations",

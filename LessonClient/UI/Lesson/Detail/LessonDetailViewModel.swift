@@ -98,6 +98,7 @@ final class LessonDetailViewModel: ObservableObject {
             let updated = try await LessonDataSource.shared.attachVocabulary(lessonId: lessonId, vocabularyId: vocabularyId)
             model = updated
             vocabularys = updated.vocabularies
+            applySearchFilter()
             await reloadDerivedRows()
         } catch {
             self.error = (error as NSError).localizedDescription
@@ -109,6 +110,7 @@ final class LessonDetailViewModel: ObservableObject {
             let updated = try await LessonDataSource.shared.detachVocabulary(lessonId: lessonId, vocabularyId: vocabularyId)
             model = updated
             vocabularys = updated.vocabularies
+            applySearchFilter()
             await reloadDerivedRows()
         } catch {
             self.error = (error as NSError).localizedDescription
@@ -117,11 +119,10 @@ final class LessonDetailViewModel: ObservableObject {
 
     func doVocabularySearch() async {
         do {
-            if wq.isEmpty {
-                wsearch = try await VocabularyDataSource.shared.listUnassigned()
-            } else {
-                wsearch = try await VocabularyDataSource.shared.searchVocabularys(q: wq)
-            }
+            let rows = try await VocabularyDataSource.shared.listUnassigned(
+                word: wq.isEmpty ? nil : wq
+            )
+            wsearch = filteredSearchRows(rows)
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -178,5 +179,14 @@ final class LessonDetailViewModel: ObservableObject {
         return exercises.filter { exercise in
             seen.insert(exercise.id).inserted
         }
+    }
+
+    private func applySearchFilter() {
+        wsearch = filteredSearchRows(wsearch)
+    }
+
+    private func filteredSearchRows(_ rows: [Vocabulary]) -> [Vocabulary] {
+        let attachedIds = Set(vocabularys.map(\.id))
+        return rows.filter { !attachedIds.contains($0.id) }
     }
 }
