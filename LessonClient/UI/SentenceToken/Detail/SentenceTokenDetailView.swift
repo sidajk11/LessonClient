@@ -49,6 +49,10 @@ struct SentenceTokenDetailView: View {
                         "createdAt",
                         token.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "-"
                     )
+                    infoRow(
+                        "vocabulary",
+                        token.vocabulary.map { "#\($0.id) \($0.text)" } ?? "-"
+                    )
                 }
 
                 Section("번역") {

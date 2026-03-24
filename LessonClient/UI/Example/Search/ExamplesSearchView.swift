@@ -24,7 +24,7 @@ struct ExamplesSearchView: View {
                         .textFieldStyle(.roundedBorder)
                         .frame(maxWidth: 140)
                         .onChange(of: vm.levelText) { _, newValue in
-                            vm.sanitizeLevelInput(newValue)
+                            vm.levelText = newValue.filter(\.isNumber)
                         }
                         .onSubmit { Task { await vm.search() } }
 
@@ -32,7 +32,7 @@ struct ExamplesSearchView: View {
                         .textFieldStyle(.roundedBorder)
                         .frame(maxWidth: 110)
                         .onChange(of: vm.unitText) { _, newValue in
-                            vm.sanitizeUnitInput(newValue)
+                            vm.unitText = newValue.filter(\.isNumber)
                         }
                         .onSubmit { Task { await vm.search() } }
 
@@ -41,12 +41,17 @@ struct ExamplesSearchView: View {
                     Button("전체 생성") {
                         Task { await vm.recreateAllTokens() }
                     }
-                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isAddingSenses || vm.displayItems.isEmpty)
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isDeletingTokens || vm.isAddingSenses || vm.displayItems.isEmpty)
+
+                    Button("토큰 삭제") {
+                        Task { await vm.deleteTokensForExamplesWithUnresolvableVocabulary() }
+                    }
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isDeletingTokens || vm.isAddingSenses || !vm.hasDeletableUnresolvableItems)
 
                     Button("sense 추가") {
                         Task { await vm.addSensesForAllExamples() }
                     }
-                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isAddingSenses || vm.displayItems.isEmpty)
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isDeletingTokens || vm.isAddingSenses || vm.displayItems.isEmpty)
                 }
                 .padding(.horizontal)
 
@@ -71,6 +76,25 @@ struct ExamplesSearchView: View {
                     }
                     .padding(.horizontal)
                 } else if let message = vm.bulkProgressText, !message.isEmpty {
+                    HStack {
+                        Text(message)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                }
+
+                if vm.isDeletingTokens {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text(vm.deleteProgressText ?? "토큰 삭제 중...")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                } else if let message = vm.deleteProgressText, !message.isEmpty {
                     HStack {
                         Text(message)
                             .font(.footnote)
@@ -126,15 +150,10 @@ struct ExamplesSearchView: View {
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
 
-                                    if let sentenceStatus = vm.sentenceStatusText(for: row) {
-                                        Text(sentenceStatus)
+                                    if let sentenceStatus = vm.sentenceStatus(for: row) {
+                                        Text(sentenceStatus.text)
                                             .font(.caption)
-                                            .foregroundStyle(
-                                                vm.hasUnresolvableVocabulary(for: row)
-                                                || vm.isHighestUnitAboveExampleUnit(for: row)
-                                                ? .red
-                                                : .secondary
-                                            )
+                                            .foregroundStyle(sentenceStatus.isWarning ? .red : .secondary)
                                     }
 
                                     let sortedTokens = row.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })

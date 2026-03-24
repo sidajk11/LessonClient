@@ -76,10 +76,10 @@
             filePath = "LessonClient/UI/Example/Detail/ExampleDetailViewModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "613"
-            endingLineNumber = "613"
-            landmarkName = "parseTokenTranslations(from:)"
-            landmarkType = "7">
+            startingLineNumber = "619"
+            endingLineNumber = "619"
+            landmarkName = "flush()"
+            landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

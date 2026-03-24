@@ -117,7 +117,6 @@ final class LessonBulkCreateViewModel: ObservableObject {
                     _ = try await VocabularyDataSource.shared.createVocabulary(
                         text: word,
                         lessonId: lesson.id,
-                        wordId: metadata.wordId,
                         formId: metadata.formId,
                         senseId: metadata.senseId,
                         phraseId: metadata.phraseId

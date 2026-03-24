@@ -17,6 +17,7 @@ final class FormListViewModel: ObservableObject {
     @Published var items: [WordFormRead] = []
     @Published var selection: Set<Int> = []      // Table selection (id)
     @Published var query: String = ""
+    @Published var wordIdText: String = ""
     @Published var selectedFormType: String? = nil
 
     @Published var isLoading: Bool = false
@@ -36,6 +37,14 @@ final class FormListViewModel: ObservableObject {
 
     init(wordId: Int? = nil) {
         self.wordId = wordId
+    }
+
+    private var requestedWordId: Int? {
+        let trimmed = wordIdText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return wordId
+        }
+        return Int(trimmed)
     }
 
     // MARK: - Load
@@ -61,13 +70,33 @@ final class FormListViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            let result = try await ds.listWordForms(
-                wordId: wordId,
-                formType: selectedFormType,
-                q: query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : query,
-                limit: limit,
-                offset: offset
-            )
+            let result: [WordFormRead]
+            if let requestedWordId {
+                guard requestedWordId > 0 else {
+                    errorMessage = "word_id는 1 이상의 숫자여야 합니다."
+                    if reset {
+                        items = []
+                        selection.removeAll()
+                    }
+                    isLoading = false
+                    return
+                }
+
+                // word_id 검색은 새 by-word 경로를 우선 사용합니다.
+                result = try await ds.listWordFormsByWord(
+                    wordId: requestedWordId,
+                    limit: limit,
+                    offset: offset
+                )
+            } else {
+                result = try await ds.listWordForms(
+                    wordId: nil,
+                    formType: selectedFormType,
+                    q: query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : query,
+                    limit: limit,
+                    offset: offset
+                )
+            }
 
             if reset {
                 items = result

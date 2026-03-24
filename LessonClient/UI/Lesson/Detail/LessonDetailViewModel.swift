@@ -144,7 +144,7 @@ final class LessonDetailViewModel: ObservableObject {
             .sorted { $0.sortIndex < $1.sortIndex }
             .flatMap(\.exercises)
         let exercisesFromVocabularyExamples = vocabularys
-            .flatMap { $0.examples ?? [] }
+            .flatMap(\.examples)
             .flatMap(\.exercises)
         let allExercises = uniqueExercises(from: exercisesFromTargets + exercisesFromVocabularyExamples)
 

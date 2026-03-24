@@ -22,23 +22,23 @@ final class VocabularyDataSource {
     func createVocabulary(
         text: String,
         lessonId: Int? = nil,
-        wordId: Int? = nil,
         formId: Int? = nil,
         senseId: Int? = nil,
         phraseId: Int? = nil,
         exampleExercise: Bool? = nil,
         vocabularyExercise: Bool? = nil,
+        isForm: Bool? = nil,
         translations: [VocabularyTranslation]? = nil
     ) async throws -> Vocabulary {
         let body = VocabularyUpdate(
             text: text,
             lessonId: lessonId,
-            wordId: wordId,
             formId: formId,
             senseId: senseId,
             phraseId: phraseId,
             exampleExercise: exampleExercise,
             vocabularyExercise: vocabularyExercise,
+            isForm: isForm,
             translations: translations
         )
         return try await api.request("POST", "admin/vocabularies", jsonBody: body.toDict(), as: Vocabulary.self)
@@ -239,23 +239,23 @@ final class VocabularyDataSource {
         id: Int,
         text: String? = nil,
         lessonId: Int? = nil,
-        wordId: Int? = nil,
         formId: Int? = nil,
         senseId: Int? = nil,
         phraseId: Int? = nil,
         exampleExercise: Bool? = nil,
         vocabularyExercise: Bool? = nil,
+        isForm: Bool? = nil,
         translations: [VocabularyTranslation]? = nil
     ) async throws -> Vocabulary {
         let body = VocabularyUpdate(
             text: text,
             lessonId: lessonId,
-            wordId: wordId,
             formId: formId,
             senseId: senseId,
             phraseId: phraseId,
             exampleExercise: exampleExercise,
             vocabularyExercise: vocabularyExercise,
+            isForm: isForm,
             translations: translations
         )
         return try await api.request("PUT", "admin/vocabularies/\(id)", jsonBody: body.toDict(), as: Vocabulary.self)
@@ -268,23 +268,23 @@ final class VocabularyDataSource {
         id: Int,
         text: String,
         lessonId: Int? = nil,
-        wordId: Int? = nil,
         formId: Int? = nil,
         senseId: Int? = nil,
         phraseId: Int? = nil,
         exampleExercise: Bool,
         vocabularyExercise: Bool,
+        isForm: Bool,
         translations: [VocabularyTranslation]? = nil
     ) async throws -> Vocabulary {
         let body: [String: Any] = [
             "text": text,
             "lesson_id": jsonNullable(lessonId),
-            "word_id": jsonNullable(wordId),
             "form_id": jsonNullable(formId),
             "sense_id": jsonNullable(senseId),
             "phrase_id": jsonNullable(phraseId),
             "example_exercise": exampleExercise,
             "vocabulary_exercise": vocabularyExercise,
+            "is_form": isForm,
             "translations": translations?.toArray() ?? []
         ]
         return try await api.request(

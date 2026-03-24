@@ -83,13 +83,12 @@ extension LessonListViewModel {
             lines.append("\n\n")
         }
         for word in lesson.vocabularies {
-            if word.examples?.count == 0 {
+            if word.examples.isEmpty {
                 continue
             }
             lines.append(word.text)
             lines.append("\n")
-            let examples = word.examples ?? []
-            for example in examples {
+            for example in word.examples {
                 lines.append(example.sentence)
                 lines.append("\n")
                 lines.append(example.translations.toString())

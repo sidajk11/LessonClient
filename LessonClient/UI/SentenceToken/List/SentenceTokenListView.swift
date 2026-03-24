@@ -87,6 +87,13 @@ struct SentenceTokenListView: View {
                             }
                             .font(.caption)
                             .foregroundStyle(.secondary)
+
+                            if let vocabulary = token.vocabulary {
+                                // 서버가 찾아준 vocabulary 연결을 바로 보여줍니다.
+                                Text("vocabulary: #\(vocabulary.id) \(vocabulary.text)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         .padding(.vertical, 4)
                         .swipeActions {

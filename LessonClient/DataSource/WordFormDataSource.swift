@@ -33,6 +33,25 @@ final class WordFormDataSource {
         )
     }
 
+    // MARK: - word_id로 WordForm 조회 (GET /word-forms/by-word/{word_id})
+    func listWordFormsByWord(
+        wordId: Int,
+        limit: Int = 50,
+        offset: Int = 0
+    ) async throws -> [WordFormRead] {
+        let query: [URLQueryItem] = [
+            .init(name: "limit", value: String(min(max(limit, 1), 200))),
+            .init(name: "offset", value: String(max(offset, 0)))
+        ]
+
+        return try await api.request(
+            "GET",
+            "admin/word-forms/by-word/\(wordId)",
+            query: query,
+            as: [WordFormRead].self
+        )
+    }
+
     // MARK: - WordForm 목록 조회 (GET /word-forms)
     func listWordForms(
         wordId: Int? = nil,

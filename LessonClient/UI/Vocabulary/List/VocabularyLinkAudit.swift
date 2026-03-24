@@ -37,18 +37,24 @@ actor VocabularyLinkAuditor {
         let expectedForm = formRows.first {
             matches($0.form, normalizedWord: normalizedText)
         }
-        let expectedFormId = expectedForm?.id
+        var expectedFormId = expectedForm?.id
 
         let cefr = vocabulary.cefr
         let expectedSenseId: Int?
         // form으로 word를 찾을 수 있으면 lemma 기준 sense 조회를 한 번 더 보완합니다.
-        let senseLemma: String?
+        var senseLemma: String?
         if let expectedForm,
            let word = try? await wordDataSource.word(id: expectedForm.wordId) {
             senseLemma = word.lemma
         } else {
             senseLemma = nil
         }
+        
+        if !vocabulary.isForm {
+            senseLemma = nil
+            expectedFormId = nil
+        }
+        
         let senseRows = try await listWordByLemma(lemma: senseLemma ?? text)?.senses ?? []
         expectedSenseId = preferredSense(from: senseRows)?.id
 

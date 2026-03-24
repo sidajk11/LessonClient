@@ -9,6 +9,11 @@ import Foundation
 
 @MainActor
 final class ExamplesSearchViewModel: ObservableObject {
+    struct SentenceStatusPresentation {
+        let text: String
+        let isWarning: Bool
+    }
+
     // Inputs
     @Published var q: String = ""
     @Published var levelText: String = ""   // numeric-only text
@@ -19,8 +24,10 @@ final class ExamplesSearchViewModel: ObservableObject {
     @Published var items: [Example] = []
     @Published var isLoading: Bool = false
     @Published var isRecreatingAllTokens: Bool = false
+    @Published var isDeletingTokens: Bool = false
     @Published var isAddingSenses: Bool = false
     @Published var bulkProgressText: String?
+    @Published var deleteProgressText: String?
     @Published var senseProgressText: String?
     @Published var senseCodeBySenseId: [Int: String] = [:]
     @Published var senseCefrBySenseId: [Int: String] = [:]
@@ -39,52 +46,38 @@ final class ExamplesSearchViewModel: ObservableObject {
         return items.filter { hasUnresolvableVocabularyByExampleId[$0.id] == true }
     }
 
-    func sanitizeLevelInput(_ value: String) {
-        levelText = value.filter { $0.isNumber }
-    }
-
-    func sanitizeUnitInput(_ value: String) {
-        unitText = value.filter { $0.isNumber }
+    var hasDeletableUnresolvableItems: Bool {
+        return unresolvableVocabularyTargetItems(in: displayItems).contains { !$0.tokens.isEmpty }
     }
 
     func search() async {
-        guard let filters = validatedFilters() else { return }
-        error = nil
-        searchGeneration += 1
-        let generation = searchGeneration
-        await fetchPage(filters: filters, generation: generation)
-    }
-
-    private struct SearchFilters {
-        let level: Int?
-        let unit: Int?
-    }
-
-    private func validatedFilters() -> SearchFilters? {
         let levelParam: Int? = levelText.isEmpty ? nil : Int(levelText)
         let unitParam: Int? = unitText.isEmpty ? nil : Int(unitText)
 
         if !levelText.isEmpty && levelParam == nil {
             error = "레벨은 숫자로 입력해 주세요."
-            return nil
+            return
         }
         if !unitText.isEmpty && unitParam == nil {
             error = "Unit은 숫자로 입력해 주세요."
-            return nil
+            return
         }
 
-        return SearchFilters(level: levelParam, unit: unitParam)
+        error = nil
+        searchGeneration += 1
+        let generation = searchGeneration
+        await fetchPage(level: levelParam, unit: unitParam, generation: generation)
     }
 
-    private func fetchPage(filters: SearchFilters, generation: Int) async {
+    private func fetchPage(level: Int?, unit: Int?, generation: Int) async {
         isLoading = true
         defer { isLoading = false }
 
         do {
             let result = try await ExampleDataSource.shared.search(
                 q: q,
-                level: filters.level,
-                unit: filters.unit,
+                level: level,
+                unit: unit,
                 limit: searchLimit
             )
 
@@ -171,29 +164,25 @@ final class ExamplesSearchViewModel: ObservableObject {
         return "U-"
     }
 
-    func sentenceStatusText(for example: Example) -> String? {
+    func sentenceStatus(for example: Example) -> SentenceStatusPresentation? {
         if hasUnresolvableVocabularyByExampleId[example.id] == true {
             if let word = unresolvableVocabularyWordByExampleId[example.id], !word.isEmpty {
-                return "미학습 단어 포함 (\(word))"
+                return .init(text: "미학습 단어 포함 (\(word))", isWarning: true)
             }
-            return "미학습 단어 포함"
+            return .init(text: "미학습 단어 포함", isWarning: true)
         }
         if let highestUnit = highestUnitByExampleId[example.id] {
-            if isHighestUnitAboveExampleUnit(for: example),
+            if highestUnitExceedsExampleUnit(for: example),
                let word = highestUnitWordByExampleId[example.id],
                !word.isEmpty {
-                return "최고 unit: \(highestUnit) (\(word))"
+                return .init(text: "최고 unit: \(highestUnit) (\(word))", isWarning: true)
             }
-            return "최고 unit: \(highestUnit)"
+            return .init(text: "최고 unit: \(highestUnit)", isWarning: false)
         }
         return nil
     }
 
-    func hasUnresolvableVocabulary(for example: Example) -> Bool {
-        hasUnresolvableVocabularyByExampleId[example.id] == true
-    }
-
-    func isHighestUnitAboveExampleUnit(for example: Example) -> Bool {
+    private func highestUnitExceedsExampleUnit(for example: Example) -> Bool {
         guard let highestUnit = highestUnitByExampleId[example.id],
               let exampleUnit = example.unit else {
             return false
@@ -244,10 +233,9 @@ final class ExamplesSearchViewModel: ObservableObject {
                 let checkTargets = tokens.filter { token in
                     !punctuationSet.contains(token.surface)
                 }
-                let isTokenReady = !hasPhraseDraft &&
-                    !checkTargets.isEmpty &&
+                let isTokenReady = !checkTargets.isEmpty &&
                     checkTargets.allSatisfy { token in
-                        token.senseId != nil
+                        token.senseId != nil || token.phraseId != nil
                 }
                 if isTokenReady {
                     skippedByTokenReady += 1
@@ -279,6 +267,59 @@ final class ExamplesSearchViewModel: ObservableObject {
         bulkProgressText = "전체 생성 완료 success=\(successCount) skipped=\(skippedByTokenReady) failed=\(failedRows.count)"
         error = """
 전체 생성 중 일부 실패:
+\(preview)
+"""
+    }
+
+    func deleteTokensForExamplesWithUnresolvableVocabulary() async {
+        guard !isDeletingTokens else { return }
+        guard !isRecreatingAllTokens else { return }
+        guard !isAddingSenses else { return }
+
+        let targetItems = unresolvableVocabularyTargetItems(in: displayItems)
+        guard !targetItems.isEmpty else {
+            deleteProgressText = "미학습 단어가 있는 예문이 없습니다."
+            return
+        }
+
+        isDeletingTokens = true
+        defer { isDeletingTokens = false }
+
+        var successExamples = 0
+        var deletedTokenCount = 0
+        var skippedExamples = 0
+        var failedRows: [String] = []
+
+        for (idx, row) in targetItems.enumerated() {
+            deleteProgressText = "토큰 삭제 중... (\(idx + 1)/\(targetItems.count)) example_id=\(row.id)"
+
+            do {
+                // 삭제 대상은 현재 예문에 달린 모든 token입니다.
+                for token in row.tokens {
+                    try await SentenceTokenDataSource.shared.deleteSentenceToken(id: token.id)
+                }
+                deletedTokenCount += row.tokens.count
+                successExamples += 1
+            } catch {
+                if row.tokens.isEmpty {
+                    skippedExamples += 1
+                } else {
+                    failedRows.append("#\(row.id) delete: \((error as NSError).localizedDescription)")
+                }
+            }
+        }
+
+        await search()
+
+        if failedRows.isEmpty {
+            deleteProgressText = "토큰 삭제 완료 examples=\(successExamples) tokens=\(deletedTokenCount) skipped=\(skippedExamples)"
+            return
+        }
+
+        let preview = failedRows.prefix(3).joined(separator: "\n")
+        deleteProgressText = "토큰 삭제 완료 examples=\(successExamples) tokens=\(deletedTokenCount) skipped=\(skippedExamples) failed=\(failedRows.count)"
+        error = """
+토큰 삭제 중 일부 실패:
 \(preview)
 """
     }
@@ -340,7 +381,11 @@ final class ExamplesSearchViewModel: ObservableObject {
             let prompt = Prompt.makeSentenceTokenSensePrompt(copyText: tokenSummary)
 
             do {
-                let result = try await openAIClient.generateText(prompt: prompt)
+                let result = try? await openAIClient.generateText(prompt: prompt)
+                guard let result else {
+                    emptySenseExamples += 1
+                    continue
+                }
 
                 if result.range(of: #"sense_id\s*:\s*\d+"#, options: .regularExpression) == nil {
                     emptySenseExamples += 1
@@ -395,6 +440,18 @@ sense 추가 중 일부 실패:
             guard !checkTargets.isEmpty else { return false }
             return checkTargets.contains { token in
                 token.senseId == nil
+            }
+        }
+    }
+
+    private func unresolvableVocabularyTargetItems(in examples: [Example]) -> [Example] {
+        return examples.filter { example in
+            // 상태 로더와 동일하게 vocabulary가 비어 있는 token을 미학습 단어로 봅니다.
+            return example.tokens.contains { token in
+                let surface = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
+                return !surface.isEmpty &&
+                    !punctuationSet.contains(surface) &&
+                    token.vocabulary == nil
             }
         }
     }

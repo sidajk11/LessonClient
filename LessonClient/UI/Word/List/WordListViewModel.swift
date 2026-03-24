@@ -16,6 +16,7 @@ final class WordListViewModel: ObservableObject {
 
     // Filters
     @Published var q: String = ""
+    @Published var wordIdText: String = ""
     @Published var kind: String = ""   // 필요 없으면 제거 가능
     @Published var pos: String = ""    // 필요 없으면 제거 가능
 
@@ -26,11 +27,39 @@ final class WordListViewModel: ObservableObject {
 
     private let ds = WordDataSource.shared
 
+    private var exactWordId: Int? {
+        let trimmed = wordIdText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return Int(trimmed)
+    }
+
     func refresh() async {
         isLoading = true
         errorMessage = nil
         offset = 0
         hasMore = true
+
+        if let wordId = exactWordId {
+            guard wordId > 0 else {
+                errorMessage = "word_id는 1 이상의 숫자여야 합니다."
+                words = []
+                isLoading = false
+                return
+            }
+
+            do {
+                // word_id 검색은 정확히 1건만 조회합니다.
+                let word = try await ds.word(id: wordId)
+                words = [word]
+                hasMore = false
+            } catch {
+                words = []
+                errorMessage = error.localizedDescription
+            }
+
+            isLoading = false
+            return
+        }
 
         do {
             let result = try await ds.listWords(
@@ -51,6 +80,7 @@ final class WordListViewModel: ObservableObject {
 
     func loadMoreIfNeeded(current item: WordRead) async {
         guard !isLoading, hasMore else { return }
+        guard exactWordId == nil else { return }
         guard item.id == words.last?.id else { return }
 
         isLoading = true

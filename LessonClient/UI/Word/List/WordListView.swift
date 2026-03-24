@@ -45,6 +45,17 @@ struct WordListView: View {
                         .onSubmit {
                             Task { await vm.refresh() }
                         }
+
+                    TextField("word_id", text: $vm.wordIdText)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 120)
+                        .onChange(of: vm.wordIdText) { _, newValue in
+                            vm.wordIdText = newValue.filter(\.isNumber)
+                        }
+                        .submitLabel(.search)
+                        .onSubmit {
+                            Task { await vm.refresh() }
+                        }
                     
                     Button("Search") {
                         Task { await vm.refresh() }

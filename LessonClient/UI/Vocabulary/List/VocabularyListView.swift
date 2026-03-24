@@ -94,11 +94,9 @@ struct VocabularyListView: View {
                                     .lineLimit(1)
                             }
 
-                            if let examples = e.examples {
-                                Text(examples.isEmpty ? "예문 없음" : "예문 \(examples.count)개")
-                                    .font(.caption)
-                                    .foregroundStyle(examples.isEmpty ? .orange : .secondary)
-                            }
+                            Text(e.examples.isEmpty ? "예문 없음" : "예문 \(e.examples.count)개")
+                                .font(.caption)
+                                .foregroundStyle(e.examples.isEmpty ? .orange : .secondary)
 
                             if let audit = vm.linkAuditByVocabularyId[e.id] {
                                 Text(audit.requiresSenseFix ? "센스수정 필요" : "정상")

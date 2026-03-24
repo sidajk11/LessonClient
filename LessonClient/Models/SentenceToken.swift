@@ -44,6 +44,18 @@ struct SentenceTokenWordSenseRead: Codable, Hashable, Identifiable {
     }
 }
 
+struct SentenceTokenVocabularyRead: Codable, Hashable, Identifiable {
+    let id: Int
+    let text: String
+    let unit: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case text
+        case unit
+    }
+}
+
 struct SentenceTokenRead: Codable, Identifiable {
     let id: Int
     let exampleId: Int
@@ -57,6 +69,7 @@ struct SentenceTokenRead: Codable, Identifiable {
     let startIndex: Int?
     let endIndex: Int?
     let translations: [SentenceTokenTranslationRead]
+    let vocabulary: SentenceTokenVocabularyRead?
     let createdAt: Date?
     private let rawSenseId: Int?
 
@@ -76,6 +89,7 @@ struct SentenceTokenRead: Codable, Identifiable {
         case startIndex = "start_index"
         case endIndex = "end_index"
         case translations
+        case vocabulary
         case createdAt = "created_at"
     }
 
@@ -94,6 +108,7 @@ struct SentenceTokenRead: Codable, Identifiable {
         startIndex = try c.decodeIfPresent(Int.self, forKey: .startIndex)
         endIndex = try c.decodeIfPresent(Int.self, forKey: .endIndex)
         translations = try c.decodeIfPresent([SentenceTokenTranslationRead].self, forKey: .translations) ?? []
+        vocabulary = try c.decodeIfPresent(SentenceTokenVocabularyRead.self, forKey: .vocabulary)
 
         let createdAtRaw = try c.decodeIfPresent(String.self, forKey: .createdAt)
         createdAt = SentenceTokenDateParser.parse(createdAtRaw)
@@ -114,6 +129,7 @@ struct SentenceTokenRead: Codable, Identifiable {
         try c.encodeIfPresent(startIndex, forKey: .startIndex)
         try c.encodeIfPresent(endIndex, forKey: .endIndex)
         try c.encode(translations, forKey: .translations)
+        try c.encodeIfPresent(vocabulary, forKey: .vocabulary)
         try c.encodeIfPresent(createdAt.map(SentenceTokenDateParser.string), forKey: .createdAt)
     }
 }

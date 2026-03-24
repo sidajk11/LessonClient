@@ -57,6 +57,14 @@ struct VocabularyDetailView: View {
                     )
                 )
 
+                Toggle(
+                    "isForm",
+                    isOn: Binding(
+                        get: { vm.word?.isForm ?? true },
+                        set: { vm.word?.isForm = $0 }
+                    )
+                )
+
                 HStack {
                     Button("기본 텍스트 저장") { Task { await vm.saveVocabulary() } }
                         .buttonStyle(.borderedProminent)

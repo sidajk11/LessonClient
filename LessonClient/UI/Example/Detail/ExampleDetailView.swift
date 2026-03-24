@@ -10,7 +10,7 @@ struct ExampleDetailView: View {
     }
 
     var body: some View {
-        Form {
+        List {
             Section(header: Text("연습문제")) {
                 NavigationLink("연습문제들") {
                     if let example = vm.example {
@@ -100,6 +100,11 @@ struct ExampleDetailView: View {
                                 Text("tokenId:\(token.id) phrase:\(token.phraseId.map(String.init) ?? "-") word:\(token.wordId.map(String.init) ?? "-") form:\(token.formId.map(String.init) ?? "-") sense:\(token.senseId.map(String.init) ?? "-")")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
+                                if let vocabulary = token.vocabulary {
+                                    Text("vocabulary: #\(vocabulary.id) \(vocabulary.text)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                                 if let ko = vm.tokenKoreanById[token.id], !ko.isEmpty {
                                     Text("ko: \(ko)")
                                         .font(.caption)

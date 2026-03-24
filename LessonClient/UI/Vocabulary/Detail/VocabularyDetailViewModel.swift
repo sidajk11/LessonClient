@@ -123,12 +123,12 @@ final class VocabularyDetailViewModel: ObservableObject {
                 id: e.id,
                 text: e.text,
                 lessonId: e.lessonId,
-                wordId: e.wordId,
                 formId: e.formId,
                 senseId: e.senseId,
                 phraseId: e.phraseId,
                 exampleExercise: e.exampleExercise,
                 vocabularyExercise: e.vocabularyExercise,
+                isForm: e.isForm,
                 translations: translations
             )
             word = updated
@@ -305,12 +305,12 @@ final class VocabularyDetailViewModel: ObservableObject {
                 id: vocabulary.id,
                 text: vocabulary.text,
                 lessonId: vocabulary.lessonId,
-                wordId: sense.wordId,
                 formId: nextFormId,
                 senseId: sense.id,
                 phraseId: vocabulary.phraseId,
                 exampleExercise: vocabulary.exampleExercise,
                 vocabularyExercise: vocabulary.vocabularyExercise,
+                isForm: vocabulary.isForm,
                 translations: vocabulary.translations
             )
             word = updated
@@ -343,12 +343,12 @@ final class VocabularyDetailViewModel: ObservableObject {
                 id: vocabulary.id,
                 text: vocabulary.text,
                 lessonId: vocabulary.lessonId,
-                wordId: form.wordId,
                 formId: form.id,
                 senseId: nextSenseId,
                 phraseId: vocabulary.phraseId,
                 exampleExercise: vocabulary.exampleExercise,
                 vocabularyExercise: vocabulary.vocabularyExercise,
+                isForm: vocabulary.isForm,
                 translations: vocabulary.translations
             )
             word = updated
@@ -375,12 +375,12 @@ final class VocabularyDetailViewModel: ObservableObject {
                 id: vocabulary.id,
                 text: vocabulary.text,
                 lessonId: vocabulary.lessonId,
-                wordId: vocabulary.wordId,
                 formId: nil,
                 senseId: vocabulary.senseId,
                 phraseId: vocabulary.phraseId,
                 exampleExercise: vocabulary.exampleExercise,
                 vocabularyExercise: vocabulary.vocabularyExercise,
+                isForm: vocabulary.isForm,
                 translations: vocabulary.translations
             )
             word = updated

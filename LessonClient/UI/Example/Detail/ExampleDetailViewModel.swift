@@ -267,7 +267,11 @@ final class ExampleDetailViewModel: ObservableObject {
         var sensesById: [Int: (lemma: String, sense: WordSenseRead)] = [:]
 
         for token in searchableTokens {
-            let surface = token.surface
+            var surface = token.surface
+            let isNumber = Int(surface) != nil
+            if isNumber {
+                surface = numberDict[surface] ?? surface
+            }
             let sensesSurface = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: surface, limit: 100)) ?? []
             var lemmaForOutput = surface
             
@@ -279,20 +283,22 @@ final class ExampleDetailViewModel: ObservableObject {
                 lemmaForOutput = word.lemma
             }
             
-            let lemma = NL.getLemma(of: surface, in: ex.sentence) ?? NL.getLemma(of: surface) ?? surface
-            var sensesLemma: [WordSenseRead] = []
-            if sensesForm.isEmpty {
-                sensesLemma = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: lemma, limit: 100)) ?? []
-            }
-            
-            for sense in sensesSurface {
-                sensesById[sense.id] = (lemma: surface, sense: sense)
-            }
-            for sense in sensesForm {
-                sensesById[sense.id] = (lemma: lemmaForOutput, sense: sense)
-            }
-            for sense in sensesLemma {
-                sensesById[sense.id] = (lemma: lemma, sense: sense)
+            // tired: form은 tire의 form이고 sense는 tired의 센스
+            // 우선 surface의
+            if !sensesForm.isEmpty || !sensesSurface.isEmpty {
+                for sense in sensesForm {
+                    sensesById[sense.id] = (lemma: lemmaForOutput, sense: sense)
+                }
+                
+                for sense in sensesSurface {
+                    sensesById[sense.id] = (lemma: surface, sense: sense)
+                }
+            } else if let lemma = NL.getLemma(of: surface) {
+                // tomorrow's 인 경우 tomorrow로 검색
+                let sensesLemma = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: lemma)) ?? []
+                for sense in sensesLemma {
+                    sensesById[sense.id] = (lemma: lemma, sense: sense)
+                }
             }
         }
 

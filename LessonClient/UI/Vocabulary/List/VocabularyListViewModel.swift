@@ -12,7 +12,6 @@ final class VocabularyListViewModel: ObservableObject {
     private let openAIClient = OpenAIClient()
     private let wordUseCase = WordUseCase.shared
     private var lessonTopicByLessonId: [Int: String] = [:]
-    private var lessonUnitByLessonId: [Int: Int] = [:]
     private let linkAuditor = VocabularyLinkAuditor()
 
     // UI State
@@ -146,12 +145,12 @@ final class VocabularyListViewModel: ObservableObject {
                     id: vocabulary.id,
                     text: vocabulary.text,
                     lessonId: vocabulary.lessonId,
-                    wordId: vocabulary.wordId,
                     formId: audit.expectedFormId,
                     senseId: audit.expectedSenseId,
                     phraseId: audit.expectedPhraseId,
                     exampleExercise: vocabulary.exampleExercise,
                     vocabularyExercise: vocabulary.vocabularyExercise,
+                    isForm: vocabulary.isForm,
                     translations: vocabulary.translations
                 )
                 if let itemIndex = items.firstIndex(where: { $0.id == updated.id }) {
@@ -277,7 +276,7 @@ final class VocabularyListViewModel: ObservableObject {
             }
             items = rows
             linkAuditByVocabularyId = [:]
-            unitByVocabularyId = await loadUnits(for: rows)
+            unitByVocabularyId = unitMap(from: rows)
         } catch {
             self.error = (error as NSError).localizedDescription
         }
@@ -322,54 +321,27 @@ final class VocabularyListViewModel: ObservableObject {
     private func normalize(_ vocabularies: [Vocabulary]) -> [Vocabulary] {
         vocabularies.map { vocabulary in
             var item = vocabulary
-            if showOnlyWithoutExamples && item.examples == nil {
+            // 예문 없는 항목 필터링 UI가 빈 배열을 바로 읽을 수 있게 유지합니다.
+            if showOnlyWithoutExamples && item.examples.isEmpty {
                 item.examples = []
             }
             return item
         }
     }
 
-    private func loadUnits(for vocabularies: [Vocabulary]) async -> [Int: Int] {
+    private func unitMap(from vocabularies: [Vocabulary]) -> [Int: Int] {
         var unitsByVocabularyId: [Int: Int] = [:]
-
-        await withTaskGroup(of: (Int, Int?).self) { group in
-            for vocabulary in vocabularies {
-                group.addTask { [lessonUnitByLessonId] in
-                    guard let lessonId = vocabulary.lessonId else {
-                        return (vocabulary.id, nil)
-                    }
-                    if let cached = lessonUnitByLessonId[lessonId] {
-                        return (vocabulary.id, cached)
-                    }
-                    let lesson = try? await LessonDataSource.shared.lesson(id: lessonId)
-                    return (vocabulary.id, lesson?.unit)
-                }
-            }
-
-            for await (vocabularyId, unit) in group {
-                if let unit {
-                    unitsByVocabularyId[vocabularyId] = unit
-                }
-            }
-        }
-
         for vocabulary in vocabularies {
-            guard let lessonId = vocabulary.lessonId,
-                  let unit = unitsByVocabularyId[vocabulary.id] else {
-                continue
+            if let unit = vocabulary.unit {
+                unitsByVocabularyId[vocabulary.id] = unit
             }
-            lessonUnitByLessonId[lessonId] = unit
         }
-
         return unitsByVocabularyId
     }
 
     private func appendExamples(_ examples: [Example], toVocabularyId vocabularyId: Int) {
         guard let index = items.firstIndex(where: { $0.id == vocabularyId }) else { return }
-        if items[index].examples == nil {
-            items[index].examples = []
-        }
-        items[index].examples?.append(contentsOf: examples.map(VocabularyExampleRead.init))
+        items[index].examples.append(contentsOf: examples.map(VocabularyExampleRead.init))
     }
 
     private func lessonTopic(for vocabulary: Vocabulary) async throws -> String {
@@ -448,7 +420,7 @@ final class VocabularyListViewModel: ObservableObject {
     }
     func filterCurrentItemsAfterGenerationIfNeeded() {
         guard showOnlyWithoutExamples else { return }
-        items = items.filter { ($0.examples ?? []).isEmpty }
+        items = items.filter { $0.examples.isEmpty }
     }
 
     func finalizeGenerationResult(createdWordCount: Int, createdExampleCount: Int, failures: [String]) {
