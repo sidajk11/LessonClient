@@ -14,6 +14,18 @@ final class SentenceUseCase {
         let formId: Int?
     }
 
+    struct TokenRangeDraft {
+        let tokenIndex: Int
+        let startIndex: Int
+        let endIndex: Int
+    }
+
+    struct TokenRangeUpdate {
+        let tokenId: Int
+        let startIndex: Int
+        let endIndex: Int
+    }
+
     struct HighestUnitInfo {
         let unit: Int
         let vocabularyText: String
@@ -22,6 +34,7 @@ final class SentenceUseCase {
     private enum SentenceUseCaseError: LocalizedError {
         case emptySentence
         case noTokenizableSentence
+        case tokenRangeMismatch(String)
 
         var errorDescription: String? {
             switch self {
@@ -29,6 +42,8 @@ final class SentenceUseCase {
                 return "문장을 입력해 주세요."
             case .noTokenizableSentence:
                 return "토큰화할 문장이 없습니다."
+            case .tokenRangeMismatch(let surface):
+                return "문장과 token surface를 맞출 수 없습니다: \(surface)"
             }
         }
     }
@@ -74,26 +89,101 @@ final class SentenceUseCase {
     /// 문장 하나를 서버 token 레코드들로 생성합니다.
     @discardableResult
     func createTokensFromSentence(
-        exampleId: Int,
+        exampleSentenceId: Int,
         sentence: String,
         includePhrases: Bool = true
     ) async throws -> [SentenceTokenRead] {
         let drafts = try await buildTokenDrafts(from: sentence, includePhrases: includePhrases)
+        let rangeDrafts = try buildTokenRanges(
+            from: sentence,
+            surfaces: drafts.map(\.surface)
+        )
         var created: [SentenceTokenRead] = []
         created.reserveCapacity(drafts.count)
 
         for (idx, draft) in drafts.enumerated() {
+            let rangeDraft = rangeDrafts[idx]
             let token = try await sentenceTokenDataSource.createSentenceToken(
-                exampleId: exampleId,
+                exampleSentenceId: exampleSentenceId,
                 tokenIndex: idx,
                 surface: draft.surface,
                 phraseId: draft.phraseId,
-                formId: draft.formId
+                formId: draft.formId,
+                startIndex: rangeDraft.startIndex,
+                endIndex: rangeDraft.endIndex
             )
             created.append(token)
         }
 
         return created
+    }
+
+    /// 현재 token surface 순서를 기준으로 문장 내 start/end index를 계산합니다.
+    func buildTokenRanges(from sentence: String, surfaces: [String]) throws -> [TokenRangeDraft] {
+        guard !sentence.trimmed.isEmpty else {
+            throw SentenceUseCaseError.emptySentence
+        }
+        guard !surfaces.isEmpty else {
+            throw SentenceUseCaseError.noTokenizableSentence
+        }
+
+        let nsSentence = sentence as NSString
+        var cursor = 0
+        var output: [TokenRangeDraft] = []
+        output.reserveCapacity(surfaces.count)
+
+        for (idx, rawSurface) in surfaces.enumerated() {
+            let surface = rawSurface.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !surface.isEmpty else {
+                throw SentenceUseCaseError.tokenRangeMismatch(rawSurface)
+            }
+
+            let searchRange = NSRange(location: cursor, length: nsSentence.length - cursor)
+            let foundRange = nsSentence.range(of: surface, options: [], range: searchRange)
+            guard foundRange.location != NSNotFound else {
+                throw SentenceUseCaseError.tokenRangeMismatch(surface)
+            }
+
+            // 토큰 사이에는 공백만 허용해서 surface 조합이 문장 전체를 덮는지 확인합니다.
+            let gapRange = NSRange(location: cursor, length: foundRange.location - cursor)
+            let gapText = gapRange.length > 0 ? nsSentence.substring(with: gapRange) : ""
+            guard gapText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw SentenceUseCaseError.tokenRangeMismatch(surface)
+            }
+
+            output.append(
+                .init(
+                    tokenIndex: idx,
+                    startIndex: foundRange.location,
+                    endIndex: foundRange.location + foundRange.length
+                )
+            )
+            cursor = foundRange.location + foundRange.length
+        }
+
+        let trailingText = cursor < nsSentence.length ? nsSentence.substring(from: cursor) : ""
+        guard trailingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw SentenceUseCaseError.tokenRangeMismatch(trailingText)
+        }
+
+        return output
+    }
+
+    /// 기존 token id에 맞춰 start/end index 업데이트 payload를 만듭니다.
+    func buildTokenRangeUpdates(sentence: String, tokens: [SentenceTokenRead]) throws -> [TokenRangeUpdate] {
+        let sortedTokens = tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
+        let rangeDrafts = try buildTokenRanges(
+            from: sentence,
+            surfaces: sortedTokens.map(\.surface)
+        )
+
+        return zip(sortedTokens, rangeDrafts).map { token, rangeDraft in
+            .init(
+                tokenId: token.id,
+                startIndex: rangeDraft.startIndex,
+                endIndex: rangeDraft.endIndex
+            )
+        }
     }
 
     /// 문장 안에서 가장 높은 lesson unit만 간단히 구합니다.

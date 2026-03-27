@@ -13,7 +13,7 @@ final class SentenceTokenDetailViewModel: ObservableObject {
 
     @Published var token: SentenceTokenRead?
 
-    @Published var exampleIdText: String = ""
+    @Published var exampleSentenceIdText: String = ""
     @Published var tokenIndexText: String = ""
     @Published var surfaceText: String = ""
     @Published var phraseIdText: String = ""
@@ -61,7 +61,7 @@ final class SentenceTokenDetailViewModel: ObservableObject {
         errorMessage = nil
         infoMessage = nil
 
-        guard let exampleId = parseRequiredInt(exampleIdText, label: "exampleId", min: 1),
+        guard let exampleSentenceId = parseRequiredInt(exampleSentenceIdText, label: "exampleSentenceId", min: 1),
               let tokenIndex = parseRequiredInt(tokenIndexText, label: "tokenIndex", min: 0) else {
             return
         }
@@ -91,7 +91,7 @@ final class SentenceTokenDetailViewModel: ObservableObject {
         do {
             let updated = try await ds.replaceSentenceToken(
                 id: tokenId,
-                exampleId: exampleId,
+                exampleSentenceId: exampleSentenceId,
                 tokenIndex: tokenIndex,
                 surface: surface,
                 phraseId: phraseId,
@@ -111,7 +111,7 @@ final class SentenceTokenDetailViewModel: ObservableObject {
     }
 
     private func bindEditorFields(from token: SentenceTokenRead) {
-        exampleIdText = String(token.exampleId)
+        exampleSentenceIdText = String(token.exampleSentenceId)
         tokenIndexText = String(token.tokenIndex)
         surfaceText = token.surface
         phraseIdText = token.phraseId.map(String.init) ?? ""

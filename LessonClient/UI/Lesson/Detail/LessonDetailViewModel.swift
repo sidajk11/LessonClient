@@ -147,10 +147,12 @@ final class LessonDetailViewModel: ObservableObject {
             .flatMap(\.examples)
             .flatMap(\.exercises)
         let allExercises = uniqueExercises(from: exercisesFromTargets + exercisesFromVocabularyExamples)
+        // 백엔드 응답에서 vocabularies가 빠져도 vocabulary_ids로 제목을 복원합니다.
+        let vocabularyTextById = Dictionary(uniqueKeysWithValues: vocabularys.map { ($0.id, $0.text) })
 
         exerciseRows = allExercises.map { exercise in
-            let vocabularyTexts = exercise.vocabularies
-                .map(\.text)
+            let vocabularyTexts = exercise.vocabularyIds
+                .compactMap { vocabularyTextById[$0] }
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
             let title: String

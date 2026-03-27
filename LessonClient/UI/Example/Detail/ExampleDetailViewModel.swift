@@ -90,13 +90,17 @@ final class ExampleDetailViewModel: ObservableObject {
     func createTokensFromSentence() async {
         guard let ex = example else { return }
         guard ex.tokens.isEmpty else { return }
+        guard let exampleSentenceId = ex.primarySentenceId else {
+            error = "example_sentence를 찾을 수 없습니다."
+            return
+        }
 
         do {
             isCreatingTokens = true
             defer { isCreatingTokens = false }
 
             let created = try await sentenceUseCase.createTokensFromSentence(
-                exampleId: ex.id,
+                exampleSentenceId: exampleSentenceId,
                 sentence: sentence
             )
 
@@ -126,8 +130,16 @@ final class ExampleDetailViewModel: ObservableObject {
                 await createTokensFromSentence()
                 return
             }
+            guard let exampleSentenceId = ex.primarySentenceId else {
+                error = "example_sentence를 찾을 수 없습니다."
+                return
+            }
 
             let drafts = try await sentenceUseCase.buildTokenDrafts(from: sentence)
+            let rangeDrafts = try sentenceUseCase.buildTokenRanges(
+                from: sentence,
+                surfaces: drafts.map(\.surface)
+            )
 
             let existing = ex.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
             let updateCount = min(existing.count, drafts.count)
@@ -138,9 +150,10 @@ final class ExampleDetailViewModel: ObservableObject {
                 for idx in 0..<updateCount {
                     let token = existing[idx]
                     let draft = drafts[idx]
+                    let rangeDraft = rangeDrafts[idx]
                     _ = try await SentenceTokenDataSource.shared.replaceSentenceToken(
                         id: token.id,
-                        exampleId: ex.id,
+                        exampleSentenceId: exampleSentenceId,
                         tokenIndex: idx,
                         surface: draft.surface,
                         phraseId: token.phraseId ?? draft.phraseId,
@@ -148,8 +161,8 @@ final class ExampleDetailViewModel: ObservableObject {
                         formId: token.formId ?? draft.formId,
                         senseId: token.senseId,
                         pos: nil,
-                        startIndex: nil,
-                        endIndex: nil
+                        startIndex: rangeDraft.startIndex,
+                        endIndex: rangeDraft.endIndex
                     )
                     updatedCount += 1
                 }
@@ -179,6 +192,10 @@ final class ExampleDetailViewModel: ObservableObject {
             error = "문장을 입력해 주세요."
             return
         }
+        guard let exampleSentenceId = ex.primarySentenceId else {
+            error = "example_sentence를 찾을 수 없습니다."
+            return
+        }
 
         isRecreatingTokens = true
         defer { isRecreatingTokens = false }
@@ -189,7 +206,7 @@ final class ExampleDetailViewModel: ObservableObject {
             }
 
             let created = try await sentenceUseCase.createTokensFromSentence(
-                exampleId: ex.id,
+                exampleSentenceId: exampleSentenceId,
                 sentence: sentence,
                 includePhrases: includePhrases
             )

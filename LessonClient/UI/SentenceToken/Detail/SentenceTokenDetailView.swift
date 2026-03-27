@@ -19,7 +19,7 @@ struct SentenceTokenDetailView: View {
             if let token = vm.token {
                 Section("기본") {
                     infoRow("tokenId", "\(token.id)")
-                    TextField("exampleId", text: $vm.exampleIdText)
+                    TextField("exampleSentenceId", text: $vm.exampleSentenceIdText)
                         .textFieldStyle(.roundedBorder)
                     TextField("tokenIndex", text: $vm.tokenIndexText)
                         .textFieldStyle(.roundedBorder)

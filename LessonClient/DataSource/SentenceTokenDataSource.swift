@@ -18,7 +18,7 @@ final class SentenceTokenDataSource {
     }
 
     func listSentenceTokens(
-        exampleId: Int? = nil,
+        exampleSentenceId: Int? = nil,
         phraseId: Int? = nil,
         wordId: Int? = nil,
         formId: Int? = nil,
@@ -30,7 +30,7 @@ final class SentenceTokenDataSource {
             .init(name: "limit", value: String(min(max(limit, 1), 500))),
             .init(name: "offset", value: String(max(offset, 0)))
         ]
-        if let exampleId { query.append(.init(name: "example_id", value: String(exampleId))) }
+        if let exampleSentenceId { query.append(.init(name: "example_sentence_id", value: String(exampleSentenceId))) }
         if let phraseId { query.append(.init(name: "phrase_id", value: String(phraseId))) }
         if let wordId { query.append(.init(name: "word_id", value: String(wordId))) }
         if let formId { query.append(.init(name: "form_id", value: String(formId))) }
@@ -46,7 +46,7 @@ final class SentenceTokenDataSource {
 
     @discardableResult
     func createSentenceToken(
-        exampleId: Int,
+        exampleSentenceId: Int,
         tokenIndex: Int,
         surface: String,
         phraseId: Int? = nil,
@@ -58,7 +58,7 @@ final class SentenceTokenDataSource {
         endIndex: Int? = nil
     ) async throws -> SentenceTokenRead {
         let body = SentenceTokenCreate(
-            exampleId: exampleId,
+            exampleSentenceId: exampleSentenceId,
             tokenIndex: tokenIndex,
             surface: surface,
             phraseId: phraseId,
@@ -88,7 +88,7 @@ final class SentenceTokenDataSource {
     @discardableResult
     func updateSentenceToken(
         id: Int,
-        exampleId: Int? = nil,
+        exampleSentenceId: Int? = nil,
         tokenIndex: Int? = nil,
         surface: String? = nil,
         phraseId: Int? = nil,
@@ -100,7 +100,7 @@ final class SentenceTokenDataSource {
         endIndex: Int? = nil
     ) async throws -> SentenceTokenRead {
         let body = SentenceTokenUpdate(
-            exampleId: exampleId,
+            exampleSentenceId: exampleSentenceId,
             tokenIndex: tokenIndex,
             surface: surface,
             phraseId: phraseId,
@@ -124,7 +124,7 @@ final class SentenceTokenDataSource {
     @discardableResult
     func replaceSentenceToken(
         id: Int,
-        exampleId: Int,
+        exampleSentenceId: Int,
         tokenIndex: Int,
         surface: String,
         phraseId: Int? = nil,
@@ -136,7 +136,7 @@ final class SentenceTokenDataSource {
         endIndex: Int? = nil
     ) async throws -> SentenceTokenRead {
         let body: [String: Any] = [
-            "example_id": exampleId,
+            "example_sentence_id": exampleSentenceId,
             "token_index": tokenIndex,
             "surface": surface,
             "phrase_id": jsonNullable(phraseId),

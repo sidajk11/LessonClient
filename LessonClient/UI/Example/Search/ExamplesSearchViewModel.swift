@@ -26,15 +26,19 @@ final class ExamplesSearchViewModel: ObservableObject {
     @Published var isRecreatingAllTokens: Bool = false
     @Published var isDeletingTokens: Bool = false
     @Published var isAddingSenses: Bool = false
+    @Published var isCheckingStartEndIndices: Bool = false
+    @Published var isRepairingStartEndIndices: Bool = false
     @Published var bulkProgressText: String?
     @Published var deleteProgressText: String?
     @Published var senseProgressText: String?
+    @Published var startEndIndexProgressText: String?
     @Published var senseCodeBySenseId: [Int: String] = [:]
     @Published var senseCefrBySenseId: [Int: String] = [:]
     @Published var hasUnresolvableVocabularyByExampleId: [Int: Bool] = [:]
     @Published var unresolvableVocabularyWordByExampleId: [Int: String] = [:]
     @Published var highestUnitByExampleId: [Int: Int] = [:]
     @Published var highestUnitWordByExampleId: [Int: String] = [:]
+    @Published var needsStartEndIndexRepairByExampleId: [Int: Bool] = [:]
     @Published var error: String?
     private let searchLimit: Int = 400
     private var searchGeneration: Int = 0
@@ -88,6 +92,8 @@ final class ExamplesSearchViewModel: ObservableObject {
             unresolvableVocabularyWordByExampleId = [:]
             highestUnitByExampleId = [:]
             highestUnitWordByExampleId = [:]
+            needsStartEndIndexRepairByExampleId = [:]
+            startEndIndexProgressText = nil
 
             guard !result.isEmpty else { return }
 
@@ -200,6 +206,129 @@ final class ExamplesSearchViewModel: ObservableObject {
             }
             return lhs.id < rhs.id
         }
+    }
+
+    func checkStartEndIndices() async {
+        guard !isCheckingStartEndIndices else { return }
+        guard !isRepairingStartEndIndices else { return }
+
+        let targetItems = displayItems
+        guard !targetItems.isEmpty else {
+            needsStartEndIndexRepairByExampleId = [:]
+            startEndIndexProgressText = "검사할 예문이 없습니다."
+            return
+        }
+
+        isCheckingStartEndIndices = true
+        defer { isCheckingStartEndIndices = false }
+
+        var checked: [Int: Bool] = [:]
+        checked.reserveCapacity(targetItems.count)
+
+        for (idx, row) in targetItems.enumerated() {
+            startEndIndexProgressText = "start_end_index 검사 중... (\(idx + 1)/\(targetItems.count)) example_id=\(row.id)"
+            checked[row.id] = startEndIndexIssue(for: row).needsRepair
+        }
+
+        needsStartEndIndexRepairByExampleId = checked
+        let needCount = checked.values.filter { $0 }.count
+        startEndIndexProgressText = "start_end_index 검사 완료 need=\(needCount) checked=\(targetItems.count)"
+    }
+
+    func repairStartEndIndices() async {
+        guard !isRepairingStartEndIndices else { return }
+        guard !isCheckingStartEndIndices else { return }
+        guard !isRecreatingAllTokens else { return }
+        guard !isDeletingTokens else { return }
+        guard !isAddingSenses else { return }
+
+        let targetItems = displayItems.filter { startEndIndexIssue(for: $0).needsRepair }
+        guard !targetItems.isEmpty else {
+            startEndIndexProgressText = "복구할 예문이 없습니다."
+            return
+        }
+
+        isRepairingStartEndIndices = true
+        defer { isRepairingStartEndIndices = false }
+
+        var successExamples = 0
+        var recreatedExamples = 0
+        var reindexedExamples = 0
+        var updatedTokenCount = 0
+        var failedRows: [String] = []
+
+        for (idx, row) in targetItems.enumerated() {
+            startEndIndexProgressText = "start_end_index 복구 중... (\(idx + 1)/\(targetItems.count)) example_id=\(row.id)"
+
+            do {
+                let detailVM = ExampleDetailViewModel(exampleId: row.id, lesson: nil, word: nil)
+                await detailVM.load()
+                if let loadError = detailVM.error, !loadError.isEmpty {
+                    failedRows.append("#\(row.id) load: \(loadError)")
+                    continue
+                }
+
+                guard var currentExample = detailVM.example else {
+                    failedRows.append("#\(row.id) load: empty example")
+                    continue
+                }
+
+                let currentIssue = startEndIndexIssue(for: currentExample)
+
+                if currentIssue.requiresRecreation {
+                    if startEndIndexIssue(for: currentExample).requiresRecreation {
+                        await detailVM.recreateAllTokensFromSentence()
+                        if let recreateError = detailVM.error, !recreateError.isEmpty {
+                            failedRows.append("#\(row.id) recreate: \(recreateError)")
+                            continue
+                        }
+                        guard let recreated = detailVM.example else {
+                            failedRows.append("#\(row.id) recreate: empty example")
+                            continue
+                        }
+                        currentExample = recreated
+                    }
+
+                    if currentExample.tokens.contains(where: { $0.startIndex == nil || $0.endIndex == nil }) {
+                        let updatedCount = try await replaceTokenRanges(
+                            sentence: currentExample.sentence,
+                            tokens: currentExample.tokens
+                        )
+                        updatedTokenCount += updatedCount
+                    }
+
+                    recreatedExamples += 1
+                    successExamples += 1
+                    continue
+                }
+
+                let updatedCount = try await replaceTokenRanges(
+                    sentence: currentExample.sentence,
+                    tokens: currentExample.tokens
+                )
+
+                updatedTokenCount += updatedCount
+                reindexedExamples += 1
+                successExamples += 1
+            } catch {
+                failedRows.append("#\(row.id) repair: \((error as NSError).localizedDescription)")
+            }
+        }
+
+        await search()
+        await checkStartEndIndices()
+
+        if failedRows.isEmpty {
+            startEndIndexProgressText = "start_end_index 복구 완료 examples=\(successExamples) reindexed=\(reindexedExamples) recreated=\(recreatedExamples) tokens=\(updatedTokenCount)"
+            return
+        }
+
+        let preview = failedRows.prefix(3).joined(separator: "\n")
+        startEndIndexProgressText = "start_end_index 복구 완료 examples=\(successExamples) reindexed=\(reindexedExamples) recreated=\(recreatedExamples) tokens=\(updatedTokenCount) failed=\(failedRows.count)"
+        error = """
+start_end_index 복구 중 일부 실패:
+\(preview)
+"""
     }
 
     func recreateAllTokens() async {
@@ -454,5 +583,58 @@ sense 추가 중 일부 실패:
                     token.vocabulary == nil
             }
         }
+    }
+
+    func needsStartEndIndexRepair(for example: Example) -> Bool {
+        needsStartEndIndexRepairByExampleId[example.id] == true
+    }
+
+    private func startEndIndexIssue(for example: Example) -> (needsRepair: Bool, requiresRecreation: Bool) {
+        if example.tokens.isEmpty {
+            return (true, true)
+        }
+
+        let hasMissingRange = example.tokens.contains { token in
+            token.startIndex == nil || token.endIndex == nil
+        }
+
+        do {
+            _ = try sentenceUseCase.buildTokenRangeUpdates(
+                sentence: example.sentence,
+                tokens: example.tokens
+            )
+        } catch {
+            return (true, true)
+        }
+
+        return (hasMissingRange, false)
+    }
+
+    /// full replace PUT을 사용해서 기존 token 필드를 보존한 채 range만 갱신합니다.
+    private func replaceTokenRanges(sentence: String, tokens: [SentenceTokenRead]) async throws -> Int {
+        let rangeUpdates = try sentenceUseCase.buildTokenRangeUpdates(
+            sentence: sentence,
+            tokens: tokens
+        )
+        let rangeByTokenId = Dictionary(uniqueKeysWithValues: rangeUpdates.map { ($0.tokenId, $0) })
+
+        for token in tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex }) {
+            guard let range = rangeByTokenId[token.id] else { continue }
+            _ = try await SentenceTokenDataSource.shared.replaceSentenceToken(
+                id: token.id,
+                exampleSentenceId: token.exampleSentenceId,
+                tokenIndex: token.tokenIndex,
+                surface: token.surface,
+                phraseId: token.phraseId,
+                wordId: token.wordId ?? token.sense?.wordId,
+                formId: token.formId,
+                senseId: token.senseId,
+                pos: token.pos,
+                startIndex: range.startIndex,
+                endIndex: range.endIndex
+            )
+        }
+
+        return rangeUpdates.count
     }
 }

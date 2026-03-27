@@ -13,7 +13,7 @@ final class SentenceTokenListViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
-    @Published var exampleIdText: String = ""
+    @Published var exampleSentenceIdText: String = ""
     @Published var phraseIdText: String = ""
     @Published var wordIdText: String = ""
     @Published var formIdText: String = ""
@@ -27,7 +27,7 @@ final class SentenceTokenListViewModel: ObservableObject {
     func refresh() async {
         errorMessage = nil
 
-        guard let exampleId = parsedIdAllowingEmpty(from: exampleIdText, label: "exampleId"),
+        guard let exampleSentenceId = parsedIdAllowingEmpty(from: exampleSentenceIdText, label: "exampleSentenceId"),
               let phraseId = parsedIdAllowingEmpty(from: phraseIdText, label: "phraseId"),
               let wordId = parsedIdAllowingEmpty(from: wordIdText, label: "wordId"),
               let formId = parsedIdAllowingEmpty(from: formIdText, label: "formId"),
@@ -43,7 +43,7 @@ final class SentenceTokenListViewModel: ObservableObject {
 
         do {
             let result = try await ds.listSentenceTokens(
-                exampleId: exampleId,
+                exampleSentenceId: exampleSentenceId,
                 phraseId: phraseId,
                 wordId: wordId,
                 formId: formId,
@@ -63,7 +63,7 @@ final class SentenceTokenListViewModel: ObservableObject {
         guard !isLoading, hasMore else { return }
         guard item.id == tokens.last?.id else { return }
 
-        guard let exampleId = parsedIdAllowingEmpty(from: exampleIdText, label: "exampleId"),
+        guard let exampleSentenceId = parsedIdAllowingEmpty(from: exampleSentenceIdText, label: "exampleSentenceId"),
               let phraseId = parsedIdAllowingEmpty(from: phraseIdText, label: "phraseId"),
               let wordId = parsedIdAllowingEmpty(from: wordIdText, label: "wordId"),
               let formId = parsedIdAllowingEmpty(from: formIdText, label: "formId"),
@@ -76,7 +76,7 @@ final class SentenceTokenListViewModel: ObservableObject {
 
         do {
             let result = try await ds.listSentenceTokens(
-                exampleId: exampleId,
+                exampleSentenceId: exampleSentenceId,
                 phraseId: phraseId,
                 wordId: wordId,
                 formId: formId,

@@ -14,7 +14,7 @@ struct SentenceTokenListView: View {
         NavigationStack {
             VStack(spacing: 10) {
                 HStack(spacing: 8) {
-                    TextField("exampleId", text: $vm.exampleIdText)
+                    TextField("exampleSentenceId", text: $vm.exampleSentenceIdText)
                         .textFieldStyle(.roundedBorder)
                         .frame(maxWidth: 120)
 
@@ -65,7 +65,7 @@ struct SentenceTokenListView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Text("exampleId: \(token.exampleId)")
+                                Text("exampleSentenceId: \(token.exampleSentenceId)")
                                 Text("tokenIndex: \(token.tokenIndex)")
                             }
 

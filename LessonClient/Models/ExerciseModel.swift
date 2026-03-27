@@ -10,59 +10,56 @@ import Foundation
 struct Exercise: Codable, Identifiable {
     let id: Int
     let exampleId: Int?
+    let targetSentences: [ExerciseTargetSentence]
     let vocabularyId: Int?
     let vocabularyIds: [Int]
 
     let type: ExerciseType
+    let status: String
 
     let prompt: String?
-    let explanation: String?
     let timeLimitSec: Int?
 
     let options: [ExerciseOption]
-
-    let correctOptionId: Int?
     let correctOptions: [ExerciseCorrectOption]
 
     let expectedAnswers: [ExpectedAnswer]
     let translations: [ExerciseTranslation]
-    let vocabularies: [Vocabulary]
 
     var lessonTargetId: Int? { vocabularyId }
 
     enum CodingKeys: String, CodingKey {
         case id
         case exampleId = "example_id"
+        case targetSentences = "target_sentences"
         case vocabularyId = "vocabulary_id"
         case vocabularyIds = "vocabulary_ids"
         case type
+        case status
         case prompt
-        case explanation
         case timeLimitSec = "time_limit_sec"
         case options
-        case correctOptionId = "correct_option_id"
         case expectedAnswers = "expected_answers"
         case correctOptions = "correct_options"
         case translations
-        case vocabularies
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
         exampleId = try c.decodeIfPresent(Int.self, forKey: .exampleId)
+        targetSentences = try c.decodeIfPresent([ExerciseTargetSentence].self, forKey: .targetSentences) ?? []
         vocabularyId = try c.decodeIfPresent(Int.self, forKey: .vocabularyId)
         vocabularyIds = try c.decodeIfPresent([Int].self, forKey: .vocabularyIds) ?? []
         type = try c.decode(ExerciseType.self, forKey: .type)
+        // 서버 응답이 단계적으로 바뀌는 동안에도 기본 상태로 안전하게 처리합니다.
+        status = try c.decodeIfPresent(String.self, forKey: .status) ?? "draft"
         prompt = try c.decodeIfPresent(String.self, forKey: .prompt)
-        explanation = try c.decodeIfPresent(String.self, forKey: .explanation)
         timeLimitSec = try c.decodeIfPresent(Int.self, forKey: .timeLimitSec)
         options = try c.decodeIfPresent([ExerciseOption].self, forKey: .options) ?? []
-        correctOptionId = try c.decodeIfPresent(Int.self, forKey: .correctOptionId)
         expectedAnswers = try c.decodeIfPresent([ExpectedAnswer].self, forKey: .expectedAnswers) ?? []
         correctOptions = try c.decodeIfPresent([ExerciseCorrectOption].self, forKey: .correctOptions) ?? []
         translations = try c.decodeIfPresent([ExerciseTranslation].self, forKey: .translations) ?? []
-        vocabularies = try c.decodeIfPresent([Vocabulary].self, forKey: .vocabularies) ?? []
     }
 }
 
@@ -70,33 +67,33 @@ struct Exercise: Codable, Identifiable {
 
 struct ExerciseCreate: Codable {
     var exampleId: Int?
+    var targetSentenceIds: [Int]? = nil
     var vocabularyId: Int?
     var type: ExerciseType
+    var status: String = "draft"
     var vocabularyIds: [Int]?
 
     var prompt: String?
-    var explanation: String?
     var timeLimitSec: Int?
 
     var options: [ExerciseOptionUpdate]?
 
-    var correctOptionId: Int?
     var correctOptionIds: [Int]?
-    var correctGroupId: Int?
+    var correctGroupId: Int? = 0
 
     var expectedAnswers: [ExpectedAnswer]?
     var translations: [ExerciseTranslation] = []
 
     enum CodingKeys: String, CodingKey {
         case exampleId = "example_id"
+        case targetSentenceIds = "target_sentence_ids"
         case vocabularyId = "vocabulary_id"
         case type
+        case status
         case vocabularyIds = "vocabulary_ids"
         case prompt
-        case explanation
         case timeLimitSec = "time_limit_sec"
         case options
-        case correctOptionId = "correct_option_id"
         case correctOptionIds = "correct_option_ids"
         case correctGroupId = "correct_group_id"
         case expectedAnswers = "expected_answers"
@@ -106,33 +103,33 @@ struct ExerciseCreate: Codable {
 
 struct ExerciseUpdate: Codable {
     var exampleId: Int?
+    var targetSentenceIds: [Int]? = nil
     var vocabularyId: Int?
 
     var type: ExerciseType?
+    var status: String?
     var vocabularyIds: [Int]?
     var prompt: String?
-    var explanation: String?
     var timeLimitSec: Int?
 
     var options: [ExerciseOptionUpdate]?
 
-    var correctOptionId: Int?
     var correctOptionIds: [Int]?
-    var correctGroupId: Int?
+    var correctGroupId: Int? = 0
 
     var expectedAnswers: [ExpectedAnswer]?
     var translations: [ExerciseTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case exampleId = "example_id"
+        case targetSentenceIds = "target_sentence_ids"
         case vocabularyId = "vocabulary_id"
         case type
+        case status
         case vocabularyIds = "vocabulary_ids"
         case prompt
-        case explanation
         case timeLimitSec = "time_limit_sec"
         case options
-        case correctOptionId = "correct_option_id"
         case correctOptionIds = "correct_option_ids"
         case correctGroupId = "correct_group_id"
         case expectedAnswers = "expected_answers"
@@ -267,6 +264,16 @@ struct ExerciseCorrectOption: Codable, Identifiable {
         case groupId = "group_id"
         case position
         case option
+    }
+}
+
+struct ExerciseTargetSentence: Codable, Identifiable {
+    let id: Int
+    let exampleSentenceId: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case exampleSentenceId = "example_sentence_id"
     }
 }
 

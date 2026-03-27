@@ -58,7 +58,7 @@ struct SentenceTokenVocabularyRead: Codable, Hashable, Identifiable {
 
 struct SentenceTokenRead: Codable, Identifiable {
     let id: Int
-    let exampleId: Int
+    let exampleSentenceId: Int
     let tokenIndex: Int
     let surface: String
     let phraseId: Int?
@@ -73,11 +73,13 @@ struct SentenceTokenRead: Codable, Identifiable {
     let createdAt: Date?
     private let rawSenseId: Int?
 
+    var exampleId: Int { exampleSentenceId }
     var senseId: Int? { sense?.id ?? rawSenseId }
 
     enum CodingKeys: String, CodingKey {
         case id
-        case exampleId = "example_id"
+        case exampleSentenceId = "example_sentence_id"
+        case legacyExampleId = "example_id"
         case tokenIndex = "token_index"
         case surface
         case phraseId = "phrase_id"
@@ -96,7 +98,9 @@ struct SentenceTokenRead: Codable, Identifiable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
-        exampleId = try c.decode(Int.self, forKey: .exampleId)
+        exampleSentenceId =
+            try c.decodeIfPresent(Int.self, forKey: .exampleSentenceId) ??
+            c.decode(Int.self, forKey: .legacyExampleId)
         tokenIndex = try c.decode(Int.self, forKey: .tokenIndex)
         surface = try c.decode(String.self, forKey: .surface)
         phraseId = try c.decodeIfPresent(Int.self, forKey: .phraseId)
@@ -117,7 +121,7 @@ struct SentenceTokenRead: Codable, Identifiable {
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(id, forKey: .id)
-        try c.encode(exampleId, forKey: .exampleId)
+        try c.encode(exampleSentenceId, forKey: .exampleSentenceId)
         try c.encode(tokenIndex, forKey: .tokenIndex)
         try c.encode(surface, forKey: .surface)
         try c.encodeIfPresent(phraseId, forKey: .phraseId)
@@ -135,7 +139,7 @@ struct SentenceTokenRead: Codable, Identifiable {
 }
 
 struct SentenceTokenCreate: Codable {
-    let exampleId: Int
+    let exampleSentenceId: Int
     let tokenIndex: Int
     let surface: String
     let phraseId: Int?
@@ -147,7 +151,7 @@ struct SentenceTokenCreate: Codable {
     let endIndex: Int?
 
     enum CodingKeys: String, CodingKey {
-        case exampleId = "example_id"
+        case exampleSentenceId = "example_sentence_id"
         case tokenIndex = "token_index"
         case surface
         case phraseId = "phrase_id"
@@ -161,7 +165,7 @@ struct SentenceTokenCreate: Codable {
 }
 
 struct SentenceTokenUpdate: Codable {
-    let exampleId: Int?
+    let exampleSentenceId: Int?
     let tokenIndex: Int?
     let surface: String?
     let phraseId: Int?
@@ -173,7 +177,7 @@ struct SentenceTokenUpdate: Codable {
     let endIndex: Int?
 
     enum CodingKeys: String, CodingKey {
-        case exampleId = "example_id"
+        case exampleSentenceId = "example_sentence_id"
         case tokenIndex = "token_index"
         case surface
         case phraseId = "phrase_id"

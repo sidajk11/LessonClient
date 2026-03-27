@@ -38,20 +38,46 @@ struct ExamplesSearchView: View {
 
                     Button("검색") { Task { await vm.search() } }
 
+                    Button("start_end_index검사") {
+                        Task { await vm.checkStartEndIndices() }
+                    }
+                    .disabled(
+                        vm.isLoading ||
+                        vm.isRecreatingAllTokens ||
+                        vm.isDeletingTokens ||
+                        vm.isAddingSenses ||
+                        vm.isCheckingStartEndIndices ||
+                        vm.isRepairingStartEndIndices ||
+                        vm.displayItems.isEmpty
+                    )
+
+                    Button("start_end_index복구") {
+                        Task { await vm.repairStartEndIndices() }
+                    }
+                    .disabled(
+                        vm.isLoading ||
+                        vm.isRecreatingAllTokens ||
+                        vm.isDeletingTokens ||
+                        vm.isAddingSenses ||
+                        vm.isCheckingStartEndIndices ||
+                        vm.isRepairingStartEndIndices ||
+                        vm.displayItems.isEmpty
+                    )
+
                     Button("전체 생성") {
                         Task { await vm.recreateAllTokens() }
                     }
-                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isDeletingTokens || vm.isAddingSenses || vm.displayItems.isEmpty)
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isDeletingTokens || vm.isAddingSenses || vm.isCheckingStartEndIndices || vm.isRepairingStartEndIndices || vm.displayItems.isEmpty)
 
                     Button("토큰 삭제") {
                         Task { await vm.deleteTokensForExamplesWithUnresolvableVocabulary() }
                     }
-                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isDeletingTokens || vm.isAddingSenses || !vm.hasDeletableUnresolvableItems)
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isDeletingTokens || vm.isAddingSenses || vm.isCheckingStartEndIndices || vm.isRepairingStartEndIndices || !vm.hasDeletableUnresolvableItems)
 
                     Button("sense 추가") {
                         Task { await vm.addSensesForAllExamples() }
                     }
-                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isDeletingTokens || vm.isAddingSenses || vm.displayItems.isEmpty)
+                    .disabled(vm.isLoading || vm.isRecreatingAllTokens || vm.isDeletingTokens || vm.isAddingSenses || vm.isCheckingStartEndIndices || vm.isRepairingStartEndIndices || vm.displayItems.isEmpty)
                 }
                 .padding(.horizontal)
 
@@ -123,6 +149,25 @@ struct ExamplesSearchView: View {
                     .padding(.horizontal)
                 }
 
+                if vm.isCheckingStartEndIndices || vm.isRepairingStartEndIndices {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text(vm.startEndIndexProgressText ?? "start_end_index 처리 중...")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                } else if let message = vm.startEndIndexProgressText, !message.isEmpty {
+                    HStack {
+                        Text(message)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                }
+
                 // 결과 리스트
                 List {
                     ForEach(vm.displayItems) { row in
@@ -154,6 +199,12 @@ struct ExamplesSearchView: View {
                                         Text(sentenceStatus.text)
                                             .font(.caption)
                                             .foregroundStyle(sentenceStatus.isWarning ? .red : .secondary)
+                                    }
+
+                                    if vm.needsStartEndIndexRepair(for: row) {
+                                        Text("start_end_index재생성 필요")
+                                            .font(.caption)
+                                            .foregroundStyle(.red)
                                     }
 
                                     let sortedTokens = row.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
