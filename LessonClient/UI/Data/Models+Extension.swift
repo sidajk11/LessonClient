@@ -35,7 +35,7 @@ extension VocabularyTranslation {
     }
 }
 
-extension ExampleTranslation {
+extension ExampleSentenceTranslation {
     func toString() -> String? {
         let text = text.trimmed
         if text.isEmpty {
@@ -74,7 +74,7 @@ extension Array where Element == VocabularyTranslation {
 }
 
 
-extension Array where Element == ExampleTranslation {
+extension Array where Element == ExampleSentenceTranslation {
     /// Parse multiline text like: "ko: 번역1\nes: texto"
     static func parse(from text: String) -> [Element] {
         let lines = text

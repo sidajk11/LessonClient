@@ -18,7 +18,7 @@ actor ExampleTokenVocabularyStatusLoader {
             for example in examples {
                 group.addTask {
                     // token에 vocabulary가 없으면 미학습 단어로 간주합니다.
-                    let unresolvedWord = example.tokens.first { token in
+                    let unresolvedWord = example.allTokens.first { token in
                         let surface = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
                         return !surface.isEmpty &&
                             !punctuationSet.contains(surface) &&
@@ -30,7 +30,7 @@ actor ExampleTokenVocabularyStatusLoader {
                     }
 
                     // sentence token 응답에 포함된 vocabulary.unit 기준으로 최고 unit을 계산합니다.
-                    let highestToken = example.tokens
+                    let highestToken = example.allTokens
                         .compactMap { token -> (Int, String)? in
                             guard let vocabulary = token.vocabulary,
                                   let unit = vocabulary.unit else {

@@ -14,7 +14,7 @@ struct VocabularyExampleRead: Codable, Identifiable {
     let phraseId: Int?
     let vocabularyText: String
     let phraseText: String
-    let translations: [ExampleTranslation]
+    let translations: [ExampleSentenceTranslation]
     let exercises: [Exercise]
 
     enum CodingKeys: String, CodingKey {
@@ -36,7 +36,7 @@ struct VocabularyExampleRead: Codable, Identifiable {
         phraseId = try c.decodeIfPresent(Int.self, forKey: .phraseId)
         vocabularyText = try c.decodeIfPresent(String.self, forKey: .vocabularyText) ?? ""
         phraseText = try c.decodeIfPresent(String.self, forKey: .phraseText) ?? ""
-        translations = try c.decodeIfPresent([ExampleTranslation].self, forKey: .translations) ?? []
+        translations = try c.decodeIfPresent([ExampleSentenceTranslation].self, forKey: .translations) ?? []
         exercises = try c.decodeIfPresent([Exercise].self, forKey: .exercises) ?? []
     }
 
@@ -47,7 +47,7 @@ struct VocabularyExampleRead: Codable, Identifiable {
         phraseId = example.phraseId
         vocabularyText = example.vocabularyText
         phraseText = example.phraseText
-        translations = example.translations
+        translations = example.primaryTranslations
         exercises = example.exercises
     }
 }

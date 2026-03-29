@@ -27,7 +27,7 @@ final class ExampleCreateViewModel: ObservableObject {
         for para in paras {
             var components = para.components(separatedBy: .newlines)
             let sentence = components.removeFirst().trimmed
-            let translations = [ExampleTranslation].parse(from: components)
+            let translations = [ExampleSentenceTranslation].parse(from: components)
 
             let example = try await ExampleDataSource.shared.createExample(
                 sentence: sentence,

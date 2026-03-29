@@ -5,33 +5,42 @@ import SwiftUI
 struct ExampleDetailView: View {
     @StateObject private var vm: ExampleDetailViewModel
 
-    init(exampleId: Int, lesson: Lesson?, word: Vocabulary?) {
-        _vm = StateObject(wrappedValue: ExampleDetailViewModel(exampleId: exampleId, lesson: lesson, word: word))
+    init(exampleId: Int, exampleSentenceId: Int? = nil, lesson: Lesson?, word: Vocabulary?) {
+        _vm = StateObject(wrappedValue: ExampleDetailViewModel(exampleId: exampleId, exampleSentenceId: exampleSentenceId, lesson: lesson, word: word))
     }
 
     var body: some View {
         List {
             Section(header: Text("연습문제")) {
                 NavigationLink("연습문제들") {
-                    if let example = vm.example {
-                        ExerciseListView(example: example)
+                    if let example = vm.displayExample {
+                        ExerciseListView(example: example, usePrefetchedExercisesOnly: vm.selectedExampleSentence != nil)
                     }
                 }
             }
             Section("문장") {
                 TextField("영어 문장", text: $vm.sentence)
                     .autocorrectionDisabled()
+                    .disabled(!vm.canEditSentence)
+
+                if !vm.canEditSentence {
+                    Text("선택한 ExampleSentence 기준 보기 전용입니다.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             Section("번역들") {
                 Text("한 줄에 하나씩 입력하세요.\n예)\nko: 내 가방과 내 휴대폰.\nes: Mi bolsa y mi teléfono.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 TextEditor(text: $vm.translationText)
+                    .disabled(!vm.canEditSentence)
                     .frame(minHeight: 140)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
             }
             Section("토큰") {
-                if let tokens = vm.example?.tokens, !tokens.isEmpty {
+                if !vm.displayTokens.isEmpty {
+                    let tokens = vm.displayTokens
                     let translationTargets = tokens.filter { !punctuationSet.contains($0.surface) }
                     let hasAnyTokenTranslation = translationTargets.contains { !$0.translations.isEmpty }
 
@@ -150,6 +159,7 @@ struct ExampleDetailView: View {
                 if vm.isSaving { ProgressView() } else { Text("저장") }
             }
             .buttonStyle(.borderedProminent)
+            .disabled(vm.isSaving || !vm.canEditSentence)
         }
         .navigationTitle("예문 상세")
         .task { await vm.load() }

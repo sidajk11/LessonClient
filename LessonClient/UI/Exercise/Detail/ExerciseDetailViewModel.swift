@@ -35,11 +35,11 @@ final class ExerciseDetailViewModel: ObservableObject {
         self.practice = practice
 
         if practice.type == .combine {
-            sentence = example.translations.text(langCode: .ko)
+            sentence = example.primaryTranslations.text(langCode: .ko)
             content = practice.prompt ?? ""
             optionsText = practice.options.map { $0.displayText }.joined(separator: ", ")
         } else if practice.type == .select {
-            sentence = example.translations.text(langCode: .ko)
+            sentence = example.primaryTranslations.text(langCode: .ko)
             content = practice.prompt ?? ""
             optionsText = practice.options.map { $0.displayText }.joined(separator: ", ")
         }

@@ -172,75 +172,70 @@ struct ExamplesSearchView: View {
                 List {
                     ForEach(vm.displayItems) { row in
                         VStack(alignment: .leading, spacing: 6) {
-                            NavigationLink {
-                                ExampleDetailView(exampleId: row.id, lesson: nil, word: nil)
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                        Text(vm.unitBadgeText(for: row))
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.secondary.opacity(0.15))
-                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Text(vm.unitBadgeText(for: row))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.secondary.opacity(0.15))
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
 
-                                        Text(row.sentence)
-                                            .font(.body)
-                                    }
+                                    ExampleSentenceLinksRow(example: row)
+                                }
 
-                                    Text(row.translations.toString())
+                                Text(row.primaryTranslations.toString())
 
-                                    Text("단어: \(row.wordText ?? (row.vocabularyId.map { "#\($0)" } ?? "-"))")
+                                Text("단어: \(row.wordText ?? (row.vocabularyId.map { "#\($0)" } ?? "-"))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                if let sentenceStatus = vm.sentenceStatus(for: row) {
+                                    Text(sentenceStatus.text)
+                                        .font(.caption)
+                                        .foregroundStyle(sentenceStatus.isWarning ? .red : .secondary)
+                                }
+
+                                if vm.needsStartEndIndexRepair(for: row) {
+                                    Text("start_end_index재생성 필요")
+                                        .font(.caption)
+                                        .foregroundStyle(.red)
+                                }
+
+                                let sortedTokens = row.primaryTokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
+                                let checkTargets = sortedTokens.filter { token in
+                                    !punctuationSet.contains(token.surface)
+                                }
+                                let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
+                                    token.senseId != nil || token.phraseId != nil
+                                }
+
+                                if isTokenReady {
+                                    Text("tokens: \(sortedTokens.map(\.surface).joinTokens())")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
-
-                                    if let sentenceStatus = vm.sentenceStatus(for: row) {
-                                        Text(sentenceStatus.text)
-                                            .font(.caption)
-                                            .foregroundStyle(sentenceStatus.isWarning ? .red : .secondary)
-                                    }
-
-                                    if vm.needsStartEndIndexRepair(for: row) {
-                                        Text("start_end_index재생성 필요")
-                                            .font(.caption)
-                                            .foregroundStyle(.red)
-                                    }
-
-                                    let sortedTokens = row.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
-                                    let checkTargets = sortedTokens.filter { token in
-                                        !punctuationSet.contains(token.surface)
-                                    }
-                                    let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
-                                        token.senseId != nil || token.phraseId != nil
-                                    }
-
-                                    if isTokenReady {
-                                        Text("tokens: \(sortedTokens.map(\.surface).joinTokens())")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    } else {
-                                        Text("tokens 수정 필요")
-                                            .font(.caption)
-                                            .foregroundStyle(.orange)
-                                    }
-
-                                    let senseTokens = checkTargets.map { token -> String in
-                                        guard let senseId = token.senseId else {
-                                            return "\(token.surface):-"
-                                        }
-                                        let senseCode = vm.senseCodeBySenseId[senseId] ?? "#\(senseId)"
-                                        let cefr = vm.senseCefrBySenseId[senseId] ?? "-"
-                                        return "\(senseCode)(\(cefr))"
-                                    }
-                                    if !senseTokens.isEmpty {
-                                        Text("senses: \(senseTokens.joined(separator: ", "))")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
+                                } else {
+                                    Text("tokens 수정 필요")
+                                        .font(.caption)
+                                        .foregroundStyle(.orange)
                                 }
-                                .padding(.vertical, 2)
+
+                                let senseTokens = checkTargets.map { token -> String in
+                                    guard let senseId = token.senseId else {
+                                        return "\(token.surface):-"
+                                    }
+                                    let senseCode = vm.senseCodeBySenseId[senseId] ?? "#\(senseId)"
+                                    let cefr = vm.senseCefrBySenseId[senseId] ?? "-"
+                                    return "\(senseCode)(\(cefr))"
+                                }
+                                if !senseTokens.isEmpty {
+                                    Text("senses: \(senseTokens.joined(separator: ", "))")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
+                            .padding(.vertical, 2)
 
                         }
                         .padding(.vertical, 2)
@@ -259,6 +254,43 @@ struct ExamplesSearchView: View {
             .alert("오류", isPresented: .constant(vm.error != nil)) {
                 Button("확인") { vm.error = nil }
             } message: { Text(vm.error ?? "") }
+        }
+    }
+}
+
+private struct ExampleSentenceLinksRow: View {
+    let example: Example
+
+    var body: some View {
+        let sentences = example.orderedExampleSentences
+
+        if sentences.count > 1 {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(sentences) { sentence in
+                        NavigationLink {
+                            ExampleDetailView(exampleId: example.id, exampleSentenceId: sentence.id, lesson: nil, word: nil)
+                        } label: {
+                            Text(sentence.text)
+                                .font(.body)
+                                .lineLimit(1)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.accentColor.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        } else {
+            NavigationLink {
+                ExampleDetailView(exampleId: example.id, exampleSentenceId: sentences.first?.id, lesson: nil, word: nil)
+            } label: {
+                Text(sentences.first?.text ?? example.sentence)
+                    .font(.body)
+            }
+            .buttonStyle(.plain)
         }
     }
 }

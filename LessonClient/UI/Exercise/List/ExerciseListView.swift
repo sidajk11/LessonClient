@@ -13,8 +13,8 @@ struct ExerciseListView: View {
     @StateObject private var vm: ExerciseListViewModel
     @State private var showingCreate: Bool = false
 
-    init(example: Example) {
-        _vm = StateObject(wrappedValue: ExerciseListViewModel(example: example))
+    init(example: Example, usePrefetchedExercisesOnly: Bool = false) {
+        _vm = StateObject(wrappedValue: ExerciseListViewModel(example: example, usePrefetchedExercisesOnly: usePrefetchedExercisesOnly))
     }
 
     var body: some View {

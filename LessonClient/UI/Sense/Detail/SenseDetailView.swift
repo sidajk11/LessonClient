@@ -88,8 +88,8 @@ struct SenseDetailView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(example.sentence)
-                                if !example.translations.isEmpty {
-                                    Text(example.translations.toString())
+                                if !example.primaryTranslations.isEmpty {
+                                    Text(example.primaryTranslations.toString())
                                         .font(.footnote)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(2)

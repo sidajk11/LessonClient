@@ -173,7 +173,7 @@ final class VocabularyDetailViewModel: ObservableObject {
     func addExample() async {
         guard word != nil else { return }
         do {
-            let payload: [ExampleTranslation] = [ExampleTranslation].parse(from: newSentencetranslationText)
+            let payload: [ExampleSentenceTranslation] = [ExampleSentenceTranslation].parse(from: newSentencetranslationText)
 
             // 3) Create
             guard let wid = word?.id else { return }
@@ -197,7 +197,7 @@ final class VocabularyDetailViewModel: ObservableObject {
         editingExample = example
         editSentence = example.sentence
         // build bulk text excluding en
-        let lines = example.translations
+        let lines = example.primaryTranslations
             .filter { $0.langCode != .enUS }
             .sorted { $0.langCode.rawValue < $1.langCode.rawValue }
             .map { "\($0.langCode): \($0.text)" }
@@ -207,7 +207,7 @@ final class VocabularyDetailViewModel: ObservableObject {
     func applyEditExample() async {
         guard let ex = editingExample else { return }
         do {
-            let payload = [ExampleTranslation].parse(from: editSentencetranslationText)
+            let payload = [ExampleSentenceTranslation].parse(from: editSentencetranslationText)
 
             let updated = try await ExampleDataSource.shared.updateExample(
                 id: ex.id,

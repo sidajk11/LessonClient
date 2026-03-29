@@ -51,7 +51,7 @@ final class ExamplesSearchViewModel: ObservableObject {
     }
 
     var hasDeletableUnresolvableItems: Bool {
-        return unresolvableVocabularyTargetItems(in: displayItems).contains { !$0.tokens.isEmpty }
+        return unresolvableVocabularyTargetItems(in: displayItems).contains { !$0.allTokens.isEmpty }
     }
 
     func search() async {
@@ -111,7 +111,7 @@ final class ExamplesSearchViewModel: ObservableObject {
 
     private func loadSenseCodes(for examples: [Example], generation: Int) async {
         guard generation == searchGeneration else { return }
-        let senseIds = Set(examples.flatMap { $0.tokens.compactMap(\.senseId) })
+        let senseIds = Set(examples.flatMap { $0.allTokens.compactMap(\.senseId) })
         guard !senseIds.isEmpty else { return }
 
         let missingIds = senseIds.filter {
@@ -289,10 +289,10 @@ final class ExamplesSearchViewModel: ObservableObject {
                         currentExample = recreated
                     }
 
-                    if currentExample.tokens.contains(where: { $0.startIndex == nil || $0.endIndex == nil }) {
+                    if detailVM.displayTokens.contains(where: { $0.startIndex == nil || $0.endIndex == nil }) {
                         let updatedCount = try await replaceTokenRanges(
-                            sentence: currentExample.sentence,
-                            tokens: currentExample.tokens
+                            sentence: detailVM.sentence,
+                            tokens: detailVM.displayTokens
                         )
                         updatedTokenCount += updatedCount
                     }
@@ -303,8 +303,8 @@ final class ExamplesSearchViewModel: ObservableObject {
                 }
 
                 let updatedCount = try await replaceTokenRanges(
-                    sentence: currentExample.sentence,
-                    tokens: currentExample.tokens
+                    sentence: detailVM.sentence,
+                    tokens: detailVM.displayTokens
                 )
 
                 updatedTokenCount += updatedCount
@@ -358,18 +358,16 @@ start_end_index 복구 중 일부 실패:
             let phraseDrafts = try? await sentenceUseCase.buildTokenDrafts(from: detailVM.sentence)
             let hasPhraseDraft = phraseDrafts?.contains(where: { $0.phraseId != nil }) == true
 
-            if let tokens = detailVM.example?.tokens {
-                let checkTargets = tokens.filter { token in
-                    !punctuationSet.contains(token.surface)
-                }
-                let isTokenReady = !checkTargets.isEmpty &&
-                    checkTargets.allSatisfy { token in
-                        token.senseId != nil || token.phraseId != nil
-                }
-                if isTokenReady {
-                    skippedByTokenReady += 1
-                    continue
-                }
+            let checkTargets = detailVM.displayTokens.filter { token in
+                !punctuationSet.contains(token.surface)
+            }
+            let isTokenReady = !checkTargets.isEmpty &&
+                checkTargets.allSatisfy { token in
+                    token.senseId != nil || token.phraseId != nil
+            }
+            if isTokenReady {
+                skippedByTokenReady += 1
+                continue
             }
 
             if hasPhraseDraft {
@@ -424,13 +422,13 @@ start_end_index 복구 중 일부 실패:
 
             do {
                 // 삭제 대상은 현재 예문에 달린 모든 token입니다.
-                for token in row.tokens {
+                for token in row.allTokens {
                     try await SentenceTokenDataSource.shared.deleteSentenceToken(id: token.id)
                 }
-                deletedTokenCount += row.tokens.count
+                deletedTokenCount += row.allTokens.count
                 successExamples += 1
             } catch {
-                if row.tokens.isEmpty {
+                if row.allTokens.isEmpty {
                     skippedExamples += 1
                 } else {
                     failedRows.append("#\(row.id) delete: \((error as NSError).localizedDescription)")
@@ -488,17 +486,15 @@ start_end_index 복구 중 일부 실패:
                 continue
             }
 
-            if let tokens = detailVM.example?.tokens {
-                let checkTargets = tokens.filter { token in
-                    !punctuationSet.contains(token.surface)
-                }
-                let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
-                    token.senseId != nil
-                }
-                if isTokenReady {
-                    skippedByExistingSense += 1
-                    continue
-                }
+            let checkTargets = detailVM.displayTokens.filter { token in
+                !punctuationSet.contains(token.surface)
+            }
+            let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
+                token.senseId != nil
+            }
+            if isTokenReady {
+                skippedByExistingSense += 1
+                continue
             }
 
             guard let tokenSummary = await detailVM.tokenSummary(),
@@ -563,7 +559,7 @@ sense 추가 중 일부 실패:
 
     private func missingSenseTargetItems(in examples: [Example]) -> [Example] {
         return examples.filter { example in
-            let checkTargets = example.tokens.filter { token in
+            let checkTargets = example.allTokens.filter { token in
                 !punctuationSet.contains(token.surface)
             }
             guard !checkTargets.isEmpty else { return false }
@@ -576,7 +572,7 @@ sense 추가 중 일부 실패:
     private func unresolvableVocabularyTargetItems(in examples: [Example]) -> [Example] {
         return examples.filter { example in
             // 상태 로더와 동일하게 vocabulary가 비어 있는 token을 미학습 단어로 봅니다.
-            return example.tokens.contains { token in
+            return example.allTokens.contains { token in
                 let surface = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
                 return !surface.isEmpty &&
                     !punctuationSet.contains(surface) &&
@@ -590,18 +586,18 @@ sense 추가 중 일부 실패:
     }
 
     private func startEndIndexIssue(for example: Example) -> (needsRepair: Bool, requiresRecreation: Bool) {
-        if example.tokens.isEmpty {
+        if example.primaryTokens.isEmpty {
             return (true, true)
         }
 
-        let hasMissingRange = example.tokens.contains { token in
+        let hasMissingRange = example.primaryTokens.contains { token in
             token.startIndex == nil || token.endIndex == nil
         }
 
         do {
             _ = try sentenceUseCase.buildTokenRangeUpdates(
                 sentence: example.sentence,
-                tokens: example.tokens
+                tokens: example.primaryTokens
             )
         } catch {
             return (true, true)

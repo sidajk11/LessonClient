@@ -31,7 +31,7 @@ final class ExampleDataSource {
         sentence: String,
         vocabularyId: Int?,
         phraseId: Int? = nil,
-        translations: [ExampleTranslation]? = nil
+        translations: [ExampleSentenceTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleCreate(
             sentence: sentence,
@@ -59,7 +59,7 @@ final class ExampleDataSource {
         sentence: String?,
         vocabularyId: Int? = nil,
         phraseId: Int? = nil,
-        translations: [ExampleTranslation]? = nil
+        translations: [ExampleSentenceTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleUpdate(
             sentence: sentence,

@@ -7,6 +7,7 @@ struct ExampleSentence: Codable, Identifiable {
     let type: String
     let speakerName: String?
     let text: String
+    let translations: [ExampleSentenceTranslation]
     let tokens: [SentenceTokenRead]
     let exercises: [Exercise]
 
@@ -17,6 +18,7 @@ struct ExampleSentence: Codable, Identifiable {
         case type
         case speakerName = "speaker_name"
         case text
+        case translations
         case tokens
         case exercises
     }
@@ -29,6 +31,7 @@ struct ExampleSentence: Codable, Identifiable {
         type = try c.decodeIfPresent(String.self, forKey: .type) ?? "sentence"
         speakerName = try c.decodeIfPresent(String.self, forKey: .speakerName)
         text = try c.decode(String.self, forKey: .text)
+        translations = try c.decodeIfPresent([ExampleSentenceTranslation].self, forKey: .translations) ?? []
         tokens = try c.decodeIfPresent([SentenceTokenRead].self, forKey: .tokens) ?? []
         exercises = try c.decodeIfPresent([Exercise].self, forKey: .exercises) ?? []
     }
@@ -43,14 +46,21 @@ struct Example: Codable, Identifiable {
     let vocabularyText: String
     let phraseText: String
     let unit: Int?
-    let translations: [ExampleTranslation]
     let exampleSentences: [ExampleSentence]
     let exercises: [Exercise]
-    let tokens: [SentenceTokenRead]
 
     var wordText: String? {
         let trimmed = vocabularyText.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    var orderedExampleSentences: [ExampleSentence] {
+        exampleSentences.sorted {
+            if $0.order == $1.order {
+                return $0.id < $1.id
+            }
+            return $0.order < $1.order
+        }
     }
 
     // 토큰 생성/수정 시 기준이 되는 주 문장을 고릅니다.
@@ -58,33 +68,23 @@ struct Example: Codable, Identifiable {
         if let exact = exampleSentences.first(where: { $0.text == sentence }) {
             return exact
         }
-        return exampleSentences.sorted {
-            if $0.order == $1.order {
-                return $0.id < $1.id
-            }
-            return $0.order < $1.order
-        }.first
+        return orderedExampleSentences.first
     }
 
     var primarySentenceId: Int? {
         primarySentence?.id ?? id
     }
 
-    private static func fallbackTokens(
-        sentence: String,
-        exampleSentences: [ExampleSentence]
-    ) -> [SentenceTokenRead] {
-        if let exact = exampleSentences.first(where: { $0.text == sentence }) {
-            return exact.tokens
-        }
+    var primaryTranslations: [ExampleSentenceTranslation] {
+        primarySentence?.translations ?? []
+    }
 
-        let primary = exampleSentences.sorted {
-            if $0.order == $1.order {
-                return $0.id < $1.id
-            }
-            return $0.order < $1.order
-        }.first
-        return primary?.tokens ?? []
+    var primaryTokens: [SentenceTokenRead] {
+        primarySentence?.tokens ?? []
+    }
+
+    var allTokens: [SentenceTokenRead] {
+        orderedExampleSentences.flatMap(\.tokens)
     }
 
     enum CodingKeys: String, CodingKey {
@@ -95,10 +95,8 @@ struct Example: Codable, Identifiable {
         case vocabularyText = "vocabulary_text"
         case phraseText = "phrase_text"
         case unit
-        case translations
         case exampleSentences = "example_sentences"
         case exercises
-        case tokens
     }
 
     init(from decoder: Decoder) throws {
@@ -110,15 +108,30 @@ struct Example: Codable, Identifiable {
         vocabularyText = try c.decodeIfPresent(String.self, forKey: .vocabularyText) ?? ""
         phraseText = try c.decodeIfPresent(String.self, forKey: .phraseText) ?? ""
         unit = try c.decodeIfPresent(Int.self, forKey: .unit)
-        translations = try c.decodeIfPresent([ExampleTranslation].self, forKey: .translations) ?? []
         exampleSentences = try c.decodeIfPresent([ExampleSentence].self, forKey: .exampleSentences) ?? []
         exercises = try c.decodeIfPresent([Exercise].self, forKey: .exercises) ?? []
-        let decodedTokens = try c.decodeIfPresent([SentenceTokenRead].self, forKey: .tokens) ?? []
-        if !decodedTokens.isEmpty {
-            tokens = decodedTokens
-        } else {
-            tokens = Self.fallbackTokens(sentence: sentence, exampleSentences: exampleSentences)
-        }
+    }
+
+    init(
+        id: Int,
+        sentence: String,
+        vocabularyId: Int?,
+        phraseId: Int?,
+        vocabularyText: String,
+        phraseText: String,
+        unit: Int?,
+        exampleSentences: [ExampleSentence],
+        exercises: [Exercise]
+    ) {
+        self.id = id
+        self.sentence = sentence
+        self.vocabularyId = vocabularyId
+        self.phraseId = phraseId
+        self.vocabularyText = vocabularyText
+        self.phraseText = phraseText
+        self.unit = unit
+        self.exampleSentences = exampleSentences
+        self.exercises = exercises
     }
 }
 
@@ -126,7 +139,7 @@ struct ExampleCreate: Codable {
     let sentence: String
     let vocabularyId: Int?
     let phraseId: Int?
-    let translations: [ExampleTranslation]?
+    let translations: [ExampleSentenceTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case sentence
@@ -140,7 +153,7 @@ struct ExampleUpdate: Codable {
     let sentence: String?
     let vocabularyId: Int?
     let phraseId: Int?
-    let translations: [ExampleTranslation]?
+    let translations: [ExampleSentenceTranslation]?
 
     enum CodingKeys: String, CodingKey {
         case sentence
@@ -153,7 +166,7 @@ struct ExampleUpdate: Codable {
         sentence: String? = nil,
         vocabularyId: Int? = nil,
         phraseId: Int? = nil,
-        translations: [ExampleTranslation]? = nil
+        translations: [ExampleSentenceTranslation]? = nil
     ) {
         self.sentence = sentence
         self.vocabularyId = vocabularyId
@@ -162,7 +175,7 @@ struct ExampleUpdate: Codable {
     }
 }
 
-struct ExampleTranslation: Codable {
+struct ExampleSentenceTranslation: Codable {
     let langCode: LangCode
     var text: String
 

@@ -62,7 +62,7 @@ final class ExerciseCreateViewModel: ObservableObject {
             }
         }
         
-        translation = example.translations.koText()
+        translation = example.primaryTranslations.koText()
         allVocabularysInSentence = words(from: example.sentence).filter { !punctuationSet.contains($0) }
         
         bind()
@@ -192,7 +192,7 @@ extension ExerciseCreateViewModel {
             .filter { $0 == .combine }
             .sink { [weak self] _ in
                 guard let self else { return }
-                sentence = example.translations.text(langCode: .ko)
+                sentence = example.primaryTranslations.text(langCode: .ko)
                 content = content(from: example.sentence)
                 wordOptionTextList = allVocabularysInSentence
             }
