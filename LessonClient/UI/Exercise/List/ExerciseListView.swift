@@ -13,8 +13,8 @@ struct ExerciseListView: View {
     @StateObject private var vm: ExerciseListViewModel
     @State private var showingCreate: Bool = false
 
-    init(example: Example, usePrefetchedExercisesOnly: Bool = false) {
-        _vm = StateObject(wrappedValue: ExerciseListViewModel(example: example, usePrefetchedExercisesOnly: usePrefetchedExercisesOnly))
+    init(example: Example, exampleSentence: ExampleSentence? = nil, usePrefetchedExercisesOnly: Bool = false) {
+        _vm = StateObject(wrappedValue: ExerciseListViewModel(example: example, exampleSentence: exampleSentence, usePrefetchedExercisesOnly: usePrefetchedExercisesOnly))
     }
 
     var body: some View {
@@ -51,7 +51,7 @@ struct ExerciseListView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Text(vm.example.sentence)
+                                Text(vm.exampleSentence?.text ?? "")
                                 Spacer()
                                 Text(ex.prompt ?? "")
                                 Spacer()
@@ -87,12 +87,23 @@ struct ExerciseListView: View {
             Task { await vm.load() }
         }) {
             NavigationStack { // keep navigation chrome consistent
-                ExerciseCreateView(example: vm.example, lesson: nil, word: vm.word) { _ in
+                if let exampleSentence = vm.exampleSentence {
+                    ExerciseCreateView(
+                        exampleSentence: exampleSentence,
+                        exampleId: vm.example.id,
+                        vocabularyId: vm.example.vocabularyId,
+                        lesson: nil,
+                        word: vm.word
+                    ) { _ in
                         // 선택: 생성 후 리스트 새로고침
                         Task { await vm.load() }
                     }
                     .padding()
                     .frame(minWidth: 520, minHeight: 460)
+                } else {
+                    ContentUnavailableView("ExampleSentence 없음", systemImage: "exclamationmark.triangle")
+                        .frame(minWidth: 520, minHeight: 460)
+                }
             }
         }
     }

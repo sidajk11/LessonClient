@@ -57,7 +57,7 @@ final class WordDetailViewModel: ObservableObject {
                     pos: sense.pos?.uppercased() ?? "",
                     explain: sense.translations.first(where: { $0.lang == "ko" })?.explain ?? "",
                     examples: sense.examples
-                        .map(\.sentence)
+                        .compactMap { $0.firstExampleSentence?.text }
                         .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                         .filter { !$0.isEmpty }
                 )

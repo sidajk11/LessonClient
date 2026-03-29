@@ -29,17 +29,21 @@ final class ExerciseDetailViewModel: ObservableObject {
 
     private var originalOptions: [String] = []
     private var wordsLearned: [Vocabulary] = []
+    
+    private var exampleTranslations: [ExampleSentenceTranslation] {
+        example.firstExampleSentence?.translations ?? []
+    }
 
     init(example: Example, practice: Exercise) {
         self.example = example
         self.practice = practice
 
         if practice.type == .combine {
-            sentence = example.primaryTranslations.text(langCode: .ko)
+            sentence = exampleTranslations.text(langCode: .ko)
             content = practice.prompt ?? ""
             optionsText = practice.options.map { $0.displayText }.joined(separator: ", ")
         } else if practice.type == .select {
-            sentence = example.primaryTranslations.text(langCode: .ko)
+            sentence = exampleTranslations.text(langCode: .ko)
             content = practice.prompt ?? ""
             optionsText = practice.options.map { $0.displayText }.joined(separator: ", ")
         }

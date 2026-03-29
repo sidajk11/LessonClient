@@ -14,6 +14,15 @@ final class ExamplesSearchViewModel: ObservableObject {
         let isWarning: Bool
     }
 
+    private struct ExampleSentenceTarget {
+        let example: Example
+        let sentence: ExampleSentence
+
+        var progressLabel: String {
+            "example_id=\(example.id) sentence_id=\(sentence.id)"
+        }
+    }
+
     // Inputs
     @Published var q: String = ""
     @Published var levelText: String = ""   // numeric-only text
@@ -51,7 +60,7 @@ final class ExamplesSearchViewModel: ObservableObject {
     }
 
     var hasDeletableUnresolvableItems: Bool {
-        return unresolvableVocabularyTargetItems(in: displayItems).contains { !$0.allTokens.isEmpty }
+        return unresolvableVocabularyTargetItems(in: displayItems).contains { !$0.sentence.tokens.isEmpty }
     }
 
     func search() async {
@@ -212,10 +221,10 @@ final class ExamplesSearchViewModel: ObservableObject {
         guard !isCheckingStartEndIndices else { return }
         guard !isRepairingStartEndIndices else { return }
 
-        let targetItems = displayItems
+        let targetItems = sentenceTargets(in: displayItems)
         guard !targetItems.isEmpty else {
             needsStartEndIndexRepairByExampleId = [:]
-            startEndIndexProgressText = "검사할 예문이 없습니다."
+            startEndIndexProgressText = "검사할 예문 문장이 없습니다."
             return
         }
 
@@ -223,15 +232,16 @@ final class ExamplesSearchViewModel: ObservableObject {
         defer { isCheckingStartEndIndices = false }
 
         var checked: [Int: Bool] = [:]
-        checked.reserveCapacity(targetItems.count)
+        checked.reserveCapacity(displayItems.count)
 
-        for (idx, row) in targetItems.enumerated() {
-            startEndIndexProgressText = "start_end_index 검사 중... (\(idx + 1)/\(targetItems.count)) example_id=\(row.id)"
-            checked[row.id] = startEndIndexIssue(for: row).needsRepair
+        for (idx, target) in targetItems.enumerated() {
+            startEndIndexProgressText = "start_end_index 검사 중... (\(idx + 1)/\(targetItems.count)) \(target.progressLabel)"
+            let needsRepair = startEndIndexIssue(for: target).needsRepair
+            checked[target.example.id] = (checked[target.example.id] ?? false) || needsRepair
         }
 
         needsStartEndIndexRepairByExampleId = checked
-        let needCount = checked.values.filter { $0 }.count
+        let needCount = targetItems.filter { startEndIndexIssue(for: $0).needsRepair }.count
         startEndIndexProgressText = "start_end_index 검사 완료 need=\(needCount) checked=\(targetItems.count)"
     }
 
@@ -242,51 +252,43 @@ final class ExamplesSearchViewModel: ObservableObject {
         guard !isDeletingTokens else { return }
         guard !isAddingSenses else { return }
 
-        let targetItems = displayItems.filter { startEndIndexIssue(for: $0).needsRepair }
+        let targetItems = sentenceTargets(in: displayItems).filter { startEndIndexIssue(for: $0).needsRepair }
         guard !targetItems.isEmpty else {
-            startEndIndexProgressText = "복구할 예문이 없습니다."
+            startEndIndexProgressText = "복구할 예문 문장이 없습니다."
             return
         }
 
         isRepairingStartEndIndices = true
         defer { isRepairingStartEndIndices = false }
 
-        var successExamples = 0
-        var recreatedExamples = 0
-        var reindexedExamples = 0
+        var successSentences = 0
+        var recreatedSentences = 0
+        var reindexedSentences = 0
         var updatedTokenCount = 0
         var failedRows: [String] = []
 
-        for (idx, row) in targetItems.enumerated() {
-            startEndIndexProgressText = "start_end_index 복구 중... (\(idx + 1)/\(targetItems.count)) example_id=\(row.id)"
+        for (idx, target) in targetItems.enumerated() {
+            startEndIndexProgressText = "start_end_index 복구 중... (\(idx + 1)/\(targetItems.count)) \(target.progressLabel)"
 
             do {
-                let detailVM = ExampleDetailViewModel(exampleId: row.id, lesson: nil, word: nil)
+                let detailVM = ExampleSentenceDetailViewModel(
+                    exampleSentence: target.sentence,
+                    lesson: nil,
+                    word: nil
+                )
                 await detailVM.load()
                 if let loadError = detailVM.error, !loadError.isEmpty {
-                    failedRows.append("#\(row.id) load: \(loadError)")
+                    failedRows.append("\(target.progressLabel) load: \(loadError)")
                     continue
                 }
 
-                guard var currentExample = detailVM.example else {
-                    failedRows.append("#\(row.id) load: empty example")
-                    continue
-                }
-
-                let currentIssue = startEndIndexIssue(for: currentExample)
+                let currentIssue = startEndIndexIssue(for: target)
 
                 if currentIssue.requiresRecreation {
-                    if startEndIndexIssue(for: currentExample).requiresRecreation {
-                        await detailVM.recreateAllTokensFromSentence()
-                        if let recreateError = detailVM.error, !recreateError.isEmpty {
-                            failedRows.append("#\(row.id) recreate: \(recreateError)")
-                            continue
-                        }
-                        guard let recreated = detailVM.example else {
-                            failedRows.append("#\(row.id) recreate: empty example")
-                            continue
-                        }
-                        currentExample = recreated
+                    await detailVM.recreateAllTokensFromSentence()
+                    if let recreateError = detailVM.error, !recreateError.isEmpty {
+                        failedRows.append("\(target.progressLabel) recreate: \(recreateError)")
+                        continue
                     }
 
                     if detailVM.displayTokens.contains(where: { $0.startIndex == nil || $0.endIndex == nil }) {
@@ -297,8 +299,8 @@ final class ExamplesSearchViewModel: ObservableObject {
                         updatedTokenCount += updatedCount
                     }
 
-                    recreatedExamples += 1
-                    successExamples += 1
+                    recreatedSentences += 1
+                    successSentences += 1
                     continue
                 }
 
@@ -308,10 +310,10 @@ final class ExamplesSearchViewModel: ObservableObject {
                 )
 
                 updatedTokenCount += updatedCount
-                reindexedExamples += 1
-                successExamples += 1
+                reindexedSentences += 1
+                successSentences += 1
             } catch {
-                failedRows.append("#\(row.id) repair: \((error as NSError).localizedDescription)")
+                failedRows.append("\(target.progressLabel) repair: \((error as NSError).localizedDescription)")
             }
         }
 
@@ -319,12 +321,12 @@ final class ExamplesSearchViewModel: ObservableObject {
         await checkStartEndIndices()
 
         if failedRows.isEmpty {
-            startEndIndexProgressText = "start_end_index 복구 완료 examples=\(successExamples) reindexed=\(reindexedExamples) recreated=\(recreatedExamples) tokens=\(updatedTokenCount)"
+            startEndIndexProgressText = "start_end_index 복구 완료 sentences=\(successSentences) reindexed=\(reindexedSentences) recreated=\(recreatedSentences) tokens=\(updatedTokenCount)"
             return
         }
 
         let preview = failedRows.prefix(3).joined(separator: "\n")
-        startEndIndexProgressText = "start_end_index 복구 완료 examples=\(successExamples) reindexed=\(reindexedExamples) recreated=\(recreatedExamples) tokens=\(updatedTokenCount) failed=\(failedRows.count)"
+        startEndIndexProgressText = "start_end_index 복구 완료 sentences=\(successSentences) reindexed=\(reindexedSentences) recreated=\(recreatedSentences) tokens=\(updatedTokenCount) failed=\(failedRows.count)"
         error = """
 start_end_index 복구 중 일부 실패:
 \(preview)
@@ -333,9 +335,9 @@ start_end_index 복구 중 일부 실패:
 
     func recreateAllTokens() async {
         guard !isRecreatingAllTokens else { return }
-        let targetItems = displayItems
+        let targetItems = sentenceTargets(in: displayItems)
         guard !targetItems.isEmpty else {
-            error = "재생성할 예문이 없습니다."
+            error = "재생성할 예문 문장이 없습니다."
             return
         }
 
@@ -345,13 +347,17 @@ start_end_index 복구 중 일부 실패:
         var skippedByTokenReady = 0
         var failedRows: [String] = []
 
-        for (idx, row) in targetItems.enumerated() {
-            bulkProgressText = "전체 생성 중... (\(idx + 1)/\(targetItems.count)) example_id=\(row.id)"
+        for (idx, target) in targetItems.enumerated() {
+            bulkProgressText = "전체 생성 중... (\(idx + 1)/\(targetItems.count)) \(target.progressLabel)"
 
-            let detailVM = ExampleDetailViewModel(exampleId: row.id, lesson: nil, word: nil)
+            let detailVM = ExampleSentenceDetailViewModel(
+                exampleSentence: target.sentence,
+                lesson: nil,
+                word: nil
+            )
             await detailVM.load()
             if let loadError = detailVM.error, !loadError.isEmpty {
-                failedRows.append("#\(row.id) load: \(loadError)")
+                failedRows.append("\(target.progressLabel) load: \(loadError)")
                 continue
             }
 
@@ -376,7 +382,7 @@ start_end_index 복구 중 일부 실패:
                 await detailVM.recreateTokensFromSentence()
             }
             if let recreateError = detailVM.error, !recreateError.isEmpty {
-                failedRows.append("#\(row.id) recreate: \(recreateError)")
+                failedRows.append("\(target.progressLabel) recreate: \(recreateError)")
                 continue
             }
 
@@ -405,33 +411,32 @@ start_end_index 복구 중 일부 실패:
 
         let targetItems = unresolvableVocabularyTargetItems(in: displayItems)
         guard !targetItems.isEmpty else {
-            deleteProgressText = "미학습 단어가 있는 예문이 없습니다."
+            deleteProgressText = "미학습 단어가 있는 예문 문장이 없습니다."
             return
         }
 
         isDeletingTokens = true
         defer { isDeletingTokens = false }
 
-        var successExamples = 0
+        var successSentences = 0
         var deletedTokenCount = 0
-        var skippedExamples = 0
+        var skippedSentences = 0
         var failedRows: [String] = []
 
-        for (idx, row) in targetItems.enumerated() {
-            deleteProgressText = "토큰 삭제 중... (\(idx + 1)/\(targetItems.count)) example_id=\(row.id)"
+        for (idx, target) in targetItems.enumerated() {
+            deleteProgressText = "토큰 삭제 중... (\(idx + 1)/\(targetItems.count)) \(target.progressLabel)"
 
             do {
-                // 삭제 대상은 현재 예문에 달린 모든 token입니다.
-                for token in row.allTokens {
+                for token in target.sentence.tokens {
                     try await SentenceTokenDataSource.shared.deleteSentenceToken(id: token.id)
                 }
-                deletedTokenCount += row.allTokens.count
-                successExamples += 1
+                deletedTokenCount += target.sentence.tokens.count
+                successSentences += 1
             } catch {
-                if row.allTokens.isEmpty {
-                    skippedExamples += 1
+                if target.sentence.tokens.isEmpty {
+                    skippedSentences += 1
                 } else {
-                    failedRows.append("#\(row.id) delete: \((error as NSError).localizedDescription)")
+                    failedRows.append("\(target.progressLabel) delete: \((error as NSError).localizedDescription)")
                 }
             }
         }
@@ -439,12 +444,12 @@ start_end_index 복구 중 일부 실패:
         await search()
 
         if failedRows.isEmpty {
-            deleteProgressText = "토큰 삭제 완료 examples=\(successExamples) tokens=\(deletedTokenCount) skipped=\(skippedExamples)"
+            deleteProgressText = "토큰 삭제 완료 sentences=\(successSentences) tokens=\(deletedTokenCount) skipped=\(skippedSentences)"
             return
         }
 
         let preview = failedRows.prefix(3).joined(separator: "\n")
-        deleteProgressText = "토큰 삭제 완료 examples=\(successExamples) tokens=\(deletedTokenCount) skipped=\(skippedExamples) failed=\(failedRows.count)"
+        deleteProgressText = "토큰 삭제 완료 sentences=\(successSentences) tokens=\(deletedTokenCount) skipped=\(skippedSentences) failed=\(failedRows.count)"
         error = """
 토큰 삭제 중 일부 실패:
 \(preview)
@@ -454,35 +459,39 @@ start_end_index 복구 중 일부 실패:
     func addSensesForAllExamples() async {
         guard !isAddingSenses else { return }
         guard !isRecreatingAllTokens else { return }
-        let visibleItems = displayItems
+        let visibleItems = sentenceTargets(in: displayItems)
         guard !visibleItems.isEmpty else {
-            error = "sense를 추가할 예문이 없습니다."
+            error = "sense를 추가할 예문 문장이 없습니다."
             return
         }
 
         isAddingSenses = true
         defer { isAddingSenses = false }
 
-        let targetItems = missingSenseTargetItems(in: visibleItems)
+        let targetItems = missingSenseTargetItems(in: displayItems)
         guard !targetItems.isEmpty else {
-            senseProgressText = "sense가 비어 있는 token 예문이 없습니다."
+            senseProgressText = "sense가 비어 있는 token 예문 문장이 없습니다."
             return
         }
         let openAIClient = OpenAIClient()
 
-        var successExamples = 0
+        var successSentences = 0
         var updatedTokenCount = 0
-        var emptySenseExamples = 0
+        var emptySenseSentences = 0
         var skippedByExistingSense = 0
         var failedRows: [String] = []
 
-        for (idx, row) in targetItems.enumerated() {
-            senseProgressText = "sense 추가 중... (\(idx + 1)/\(targetItems.count)) example_id=\(row.id)"
+        for (idx, target) in targetItems.enumerated() {
+            senseProgressText = "sense 추가 중... (\(idx + 1)/\(targetItems.count)) \(target.progressLabel)"
 
-            let detailVM = ExampleDetailViewModel(exampleId: row.id, lesson: nil, word: nil)
+            let detailVM = ExampleSentenceDetailViewModel(
+                exampleSentence: target.sentence,
+                lesson: nil,
+                word: nil
+            )
             await detailVM.load()
             if let loadError = detailVM.error, !loadError.isEmpty {
-                failedRows.append("#\(row.id) load: \(loadError)")
+                failedRows.append("\(target.progressLabel) load: \(loadError)")
                 continue
             }
 
@@ -499,7 +508,7 @@ start_end_index 복구 중 일부 실패:
 
             guard let tokenSummary = await detailVM.tokenSummary(),
                   !tokenSummary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                failedRows.append("#\(row.id) tokenSummary: empty")
+                failedRows.append("\(target.progressLabel) tokenSummary: empty")
                 continue
             }
 
@@ -508,12 +517,12 @@ start_end_index 복구 중 일부 실패:
             do {
                 let result = try? await openAIClient.generateText(prompt: prompt)
                 guard let result else {
-                    emptySenseExamples += 1
+                    emptySenseSentences += 1
                     continue
                 }
 
                 if result.range(of: #"sense_id\s*:\s*\d+"#, options: .regularExpression) == nil {
-                    emptySenseExamples += 1
+                    emptySenseSentences += 1
                     continue
                 }
 
@@ -524,7 +533,7 @@ start_end_index 복구 중 일부 실패:
                 }
 
                 if latestByTokenId.isEmpty {
-                    emptySenseExamples += 1
+                    emptySenseSentences += 1
                     continue
                 }
 
@@ -536,30 +545,30 @@ start_end_index 복구 중 일부 실패:
                 }
 
                 updatedTokenCount += latestByTokenId.count
-                successExamples += 1
+                successSentences += 1
             } catch {
-                failedRows.append("#\(row.id) sense: \((error as NSError).localizedDescription)")
+                failedRows.append("\(target.progressLabel) sense: \((error as NSError).localizedDescription)")
             }
         }
 
         await search()
 
         if failedRows.isEmpty {
-            senseProgressText = "sense 추가 완료 examples=\(successExamples) tokens=\(updatedTokenCount) empty=\(emptySenseExamples) skipped=\(skippedByExistingSense)"
+            senseProgressText = "sense 추가 완료 sentences=\(successSentences) tokens=\(updatedTokenCount) empty=\(emptySenseSentences) skipped=\(skippedByExistingSense)"
             return
         }
 
         let preview = failedRows.prefix(3).joined(separator: "\n")
-        senseProgressText = "sense 추가 완료 examples=\(successExamples) tokens=\(updatedTokenCount) empty=\(emptySenseExamples) skipped=\(skippedByExistingSense) failed=\(failedRows.count)"
+        senseProgressText = "sense 추가 완료 sentences=\(successSentences) tokens=\(updatedTokenCount) empty=\(emptySenseSentences) skipped=\(skippedByExistingSense) failed=\(failedRows.count)"
         error = """
 sense 추가 중 일부 실패:
 \(preview)
 """
     }
 
-    private func missingSenseTargetItems(in examples: [Example]) -> [Example] {
-        return examples.filter { example in
-            let checkTargets = example.allTokens.filter { token in
+    private func missingSenseTargetItems(in examples: [Example]) -> [ExampleSentenceTarget] {
+        return sentenceTargets(in: examples).filter { target in
+            let checkTargets = target.sentence.tokens.filter { token in
                 !punctuationSet.contains(token.surface)
             }
             guard !checkTargets.isEmpty else { return false }
@@ -569,10 +578,9 @@ sense 추가 중 일부 실패:
         }
     }
 
-    private func unresolvableVocabularyTargetItems(in examples: [Example]) -> [Example] {
-        return examples.filter { example in
-            // 상태 로더와 동일하게 vocabulary가 비어 있는 token을 미학습 단어로 봅니다.
-            return example.allTokens.contains { token in
+    private func unresolvableVocabularyTargetItems(in examples: [Example]) -> [ExampleSentenceTarget] {
+        return sentenceTargets(in: examples).filter { target in
+            return target.sentence.tokens.contains { token in
                 let surface = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
                 return !surface.isEmpty &&
                     !punctuationSet.contains(surface) &&
@@ -585,25 +593,33 @@ sense 추가 중 일부 실패:
         needsStartEndIndexRepairByExampleId[example.id] == true
     }
 
-    private func startEndIndexIssue(for example: Example) -> (needsRepair: Bool, requiresRecreation: Bool) {
-        if example.primaryTokens.isEmpty {
+    private func startEndIndexIssue(for target: ExampleSentenceTarget) -> (needsRepair: Bool, requiresRecreation: Bool) {
+        if target.sentence.tokens.isEmpty {
             return (true, true)
         }
 
-        let hasMissingRange = example.primaryTokens.contains { token in
+        let hasMissingRange = target.sentence.tokens.contains { token in
             token.startIndex == nil || token.endIndex == nil
         }
 
         do {
             _ = try sentenceUseCase.buildTokenRangeUpdates(
-                sentence: example.sentence,
-                tokens: example.primaryTokens
+                sentence: target.sentence.text,
+                tokens: target.sentence.tokens
             )
         } catch {
             return (true, true)
         }
 
         return (hasMissingRange, false)
+    }
+
+    private func sentenceTargets(in examples: [Example]) -> [ExampleSentenceTarget] {
+        examples.flatMap { example in
+            example.orderedExampleSentences.map { sentence in
+                ExampleSentenceTarget(example: example, sentence: sentence)
+            }
+        }
     }
 
     /// full replace PUT을 사용해서 기존 token 필드를 보존한 채 range만 갱신합니다.

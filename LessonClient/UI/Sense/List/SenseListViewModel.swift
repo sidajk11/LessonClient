@@ -268,7 +268,8 @@ final class SenseListViewModel: ObservableObject {
         var output: [String] = []
 
         for example in examples {
-            for lemma in SentenseParser.lemmas(in: example.sentence) {
+            guard let text = example.firstExampleSentence?.text else { continue }
+            for lemma in SentenseParser.lemmas(in: text) {
                 let trimmed = lemma.trimmed
                 guard isLemmaCandidate(trimmed) else { continue }
 

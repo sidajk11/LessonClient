@@ -83,19 +83,24 @@ struct SenseDetailView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(vm.examples) { example in
-                        NavigationLink {
-                            ExampleDetailView(exampleId: example.id, lesson: nil, word: nil)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(example.sentence)
-                                if !example.primaryTranslations.isEmpty {
-                                    Text(example.primaryTranslations.toString())
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(2)
+                        let exampleSentence = defaultExampleSentence(for: example)
+                        if let exampleSentence {
+                            NavigationLink {
+                                ExampleSentenceDetailView(exampleSentence: exampleSentence, lesson: nil, word: nil)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(exampleSentence.text)
+                                    if !exampleSentence.translations.isEmpty {
+                                        Text(exampleSentence.translations.toString())
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(2)
+                                    }
                                 }
+                                .padding(.vertical, 2)
                             }
-                            .padding(.vertical, 2)
+                        } else {
+                            Text("")
                         }
                     }
                 }
@@ -165,4 +170,8 @@ struct SenseDetailView: View {
                 .foregroundStyle(.secondary)
         }
     }
+}
+
+private func defaultExampleSentence(for example: Example) -> ExampleSentence? {
+    example.firstExampleSentence
 }

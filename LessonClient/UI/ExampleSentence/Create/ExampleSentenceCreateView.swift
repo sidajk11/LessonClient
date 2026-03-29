@@ -1,18 +1,18 @@
-// ExampleCreateView.swift
+// ExampleSentenceCreateView.swift
 
 import SwiftUI
 
-struct ExampleCreateView: View {
+struct ExampleSentenceCreateView: View {
     let wordId: Int
-    var onCreated: (([Example]) -> Void)? = nil
+    var onCreated: (([ExampleSentence]) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var vm: ExampleCreateViewModel
+    @StateObject private var vm: ExampleSentenceCreateViewModel
 
-    init(wordId: Int, onCreated: (([Example]) -> Void)? = nil) {
+    init(wordId: Int, onCreated: (([ExampleSentence]) -> Void)? = nil) {
         self.wordId = wordId
         self.onCreated = onCreated
-        _vm = StateObject(wrappedValue: ExampleCreateViewModel(wordId: wordId))
+        _vm = StateObject(wrappedValue: ExampleSentenceCreateViewModel(wordId: wordId))
     }
 
     var body: some View {

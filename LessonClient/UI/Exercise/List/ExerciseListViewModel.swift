@@ -6,14 +6,16 @@ import Combine
 @MainActor
 final class ExerciseListViewModel: ObservableObject {
     let example: Example
+    let exampleSentence: ExampleSentence?
     let usePrefetchedExercisesOnly: Bool
     @Published var word: Vocabulary?
     @Published var practices: [Exercise] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
-    init(example: Example, usePrefetchedExercisesOnly: Bool = false) {
+    init(example: Example, exampleSentence: ExampleSentence? = nil, usePrefetchedExercisesOnly: Bool = false) {
         self.example = example
+        self.exampleSentence = exampleSentence ?? example.firstExampleSentence
         self.usePrefetchedExercisesOnly = usePrefetchedExercisesOnly
     }
 

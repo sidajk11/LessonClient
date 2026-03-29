@@ -7,9 +7,15 @@ struct ExerciseCreateView: View {
     
     @StateObject private var vm: ExerciseCreateViewModel
     
-    init(example: Example, lesson: Lesson?, word: Vocabulary?, onCreated: ((Exercise) -> Void)? = nil) {
+    init(exampleSentence: ExampleSentence, exampleId: Int, vocabularyId: Int?, lesson: Lesson?, word: Vocabulary?, onCreated: ((Exercise) -> Void)? = nil) {
         self.onCreated = onCreated
-        let vm = ExerciseCreateViewModel(example: example, lesson: lesson, word: word)
+        let vm = ExerciseCreateViewModel(
+            exampleSentence: exampleSentence,
+            exampleId: exampleId,
+            vocabularyId: vocabularyId,
+            lesson: lesson,
+            word: word
+        )
         _vm = StateObject(wrappedValue: vm)
     }
 
@@ -28,7 +34,7 @@ struct ExerciseCreateView: View {
             Section {
                 VStack(alignment: .leading) {
                     HStack {
-                        Text(vm.example.sentence)
+                        Text(vm.exampleSentence.text)
                     }
                     Text(vm.translation)
                     Text(vm.word?.text ?? "")

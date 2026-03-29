@@ -185,7 +185,7 @@ struct ExamplesSearchView: View {
                                     ExampleSentenceLinksRow(example: row)
                                 }
 
-                                Text(row.primaryTranslations.toString())
+                                Text(displayTranslations(for: row).toString())
 
                                 Text("단어: \(row.wordText ?? (row.vocabularyId.map { "#\($0)" } ?? "-"))")
                                     .font(.caption)
@@ -203,7 +203,7 @@ struct ExamplesSearchView: View {
                                         .foregroundStyle(.red)
                                 }
 
-                                let sortedTokens = row.primaryTokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
+                                let sortedTokens = displayTokens(for: row).sorted(by: { $0.tokenIndex < $1.tokenIndex })
                                 let checkTargets = sortedTokens.filter { token in
                                     !punctuationSet.contains(token.surface)
                                 }
@@ -258,6 +258,18 @@ struct ExamplesSearchView: View {
     }
 }
 
+private func displaySentence(for example: Example) -> ExampleSentence? {
+    example.firstExampleSentence
+}
+
+private func displayTranslations(for example: Example) -> [ExampleSentenceTranslation] {
+    displaySentence(for: example)?.translations ?? []
+}
+
+private func displayTokens(for example: Example) -> [SentenceTokenRead] {
+    displaySentence(for: example)?.tokens ?? []
+}
+
 private struct ExampleSentenceLinksRow: View {
     let example: Example
 
@@ -269,7 +281,7 @@ private struct ExampleSentenceLinksRow: View {
                 HStack(spacing: 8) {
                     ForEach(sentences) { sentence in
                         NavigationLink {
-                            ExampleDetailView(exampleId: example.id, exampleSentenceId: sentence.id, lesson: nil, word: nil)
+                            ExampleSentenceDetailView(exampleSentence: sentence, lesson: nil, word: nil)
                         } label: {
                             Text(sentence.text)
                                 .font(.body)
@@ -285,9 +297,11 @@ private struct ExampleSentenceLinksRow: View {
             }
         } else {
             NavigationLink {
-                ExampleDetailView(exampleId: example.id, exampleSentenceId: sentences.first?.id, lesson: nil, word: nil)
+                if let sentence = sentences.first {
+                    ExampleSentenceDetailView(exampleSentence: sentence, lesson: nil, word: nil)
+                }
             } label: {
-                Text(sentences.first?.text ?? example.sentence)
+                Text(sentences.first?.text ?? "")
                     .font(.body)
             }
             .buttonStyle(.plain)

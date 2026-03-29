@@ -195,9 +195,10 @@ final class VocabularyDetailViewModel: ObservableObject {
 
     func startEdit(example: Example) {
         editingExample = example
-        editSentence = example.sentence
+        editSentence = example.firstExampleSentence?.text ?? ""
         // build bulk text excluding en
-        let lines = example.primaryTranslations
+        let translations = example.firstExampleSentence?.translations ?? []
+        let lines = translations
             .filter { $0.langCode != .enUS }
             .sorted { $0.langCode.rawValue < $1.langCode.rawValue }
             .map { "\($0.langCode): \($0.text)" }

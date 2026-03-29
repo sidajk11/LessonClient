@@ -42,12 +42,12 @@ struct VocabularyExampleRead: Codable, Identifiable {
 
     init(example: Example) {
         id = example.id
-        sentence = example.sentence
+        sentence = example.firstExampleSentence?.text ?? ""
         vocabularyId = example.vocabularyId
         phraseId = example.phraseId
         vocabularyText = example.vocabularyText
         phraseText = example.phraseText
-        translations = example.primaryTranslations
+        translations = example.firstExampleSentence?.translations ?? []
         exercises = example.exercises
     }
 }

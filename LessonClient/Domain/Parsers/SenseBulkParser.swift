@@ -173,7 +173,7 @@ extension WordRead {
             let posText = (s.pos ?? "-").trimmingCharacters(in: .whitespacesAndNewlines)
             let cefrText = (s.cefr ?? "-").trimmingCharacters(in: .whitespacesAndNewlines)
             let koText = (koProvider(s) ?? "-").trimmingCharacters(in: .whitespacesAndNewlines)
-            let exText = (s.examples.first?.sentence ?? "-").trimmingCharacters(in: .whitespacesAndNewlines)
+            let exText = (s.examples.first?.firstExampleSentence?.text ?? "-").trimmingCharacters(in: .whitespacesAndNewlines)
 
             // SenseBulkParser는 블록마다 word가 "있어도 되고 없어도" 되지만,
             // 예시 포맷처럼 첫 블록에만 word를 넣어줍니다.
@@ -199,4 +199,3 @@ extension WordRead {
         return upper == "A1" || upper == "A2" || upper == "B1" || upper == "B2" || upper == "C1" || upper == "C2"
     }
 }
-

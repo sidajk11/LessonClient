@@ -1,4 +1,4 @@
-// ExampleDetailViewModel.swift
+// ExampleSentenceDetailViewModel.swift
 
 import Foundation
 #if canImport(AppKit)
@@ -8,9 +8,8 @@ import UIKit
 #endif
 
 @MainActor
-final class ExampleDetailViewModel: ObservableObject {
-    let exampleId: Int
-    let exampleSentenceId: Int?
+final class ExampleSentenceDetailViewModel: ObservableObject {
+    let exampleSentence: ExampleSentence
     let lesson: Lesson?
     let word: Vocabulary?
 
@@ -36,19 +35,19 @@ final class ExampleDetailViewModel: ObservableObject {
     private let sentenceUseCase = SentenceUseCase.shared
 
     /// 뷰모델의 대상 예문/문맥 정보를 설정합니다.
-    init(exampleId: Int, exampleSentenceId: Int? = nil, lesson: Lesson?, word: Vocabulary?) {
-        self.exampleId = exampleId
-        self.exampleSentenceId = exampleSentenceId
+    init(exampleSentence: ExampleSentence, lesson: Lesson?, word: Vocabulary?) {
+        self.exampleSentence = exampleSentence
         self.lesson = lesson
         self.word = word
+        self.selectedExampleSentence = exampleSentence
     }
 
     var displayTokens: [SentenceTokenRead] {
-        selectedExampleSentence?.tokens ?? example?.primaryTokens ?? []
+        selectedExampleSentence?.tokens ?? example.map(tokens(in:)) ?? []
     }
 
     var displayTranslations: [ExampleSentenceTranslation] {
-        selectedExampleSentence?.translations ?? example?.primaryTranslations ?? []
+        selectedExampleSentence?.translations ?? example.map(translations(in:)) ?? []
     }
 
     var displayExample: Example? {
@@ -57,7 +56,6 @@ final class ExampleDetailViewModel: ObservableObject {
 
         return Example(
             id: example.id,
-            sentence: selectedExampleSentence.text,
             vocabularyId: example.vocabularyId,
             phraseId: example.phraseId,
             vocabularyText: example.vocabularyText,
@@ -70,16 +68,16 @@ final class ExampleDetailViewModel: ObservableObject {
 
     var canEditSentence: Bool {
         guard let example, let selectedExampleSentence else { return true }
-        return selectedExampleSentence.id == example.primarySentence?.id
+        return selectedExampleSentence.id == defaultSentence(in: example)?.id
     }
 
     /// 예문 상세를 조회하고 화면 편집 상태를 초기화합니다.
     func load() async {
         do {
-            let ex = try await ExampleDataSource.shared.example(id: exampleId)
+            let ex = try await ExampleDataSource.shared.example(id: exampleSentence.exampleId)
             example = ex
             selectedExampleSentence = resolvedExampleSentence(in: ex)
-            sentence = selectedExampleSentence?.text ?? ex.sentence
+            sentence = selectedExampleSentence?.text ?? ex.firstExampleSentence?.text ?? ""
             let lines = displayTranslations
                 .sorted { $0.langCode.rawValue < $1.langCode.rawValue }
                 .map { "\($0.langCode): \($0.text)" }
@@ -113,13 +111,13 @@ final class ExampleDetailViewModel: ObservableObject {
             let payload = [ExampleSentenceTranslation].parse(from: translationText)
 
             let updated = try await ExampleDataSource.shared.updateExample(
-                id: exampleId,
+                id: exampleSentence.exampleId,
                 sentence: trimmedSentence,
                 translations: payload
             )
             example = updated
             selectedExampleSentence = resolvedExampleSentence(in: updated)
-            sentence = selectedExampleSentence?.text ?? updated.sentence
+            sentence = selectedExampleSentence?.text ?? updated.firstExampleSentence?.text ?? ""
             await refreshTokenKoreanTranslations()
             //info = "저장되었습니다."
         } catch {
@@ -145,7 +143,7 @@ final class ExampleDetailViewModel: ObservableObject {
                 sentence: sentence
             )
 
-            let refreshed = try await ExampleDataSource.shared.example(id: exampleId)
+            let refreshed = try await ExampleDataSource.shared.example(id: exampleSentence.exampleId)
             example = refreshed
             selectedExampleSentence = resolvedExampleSentence(in: refreshed)
             await refreshTokenKoreanTranslations()
@@ -210,7 +208,7 @@ final class ExampleDetailViewModel: ObservableObject {
                 }
             }
 
-            let refreshed = try await ExampleDataSource.shared.example(id: exampleId)
+            let refreshed = try await ExampleDataSource.shared.example(id: exampleSentence.exampleId)
             example = refreshed
             selectedExampleSentence = resolvedExampleSentence(in: refreshed)
             await refreshTokenKoreanTranslations()
@@ -254,7 +252,7 @@ final class ExampleDetailViewModel: ObservableObject {
                 includePhrases: includePhrases
             )
 
-            let refreshed = try await ExampleDataSource.shared.example(id: exampleId)
+            let refreshed = try await ExampleDataSource.shared.example(id: exampleSentence.exampleId)
             example = refreshed
             selectedExampleSentence = resolvedExampleSentence(in: refreshed)
             await refreshTokenKoreanTranslations()
@@ -283,7 +281,7 @@ final class ExampleDetailViewModel: ObservableObject {
                 try await SentenceTokenDataSource.shared.deleteSentenceToken(id: token.id)
             }
 
-            let refreshed = try await ExampleDataSource.shared.example(id: exampleId)
+            let refreshed = try await ExampleDataSource.shared.example(id: exampleSentence.exampleId)
             example = refreshed
             selectedExampleSentence = resolvedExampleSentence(in: refreshed)
             await refreshTokenKoreanTranslations()
@@ -312,7 +310,7 @@ final class ExampleDetailViewModel: ObservableObject {
 
     /// 토큰/센스 요약 문자열을 생성합니다.
     private func makeTokenSummaryText(example ex: Example) async -> String {
-        let sortedTokens = ex.primaryTokens.sorted { $0.tokenIndex < $1.tokenIndex }
+        let sortedTokens = tokens(in: ex).sorted { $0.tokenIndex < $1.tokenIndex }
         let tokenLines = sortedTokens
             .filter { token in
                 let trimmed = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -381,7 +379,7 @@ final class ExampleDetailViewModel: ObservableObject {
             }
 
             let examplesText = sense.examples
-                .map(\.sentence)
+                .compactMap { $0.firstExampleSentence?.text }
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
                 .joined(separator: " | ")
@@ -394,7 +392,7 @@ sense_examples: \(examplesText.isEmpty ? "-" : examplesText)
         }
 
         let text = """
-        sentence: \(ex.sentence)
+        sentence: \(displaySentenceText(example: ex))
 
         tokens:
         \(tokenLines.isEmpty ? "-" : tokenLines.joined(separator: "\n"))
@@ -434,7 +432,7 @@ sense_examples: \(examplesText.isEmpty ? "-" : examplesText)
     func copyTokenTranslationSummary() {
         guard let ex = displayExample else { return }
 
-        let sortedTokens = ex.primaryTokens.sorted { $0.tokenIndex < $1.tokenIndex }
+        let sortedTokens = tokens(in: ex).sorted { $0.tokenIndex < $1.tokenIndex }
         let tokenLines = sortedTokens
             .filter { token in
                 let trimmed = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -446,7 +444,7 @@ sense_examples: \(examplesText.isEmpty ? "-" : examplesText)
 
         let text = """
         sentence:
-        \(ex.sentence)
+        \(displaySentenceText(example: ex))
 
         tokens:
         \(tokenLines.isEmpty ? "-" : tokenLines.joined(separator: "\n"))
@@ -519,7 +517,7 @@ sense_examples: \(examplesText.isEmpty ? "-" : examplesText)
                 }
             }
 
-            let refreshed = try await ExampleDataSource.shared.example(id: exampleId)
+            let refreshed = try await ExampleDataSource.shared.example(id: exampleSentence.exampleId)
             example = refreshed
             selectedExampleSentence = resolvedExampleSentence(in: refreshed)
             await refreshTokenKoreanTranslations()
@@ -586,7 +584,7 @@ sense_examples: \(examplesText.isEmpty ? "-" : examplesText)
                 updated += 1
             }
 
-            let refreshed = try await ExampleDataSource.shared.example(id: exampleId)
+            let refreshed = try await ExampleDataSource.shared.example(id: exampleSentence.exampleId)
             example = refreshed
             selectedExampleSentence = resolvedExampleSentence(in: refreshed)
             await refreshTokenKoreanTranslations()
@@ -763,14 +761,27 @@ sense_examples: \(examplesText.isEmpty ? "-" : examplesText)
     }
 
     private var activeExampleSentenceId: Int? {
-        selectedExampleSentence?.id ?? example?.primarySentenceId
+        selectedExampleSentence?.id ?? exampleSentence.id
     }
 
     private func resolvedExampleSentence(in example: Example) -> ExampleSentence? {
-        if let exampleSentenceId {
-            return example.exampleSentences.first(where: { $0.id == exampleSentenceId }) ?? example.primarySentence
-        }
-        return example.primarySentence
+        example.exampleSentences.first(where: { $0.id == exampleSentence.id }) ?? defaultSentence(in: example)
+    }
+
+    private func defaultSentence(in example: Example) -> ExampleSentence? {
+        example.firstExampleSentence
+    }
+
+    private func translations(in example: Example) -> [ExampleSentenceTranslation] {
+        defaultSentence(in: example)?.translations ?? []
+    }
+
+    private func tokens(in example: Example) -> [SentenceTokenRead] {
+        defaultSentence(in: example)?.tokens ?? []
+    }
+
+    private func displaySentenceText(example: Example) -> String {
+        selectedExampleSentence?.text ?? defaultSentence(in: example)?.text ?? ""
     }
 
     /// sense 번역 목록에서 한국어 텍스트를 추출합니다.

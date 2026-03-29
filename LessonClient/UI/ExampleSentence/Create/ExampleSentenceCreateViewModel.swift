@@ -1,9 +1,9 @@
-// ExampleCreateViewModel.swift
+// ExampleSentenceCreateViewModel.swift
 
 import Foundation
 
 @MainActor
-final class ExampleCreateViewModel: ObservableObject {
+final class ExampleSentenceCreateViewModel: ObservableObject {
     
     let wordId: Int
     @Published var text: String = ""
@@ -12,7 +12,7 @@ final class ExampleCreateViewModel: ObservableObject {
 
     init(wordId: Int) { self.wordId = wordId }
 
-    func create() async throws -> [Example] {
+    func create() async throws -> [ExampleSentence] {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw NSError(domain: "invalid.form", code: 0, userInfo: [NSLocalizedDescriptionKey: "문장을 입력해 주세요."])
         }
@@ -22,7 +22,7 @@ final class ExampleCreateViewModel: ObservableObject {
         isSaving = true
         defer { isSaving = false }
 
-        var examples: [Example] = []
+        var exampleSentences: [ExampleSentence] = []
         let paras = text.components(separatedBy: "\n\n")
         for para in paras {
             var components = para.components(separatedBy: .newlines)
@@ -34,40 +34,45 @@ final class ExampleCreateViewModel: ObservableObject {
                 vocabularyId: wordId,
                 translations: translations
             )
-            examples.append(example)
+            guard let exampleSentence = example.exampleSentences.first(where: { $0.text == sentence }) ?? example.orderedExampleSentences.first else {
+                throw NSError(domain: "ExampleSentenceCreateViewModel", code: 1, userInfo: [
+                    NSLocalizedDescriptionKey: "생성된 ExampleSentence를 찾을 수 없습니다."
+                ])
+            }
+            exampleSentences.append(exampleSentence)
         }
         
         let word = try await VocabularyDataSource.shared.vocabulary(id: wordId)
         
-        for example in examples {
-            await autoGenerateCombine(example: example, word: word)
-            await autoGenerateSelect(example: example, word: word)
+        for exampleSentence in exampleSentences {
+            await autoGenerateCombine(exampleSentence: exampleSentence, word: word)
+            await autoGenerateSelect(exampleSentence: exampleSentence, word: word)
         }
         
         
-        return examples
+        return exampleSentences
     }
     
-    private func autoGenerateCombine(example: Example, word: Vocabulary) async {
+    private func autoGenerateCombine(exampleSentence: ExampleSentence, word: Vocabulary) async {
         do {
-            let practices = try await ExerciseDataSource.shared.list(exampleId: example.id)
+            let practices = try await ExerciseDataSource.shared.list(exampleId: exampleSentence.exampleId)
             if !practices.contains(where: { $0.type == .combine }) {
-                let allVocabularysInSentence = example.sentence.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
-                let content = example.sentence.underlinesText
-                await submit(example: example, prompt: content, type: .combine, wordOptionTextList: allVocabularysInSentence)
+                let allVocabularysInSentence = exampleSentence.text.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
+                let content = exampleSentence.text.underlinesText
+                await submit(exampleSentence: exampleSentence, prompt: content, type: .combine, wordOptionTextList: allVocabularysInSentence)
             }
         } catch {
             errorMessage = error.localizedDescription
         }
     }
     
-    private func autoGenerateSelect(example: Example, word: Vocabulary) async {
+    private func autoGenerateSelect(exampleSentence: ExampleSentence, word: Vocabulary) async {
         guard let lessonId = word.lessonId else { return }
         do {
-            let practices = try await ExerciseDataSource.shared.list(exampleId: example.id)
+            let practices = try await ExerciseDataSource.shared.list(exampleId: exampleSentence.exampleId)
             let lesson = try await LessonDataSource.shared.lesson(id: lessonId)
             if !practices.contains(where: { $0.type == .select }) {
-                let allVocabularysInSentence = example.sentence.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
+                let allVocabularysInSentence = exampleSentence.text.tokenize(word: word.text).filter { !punctuationSet.contains($0) }
                 
                 var selectedTestVocabularys: [String] = []
                 if allVocabularysInSentence.contains(where: { $0.lowercased() == word.text.lowercased() }) {
@@ -93,7 +98,7 @@ final class ExampleCreateViewModel: ObservableObject {
                 let index = Int.random(in: 0 ..< dummyVocabularys.count)
                 selectedTestVocabularys.append(dummyVocabularys[index])
                 
-                var tokens = example.sentence.tokenize(word: word.text)
+                var tokens = exampleSentence.text.tokenize(word: word.text)
                 tokens = tokens.map { word in
                     if selectedTestVocabularys.contains(where: { $0.lowercased() == word.lowercased() }) {
                         "_"
@@ -109,7 +114,7 @@ final class ExampleCreateViewModel: ObservableObject {
                 
                 let content = tokens.joinTokens()
                 
-                await submit(example: example, prompt: content, type: .select, wordOptionTextList: selectedTestVocabularys)
+                await submit(exampleSentence: exampleSentence, prompt: content, type: .select, wordOptionTextList: selectedTestVocabularys)
             }
             
         } catch {
@@ -117,19 +122,20 @@ final class ExampleCreateViewModel: ObservableObject {
         }
     }
     
-    private func submit(example: Example, prompt: String, type: ExerciseType, wordOptionTextList: [String]) async {
+    private func submit(exampleSentence: ExampleSentence, prompt: String, type: ExerciseType, wordOptionTextList: [String]) async {
         var transList: [ExerciseTranslation] = []
         let trans = ExerciseTranslation(langCode: .enUS, question: nil)
         transList.append(trans)
         
         var wordsOptions: [ExerciseOptionUpdate] = []
         wordsOptions = wordOptionTextList.map {
-            let text = NL.lowercaseAvailable(sentence: example.sentence, word: $0) ? $0.lowercased() : $0
+            let text = NL.lowercaseAvailable(sentence: exampleSentence.text, word: $0) ? $0.lowercased() : $0
             return ExerciseOptionUpdate.textOption(text)
         }
         
         let practiceCrate = ExerciseCreate(
-            exampleId: example.id,
+            exampleId: exampleSentence.exampleId,
+            targetSentenceIds: [exampleSentence.id],
             type: type,
             prompt: prompt,
             options: wordsOptions,

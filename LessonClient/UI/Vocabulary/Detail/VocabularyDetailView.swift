@@ -87,8 +87,8 @@ struct VocabularyDetailView: View {
             
             // + 새 예문 추가 네비게이션 (필요 시 유지)
             NavigationLink {
-                ExampleCreateView(wordId: vm.wordId) { examples in
-                    vm.examples.insert(contentsOf: examples, at: 0)
+                ExampleSentenceCreateView(wordId: vm.wordId) { _ in
+                    Task { await vm.load() }
                 }
             } label: {
                 Label("새 예문 추가", systemImage: "plus.circle")
@@ -117,15 +117,21 @@ struct VocabularyDetailView: View {
             } else {
                 List {
                     ForEach(vm.examples) { example in
+                        let exampleSentence = defaultExampleSentence(for: example)
                         HStack {
                             // 상세로 이동
-                            NavigationLink {
-                                ExampleDetailView(exampleId: example.id, lesson: vm.lesson, word: vm.word)
-                            } label: {
-                                Text(example.sentence)
+                            if let exampleSentence {
+                                NavigationLink {
+                                    ExampleSentenceDetailView(exampleSentence: exampleSentence, lesson: vm.lesson, word: vm.word)
+                                } label: {
+                                    Text(exampleSentence.text)
+                                        .lineLimit(1)
+                                }
+                                .buttonStyle(.plain) // macOS에서 과한 버튼 스타일 제거
+                            } else {
+                                Text("")
                                     .lineLimit(1)
                             }
-                            .buttonStyle(.plain) // macOS에서 과한 버튼 스타일 제거
 
                             Spacer()
 
@@ -340,4 +346,8 @@ struct VocabularyDetailView: View {
         .buttonStyle(.plain)
         .disabled(vm.isUpdatingForm)
     }
+}
+
+private func defaultExampleSentence(for example: Example) -> ExampleSentence? {
+    example.firstExampleSentence
 }

@@ -1,12 +1,12 @@
-// ExampleDetailView.swift
+// ExampleSentenceDetailView.swift
 
 import SwiftUI
 
-struct ExampleDetailView: View {
-    @StateObject private var vm: ExampleDetailViewModel
+struct ExampleSentenceDetailView: View {
+    @StateObject private var vm: ExampleSentenceDetailViewModel
 
-    init(exampleId: Int, exampleSentenceId: Int? = nil, lesson: Lesson?, word: Vocabulary?) {
-        _vm = StateObject(wrappedValue: ExampleDetailViewModel(exampleId: exampleId, exampleSentenceId: exampleSentenceId, lesson: lesson, word: word))
+    init(exampleSentence: ExampleSentence, lesson: Lesson?, word: Vocabulary?) {
+        _vm = StateObject(wrappedValue: ExampleSentenceDetailViewModel(exampleSentence: exampleSentence, lesson: lesson, word: word))
     }
 
     var body: some View {
@@ -14,7 +14,11 @@ struct ExampleDetailView: View {
             Section(header: Text("연습문제")) {
                 NavigationLink("연습문제들") {
                     if let example = vm.displayExample {
-                        ExerciseListView(example: example, usePrefetchedExercisesOnly: vm.selectedExampleSentence != nil)
+                        ExerciseListView(
+                            example: example,
+                            exampleSentence: vm.selectedExampleSentence,
+                            usePrefetchedExercisesOnly: vm.selectedExampleSentence != nil
+                        )
                     }
                 }
             }

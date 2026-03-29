@@ -6,7 +6,9 @@ import Combine
 @MainActor
 final class ExerciseCreateViewModel: ObservableObject {
     // Inputs
-    let example: Example
+    let exampleSentence: ExampleSentence
+    let exampleId: Int
+    let vocabularyId: Int?
     var lesson: Lesson?
     var word: Vocabulary?
     
@@ -39,15 +41,18 @@ final class ExerciseCreateViewModel: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
 
-    init(example: Example, lesson: Lesson?, word: Vocabulary?) {
-        self.example = example
+    init(exampleSentence: ExampleSentence, exampleId: Int, vocabularyId: Int?, lesson: Lesson?, word: Vocabulary?) {
+        self.exampleSentence = exampleSentence
+        self.exampleId = exampleId
+        self.vocabularyId = vocabularyId
         self.lesson = lesson
         self.word = word
         if lesson == nil {
             Task {
                 do {
-                    if let vocabularyId = example.vocabularyId {
+                    if let vocabularyId {
                         let word = try await VocabularyDataSource.shared.vocabulary(id: vocabularyId)
+                        self.word = self.word ?? word
                         if let lessonId = word.lessonId {
                             self.lesson = try await LessonDataSource.shared.lesson(id: lessonId)
                             if let lesson = self.lesson {
@@ -62,8 +67,8 @@ final class ExerciseCreateViewModel: ObservableObject {
             }
         }
         
-        translation = example.primaryTranslations.koText()
-        allVocabularysInSentence = words(from: example.sentence).filter { !punctuationSet.contains($0) }
+        translation = exampleSentence.translations.koText()
+        allVocabularysInSentence = words(from: exampleSentence.text).filter { !punctuationSet.contains($0) }
         
         bind()
     }
@@ -104,7 +109,7 @@ extension ExerciseCreateViewModel {
 extension ExerciseCreateViewModel {
     func autoGenerate() async {
         do {
-            let practices = try await ExerciseDataSource.shared.list(exampleId: example.id)
+            let practices = try await ExerciseDataSource.shared.list(exampleId: exampleId)
             if !practices.contains(where: { $0.type == .combine }) {
                 type = .combine
                 await submit()
@@ -160,13 +165,14 @@ extension ExerciseCreateViewModel {
         var options: [ExerciseOptionUpdate] = []
         if type == .combine || type == .select, wordOptionTextList.count > 0 {
             options = wordOptionTextList.map {
-                let text = NL.lowercaseAvailable(sentence: example.sentence, word: $0) ? $0.lowercased() : $0
+                let text = NL.lowercaseAvailable(sentence: exampleSentence.text, word: $0) ? $0.lowercased() : $0
                 return ExerciseOptionUpdate.textOption(text)
             }
         }
         
         let practiceCrate = ExerciseCreate(
-            exampleId: example.id,
+            exampleId: exampleId,
+            targetSentenceIds: [exampleSentence.id],
             type: type,
             options: options,
             translations: transList
@@ -192,8 +198,8 @@ extension ExerciseCreateViewModel {
             .filter { $0 == .combine }
             .sink { [weak self] _ in
                 guard let self else { return }
-                sentence = example.primaryTranslations.text(langCode: .ko)
-                content = content(from: example.sentence)
+                sentence = exampleSentence.translations.text(langCode: .ko)
+                content = content(from: exampleSentence.text)
                 wordOptionTextList = allVocabularysInSentence
             }
             .store(in: &cancellables)
@@ -204,7 +210,7 @@ extension ExerciseCreateViewModel {
             .combineLatest($selectedIndexes)
             .sink { [weak self] (type, selectedIndexes) in
                 guard let self else { return }
-                sentence = example.sentence
+                sentence = exampleSentence.text
                 var tokens = sentence.tokenize(word: word?.text)
                 for index in selectedIndexes {
                     tokens[index] = "_"
