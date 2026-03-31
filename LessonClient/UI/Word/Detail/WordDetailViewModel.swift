@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 @MainActor
 final class WordDetailViewModel: ObservableObject {
@@ -15,6 +16,8 @@ final class WordDetailViewModel: ObservableObject {
     @Published private(set) var word: WordRead?
     @Published private(set) var senses: [WordSenseRead] = []
     @Published var senseCellList: [WordViewData.Sense] = []
+    @Published var posTextBySenseId: [Int: String] = [:]
+    @Published private(set) var savingSenseIds: Set<Int> = []
 
     let wordId: Int
     private let dataSource: WordDataSource
@@ -46,24 +49,61 @@ final class WordDetailViewModel: ObservableObject {
 
         do {
             let word = try await dataSource.word(id: wordId)
-            self.word = word
-            self.senses = word.senses
-            senseCellList = senses.map { sense in
-                WordViewData.Sense(
-                    wordId: sense.wordId,
-                    senseCode: sense.senseCode,
-                    tr1: sense.translations.first?.text ?? "",
-                    tr2: sense.translations.first(where: { $0.lang == "ja" })?.text ?? "",
-                    pos: sense.pos?.uppercased() ?? "",
-                    explain: sense.translations.first(where: { $0.lang == "ko" })?.explain ?? "",
-                    examples: sense.examples
-                        .compactMap { $0.firstExampleSentence?.text }
-                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                        .filter { !$0.isEmpty }
-                )
-            }
+            apply(word: word)
         } catch {
             self.errorMessage = error.localizedDescription
+        }
+    }
+
+    func posText(for senseId: Int) -> String {
+        posTextBySenseId[senseId] ?? ""
+    }
+
+    func setPosText(_ text: String, for senseId: Int) {
+        posTextBySenseId[senseId] = text
+    }
+
+    func isSavingPos(for senseId: Int) -> Bool {
+        savingSenseIds.contains(senseId)
+    }
+
+    func canSavePos(for senseId: Int) -> Bool {
+        guard let sense = senses.first(where: { $0.id == senseId }) else { return false }
+        guard !isSavingPos(for: senseId) else { return false }
+
+        let draft = posText(for: senseId).trimmed
+        let current = sense.pos?.trimmed ?? ""
+        return draft != current
+    }
+
+    func savePos(for senseId: Int) async {
+        guard canSavePos(for: senseId) else { return }
+        guard senses.contains(where: { $0.id == senseId }) else { return }
+
+        savingSenseIds.insert(senseId)
+        errorMessage = nil
+        defer { savingSenseIds.remove(senseId) }
+
+        do {
+            let updatedSense = try await dataSource.updateWordSense(
+                senseId: senseId,
+                pos: posText(for: senseId).trimmedNilIfEmpty
+            )
+
+            if let idx = senses.firstIndex(where: { $0.id == senseId }) {
+                senses[idx] = updatedSense
+            }
+
+            if var currentWord = word,
+               let idx = currentWord.senses.firstIndex(where: { $0.id == senseId }) {
+                currentWord.senses[idx] = updatedSense
+                word = currentWord
+            }
+
+            posTextBySenseId[senseId] = updatedSense.pos ?? ""
+            rebuildSenseCellList()
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -141,6 +181,33 @@ final class WordDetailViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             return false
+        }
+    }
+
+    private func apply(word: WordRead) {
+        self.word = word
+        self.senses = word.senses
+        self.posTextBySenseId = Dictionary(
+            uniqueKeysWithValues: word.senses.map { ($0.id, $0.pos ?? "") }
+        )
+        rebuildSenseCellList()
+    }
+
+    private func rebuildSenseCellList() {
+        senseCellList = senses.map { sense in
+            WordViewData.Sense(
+                senseId: sense.id,
+                wordId: sense.wordId,
+                senseCode: sense.senseCode,
+                tr1: sense.translations.first?.text ?? "",
+                tr2: sense.translations.first(where: { $0.lang == "ja" })?.text ?? "",
+                pos: sense.pos?.uppercased() ?? "",
+                explain: sense.translations.first(where: { $0.lang == "ko" })?.explain ?? "",
+                examples: sense.examples
+                    .compactMap { $0.firstExampleSentence?.text }
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+            )
         }
     }
 
@@ -318,5 +385,12 @@ extension WordDetailViewModel {
         guard let word else { return "" }
         let text = word.toSenseBulkText()
         return text
+    }
+}
+
+private extension String {
+    var trimmedNilIfEmpty: String? {
+        let value = trimmed
+        return value.isEmpty ? nil : value
     }
 }

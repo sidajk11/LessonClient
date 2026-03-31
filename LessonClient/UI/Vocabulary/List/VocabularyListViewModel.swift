@@ -13,6 +13,7 @@ final class VocabularyListViewModel: ObservableObject {
     private let wordUseCase = WordUseCase.shared
     private var lessonTopicByLessonId: [Int: String] = [:]
     private let linkAuditor = VocabularyLinkAuditor()
+    private var hasLoadedOnce = false
 
     // UI State
     @Published var items: [Vocabulary] = []
@@ -20,6 +21,7 @@ final class VocabularyListViewModel: ObservableObject {
     @Published var levelText: String = ""     // free-form, parsed to Int?
     @Published var unitText: String = ""      // free-form, parsed to Int?
     @Published var showOnlyWithoutExamples: Bool = false
+    @Published var showOnlyAuditFailures: Bool = false
     @Published var isSentenceGeneratorPresented: Bool = false
     @Published var sentenceCefr: String = "B1"
     @Published var isLoading: Bool = false
@@ -27,13 +29,20 @@ final class VocabularyListViewModel: ObservableObject {
     @Published var isCheckingLinks: Bool = false
     @Published var isApplyingAuditResults: Bool = false
     @Published var linkAuditByVocabularyId: [Int: VocabularyLinkAuditResult] = [:]
+    @Published var auditFailureMessageByVocabularyId: [Int: String] = [:]
     @Published var unitByVocabularyId: [Int: Int] = [:]
     @Published var progressText: String?
     @Published var error: String?
     @Published var info: String?
 
+    var displayedItems: [Vocabulary] {
+        items.filter { vocabulary in
+            !showOnlyAuditFailures || auditFailureMessageByVocabularyId[vocabulary.id] != nil
+        }
+    }
+
     var canGenerateExamples: Bool {
-        !items.isEmpty && !isLoading && !isGeneratingExamples && !isApplyingAuditResults
+        !displayedItems.isEmpty && !isLoading && !isGeneratingExamples && !isApplyingAuditResults
     }
 
     var canCheckLinks: Bool {
@@ -45,11 +54,14 @@ final class VocabularyListViewModel: ObservableObject {
         !isGeneratingExamples &&
         !isCheckingLinks &&
         !isApplyingAuditResults &&
-        linkAuditByVocabularyId.values.contains(where: \.requiresSenseFix)
+        displayedItems.contains { vocabulary in
+            linkAuditByVocabularyId[vocabulary.id]?.requiresSenseFix == true
+        }
     }
 
     // Initial load
     func load() async {
+        guard !hasLoadedOnce else { return }
         await reload()
     }
 
@@ -66,7 +78,7 @@ final class VocabularyListViewModel: ObservableObject {
     func checkCurrentItems() async {
         guard !isCheckingLinks else { return }
 
-        let targetItems = items
+        let targetItems = inspectionTargetItems
         guard !targetItems.isEmpty else {
             error = "검사할 단어가 없습니다."
             return
@@ -76,9 +88,11 @@ final class VocabularyListViewModel: ObservableObject {
         info = nil
         isCheckingLinks = true
         linkAuditByVocabularyId = [:]
+        auditFailureMessageByVocabularyId = [:]
         defer { isCheckingLinks = false }
 
         var auditResults: [Int: VocabularyLinkAuditResult] = [:]
+        var failureMessages: [Int: String] = [:]
         var mismatchCount = 0
         var failureCount = 0
 
@@ -93,10 +107,12 @@ final class VocabularyListViewModel: ObservableObject {
                 }
             } catch {
                 failureCount += 1
+                failureMessages[vocabulary.id] = (error as NSError).localizedDescription
             }
         }
 
         linkAuditByVocabularyId = auditResults
+        auditFailureMessageByVocabularyId = failureMessages
         progressText = "연결 검사 완료 mismatch=\(mismatchCount) failed=\(failureCount)"
         if mismatchCount > 0 {
             info = "센스수정 필요 \(mismatchCount)개"
@@ -111,8 +127,11 @@ final class VocabularyListViewModel: ObservableObject {
     func applyAuditResultsToCurrentItems() async {
         guard !isApplyingAuditResults else { return }
 
-        let targetItems = items
-        let targetAudits = linkAuditByVocabularyId.filter { $0.value.requiresSenseFix }
+        let targetItems = displayedItems
+        let targetVocabularyIds = Set(targetItems.map(\.id))
+        let targetAudits = linkAuditByVocabularyId.filter {
+            targetVocabularyIds.contains($0.key) && $0.value.requiresSenseFix
+        }
 
         guard !targetItems.isEmpty else {
             error = "적용할 단어가 없습니다."
@@ -187,7 +206,7 @@ final class VocabularyListViewModel: ObservableObject {
         guard !isGeneratingExamples else { return }
 
         let cefr = sentenceCefr.trimmed.isEmpty ? "B1" : sentenceCefr.trimmed.uppercased()
-        let targetItems = items
+        let targetItems = displayedItems
         guard !targetItems.isEmpty else {
             error = "예문을 만들 단어가 없습니다."
             return
@@ -283,13 +302,22 @@ final class VocabularyListViewModel: ObservableObject {
             }
             items = rows
             linkAuditByVocabularyId = [:]
+            auditFailureMessageByVocabularyId = [:]
             unitByVocabularyId = unitMap(from: rows)
+            hasLoadedOnce = true
         } catch {
             self.error = (error as NSError).localizedDescription
         }
         if !isGeneratingExamples && !isCheckingLinks && !isApplyingAuditResults {
             progressText = nil
         }
+    }
+
+    private var inspectionTargetItems: [Vocabulary] {
+        if showOnlyAuditFailures && displayedItems.isEmpty {
+            return items
+        }
+        return displayedItems
     }
 
     private func fetchVocabularies(level: Int?, unit: Int?) async throws -> [Vocabulary] {

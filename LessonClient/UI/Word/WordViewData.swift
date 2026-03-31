@@ -10,6 +10,7 @@ import SwiftUI
 struct WordViewData {
     struct Sense {
         let id: UUID = UUID()
+        let senseId: Int
         let wordId: Int
         let senseCode: String
         let tr1: String

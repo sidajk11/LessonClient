@@ -7,7 +7,7 @@
 
 import Foundation
 
-let punctuationSet: [String] = [",", ".", "!", "?", ":"]
+let punctuationSet: [String] = [",", ".", "!", "?", ":", "$"]
 
 let expressions = [
     "Christmas Day", "New Year's Eve", "Christmas Eve", "New Year's Day",
@@ -56,7 +56,7 @@ extension String {
         parts.append("(?:a\\.m\\.|p\\.m\\.)")
         parts.append("[\\p{L}\\p{M}]+(?:[\\p{Pd}'’][\\p{L}\\p{M}]+)*(?:['’])?")
         parts.append("\\d+(?:\\.\\d+)?")
-        parts.append("[.,!?;:()\\[\\]{}\"']")
+        parts.append("[$.,!?;:()\\[\\]{}\"']")
 
         let pattern = "(?ix)" + parts.joined(separator: "|")
 
@@ -109,11 +109,14 @@ extension String {
 extension Array where Element == String {
     func joinTokens() -> String {
         let noSpaceBefore = punctuationSet  // 앞에 공백이 필요 없는 토큰
+        let noSpaceAfter = ["$"]            // 뒤에 공백이 필요 없는 토큰
         var result = ""
         
         for token in self {
             if result.isEmpty {
                 result = token
+            } else if noSpaceAfter.contains(String(result.suffix(1))) {
+                result += token
             } else if noSpaceBefore.contains(token) {
                 result += token
             } else {

@@ -42,6 +42,9 @@ struct VocabularyListView: View {
                             Task { await vm.search() }
                         }
 
+                    Toggle("검사 실패 단어만", isOn: $vm.showOnlyAuditFailures)
+                        .toggleStyle(CheckboxToggleStyle())
+
                     Spacer()
 
                     Button("검사") {
@@ -76,7 +79,7 @@ struct VocabularyListView: View {
                     ProgressView().padding()
                 }
 
-                List(vm.items) { e in
+                List(vm.displayedItems) { e in
                     NavigationLink {
                         VocabularyDetailView(wordId: e.id, lesson: nil)
                     } label: {
@@ -106,6 +109,15 @@ struct VocabularyListView: View {
                                 Text(auditDetailText(audit))
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
+                            } else if let failureMessage = vm.auditFailureMessageByVocabularyId[e.id] {
+                                Text("검사 실패")
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+
+                                Text(failureMessage)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
                             }
                         }
                     }
@@ -155,7 +167,7 @@ struct VocabularyListView: View {
                 }
 
                 Section("대상") {
-                    Text("현재 단어 \(vm.items.count)개")
+                    Text("현재 단어 \(vm.displayedItems.count)개")
                     Text("각 단어가 속한 레슨의 토픽을 사용해 `makeSentencePrompt`와 OpenAI 호출로 예문을 생성합니다.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)

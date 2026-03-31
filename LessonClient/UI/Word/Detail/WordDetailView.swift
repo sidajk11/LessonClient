@@ -82,14 +82,49 @@ struct WordDetailView: View {
                                     .padding(.vertical, 2)
                                     .background(Color.secondary.opacity(0.15))
                                     .clipShape(RoundedRectangle(cornerRadius: 4))
-                                
-                                Text(cellData.pos)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
 
                                 Text("wordId: \(cellData.wordId)")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
+                            }
+
+                            HStack(spacing: 8) {
+                                Text("POS")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                TextField(
+                                    "pos",
+                                    text: Binding(
+                                        get: { vm.posText(for: cellData.senseId) },
+                                        set: { vm.setPosText($0, for: cellData.senseId) }
+                                    )
+                                )
+                                .textFieldStyle(.roundedBorder)
+                                .frame(maxWidth: 120)
+                                .onSubmit {
+                                    Task { await vm.savePos(for: cellData.senseId) }
+                                }
+
+                                Button {
+                                    Task { await vm.savePos(for: cellData.senseId) }
+                                } label: {
+                                    if vm.isSavingPos(for: cellData.senseId) {
+                                        ProgressView()
+                                    } else {
+                                        Text("저장")
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(!vm.canSavePos(for: cellData.senseId))
+
+                                if !cellData.pos.isEmpty {
+                                    Text("현재: \(cellData.pos)")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
                             }
 
                             Text(cellData.explain)

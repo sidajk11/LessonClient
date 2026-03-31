@@ -13,7 +13,7 @@ extension Prompt {
 영어 단어 lemma의 메인 sense들을 출력해줘.
 example은 반드시 해당 CEFR 레벨 문장만 사용
 
-pos
+pos는 (noun, verb, adjective, adverb, pronoun, determiner ,preposition, conjunction, interjection, numeral, auxiliary, modal, particle, contraction, abbreviation 중하나)
 CEFR 레벨 (cambridge 사전이랑 동일)
 번역
 example
