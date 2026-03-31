@@ -76,7 +76,14 @@ final class SenseCreateViewModel: ObservableObject {
                 ]
                 senseCode = "s\(idx + 1)"
                 let sense = try await dataSource.createWordSense(wordId: word.id, senseCode: senseCode, explain: explain, pos: item.pos, cefr: cefr, translations: translations)
-                let example = try await ExampleDataSource.shared.createExample(sentence: item.example, vocabularyId: nil)
+                // sense 예문도 example_sentence를 통해 문장을 생성합니다.
+                let example = try await ExampleDataSource.shared.createExample(vocabularyId: nil)
+                _ = try await ExampleSentenceDataSource.shared.createExampleSentence(
+                    payload: ExampleSentenceCreate(
+                        exampleId: example.id,
+                        text: item.example
+                    )
+                )
                 _ = try await dataSource.attachExampleToWordSense(senseId: sense.id, exampleId: example.id, isPrime: true)
                 
                 created += 1
@@ -95,4 +102,3 @@ final class SenseCreateViewModel: ObservableObject {
 // 필요하면 여기서도 추가 가능:
 // updateWordSense(senseId:payload:) / deleteWordSense(senseId:)
 //
-

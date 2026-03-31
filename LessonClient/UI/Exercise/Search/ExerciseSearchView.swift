@@ -60,8 +60,8 @@ struct ExerciseSearchView: View {
                             .font(.caption)
                             .foregroundStyle(.tertiary)
 
-                        if let prompt = ex.prompt, !prompt.isEmpty {
-                            Text(prompt)
+                        if !ex.displayPrompt.isEmpty {
+                            Text(ex.displayPrompt)
                                 .font(.subheadline)
                         }
 

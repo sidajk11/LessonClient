@@ -43,3 +43,82 @@ struct ExampleSentence: Codable, Identifiable {
         exercises = try c.decodeIfPresent([Exercise].self, forKey: .exercises) ?? []
     }
 }
+
+// example_sentence 생성 payload입니다.
+struct ExampleSentenceCreate: Codable {
+    let exampleId: Int
+    let order: Int?
+    let type: String
+    let speakerName: String?
+    let text: String
+    let translations: [ExampleSentenceTranslation]?
+
+    enum CodingKeys: String, CodingKey {
+        case exampleId = "example_id"
+        case order
+        case type
+        case speakerName = "speaker_name"
+        case text
+        case translations
+    }
+
+    init(
+        exampleId: Int,
+        order: Int? = nil,
+        type: String = "sentence",
+        speakerName: String? = nil,
+        text: String,
+        translations: [ExampleSentenceTranslation]? = nil
+    ) {
+        self.exampleId = exampleId
+        self.order = order
+        self.type = type
+        self.speakerName = speakerName
+        self.text = text
+        self.translations = translations
+    }
+}
+
+// example_sentence 수정 payload입니다.
+struct ExampleSentenceUpdate: Codable {
+    let exampleId: Int?
+    let order: Int?
+    let type: String?
+    let speakerName: String?
+    let text: String?
+    let translations: [ExampleSentenceTranslation]?
+
+    enum CodingKeys: String, CodingKey {
+        case exampleId = "example_id"
+        case order
+        case type
+        case speakerName = "speaker_name"
+        case text
+        case translations
+    }
+
+    init(
+        exampleId: Int? = nil,
+        order: Int? = nil,
+        type: String? = nil,
+        speakerName: String? = nil,
+        text: String? = nil,
+        translations: [ExampleSentenceTranslation]? = nil
+    ) {
+        self.exampleId = exampleId
+        self.order = order
+        self.type = type
+        self.speakerName = speakerName
+        self.text = text
+        self.translations = translations
+    }
+}
+
+// example_sentence 번역 전체 치환 payload입니다.
+struct ExampleSentenceTranslationsReplace: Codable {
+    let translations: [ExampleSentenceTranslation]
+
+    init(translations: [ExampleSentenceTranslation] = []) {
+        self.translations = translations
+    }
+}

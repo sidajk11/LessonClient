@@ -47,6 +47,34 @@
                   startingLineNumber = "43"
                   endingLineNumber = "43">
                </Location>
+               <Location
+                  uuid = "0027367A-A106-46C1-87ED-60CFCA87921A - 410cfcfba25ede13"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for closure #1 () async -&gt; () in closure #1 @Swift.MainActor () -&gt; () in closure #1 () -&gt; SwiftUI.TupleView&lt;(SwiftUI.Button&lt;SwiftUI.Text&gt;, SwiftUI.Button&lt;SwiftUI.Text&gt;, &lt;&lt;opaque return type of SwiftUI.View.disabled(Swift.Bool) -&gt; some&gt;&gt;.0)&gt; in closure #1 () -&gt; SwiftUI.TupleView&lt;(&lt;&lt;opaque return type of SwiftUI.View.frame(minWidth: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, idealWidth: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, maxWidth: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, minHeight: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, idealHeight: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, maxHeight: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, alignment: SwiftUI.Alignment) -&gt; some&gt;&gt;.0, SwiftUI.HStack&lt;SwiftUI.TupleView&lt;(SwiftUI.Button&lt;SwiftUI.Text&gt;, SwiftUI.Button&lt;SwiftUI.Text&gt;, &lt;&lt;opaque return type of SwiftUI.View.disabled(Swift.Bool) -&gt; some&gt;&gt;.0)&gt;&gt;, SwiftUI.Text)&gt; in LessonClient.TTSView.body.getter : some"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/TTSView/TTSView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "43"
+                  endingLineNumber = "43">
+               </Location>
+               <Location
+                  uuid = "0027367A-A106-46C1-87ED-60CFCA87921A - ec2b8142714d3c14"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(4) suspend resume partial function for closure #1 () async -&gt; () in closure #1 @Swift.MainActor () -&gt; () in closure #1 () -&gt; SwiftUI.TupleView&lt;(SwiftUI.Button&lt;SwiftUI.Text&gt;, SwiftUI.Button&lt;SwiftUI.Text&gt;, &lt;&lt;opaque return type of SwiftUI.View.disabled(Swift.Bool) -&gt; some&gt;&gt;.0)&gt; in closure #1 () -&gt; SwiftUI.TupleView&lt;(&lt;&lt;opaque return type of SwiftUI.View.frame(minWidth: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, idealWidth: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, maxWidth: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, minHeight: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, idealHeight: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, maxHeight: Swift.Optional&lt;CoreGraphics.CGFloat&gt;, alignment: SwiftUI.Alignment) -&gt; some&gt;&gt;.0, SwiftUI.HStack&lt;SwiftUI.TupleView&lt;(SwiftUI.Button&lt;SwiftUI.Text&gt;, SwiftUI.Button&lt;SwiftUI.Text&gt;, &lt;&lt;opaque return type of SwiftUI.View.disabled(Swift.Bool) -&gt; some&gt;&gt;.0)&gt;&gt;, SwiftUI.Text)&gt; in LessonClient.TTSView.body.getter : some"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/TTSView/TTSView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "43"
+                  endingLineNumber = "43">
+               </Location>
             </Locations>
          </BreakpointContent>
       </BreakpointProxy>
@@ -126,6 +154,50 @@
             endingLineNumber = "138"
             landmarkName = "saveOptions()"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "8732DC12-EDD0-49F8-9C7E-CF26A5023B96 - a2e32512e628e288"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for LessonClient.ExerciseDetailViewModel.saveOptions() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/Exercise/Detail/ExerciseDetailViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "140"
+                  endingLineNumber = "140">
+               </Location>
+               <Location
+                  uuid = "8732DC12-EDD0-49F8-9C7E-CF26A5023B96 - 470e5b09e557f767"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(2) await resume partial function for LessonClient.ExerciseDetailViewModel.saveOptions() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/Exercise/Detail/ExerciseDetailViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "140"
+                  endingLineNumber = "140">
+               </Location>
+               <Location
+                  uuid = "8732DC12-EDD0-49F8-9C7E-CF26A5023B96 - ec6b2018cac21f06"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for LessonClient.ExerciseDetailViewModel.saveOptions() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/Exercise/Detail/ExerciseDetailViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "140"
+                  endingLineNumber = "140">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -142,6 +214,92 @@
             endingLineNumber = "113"
             landmarkName = "saveOptions()"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "E6E5F6ED-D049-474C-946A-12B7409AA656 - b82a1456d5547e57"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for LessonClient.ExerciseDetailViewModel.loadExtraVocabularys() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/Exercise/Detail/ExerciseDetailViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "113"
+                  endingLineNumber = "113">
+               </Location>
+               <Location
+                  uuid = "E6E5F6ED-D049-474C-946A-12B7409AA656 - 1fcf4f610ebf8259"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for LessonClient.ExerciseDetailViewModel.loadExtraVocabularys() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/Exercise/Detail/ExerciseDetailViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "113"
+                  endingLineNumber = "113">
+               </Location>
+               <Location
+                  uuid = "E6E5F6ED-D049-474C-946A-12B7409AA656 - 4b3a18f2feef0a5d"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(7) suspend resume partial function for LessonClient.ExerciseDetailViewModel.loadExtraVocabularys() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/Exercise/Detail/ExerciseDetailViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "113"
+                  endingLineNumber = "113">
+               </Location>
+               <Location
+                  uuid = "E6E5F6ED-D049-474C-946A-12B7409AA656 - ffe9a7965adb685e"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(8) suspend resume partial function for LessonClient.ExerciseDetailViewModel.loadExtraVocabularys() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/Exercise/Detail/ExerciseDetailViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "113"
+                  endingLineNumber = "113">
+               </Location>
+               <Location
+                  uuid = "E6E5F6ED-D049-474C-946A-12B7409AA656 - 22df733d36374e5f"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(9) suspend resume partial function for LessonClient.ExerciseDetailViewModel.loadExtraVocabularys() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/Exercise/Detail/ExerciseDetailViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "113"
+                  endingLineNumber = "113">
+               </Location>
+               <Location
+                  uuid = "E6E5F6ED-D049-474C-946A-12B7409AA656 - b87dfe553f09c094"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(10) suspend resume partial function for LessonClient.ExerciseDetailViewModel.loadExtraVocabularys() async -&gt; ()"
+                  moduleName = "LessonClient.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/UI/Exercise/Detail/ExerciseDetailViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "113"
+                  endingLineNumber = "113">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy

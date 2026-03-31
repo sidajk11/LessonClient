@@ -439,7 +439,13 @@ final class SenseListViewModel: ObservableObject {
 
             let exampleText = item.example.trimmed
             if !exampleText.isEmpty, exampleText != "-" {
-                if let example = try? await exampleDataSource.createExample(sentence: exampleText, vocabularyId: nil) {
+                if let example = try? await exampleDataSource.createExample(vocabularyId: nil) {
+                    _ = try? await ExampleSentenceDataSource.shared.createExampleSentence(
+                        payload: ExampleSentenceCreate(
+                            exampleId: example.id,
+                            text: exampleText
+                        )
+                    )
                     _ = try? await dataSource.attachExampleToWordSense(
                         senseId: sense.id,
                         exampleId: example.id,

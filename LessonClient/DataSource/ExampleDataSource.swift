@@ -20,23 +20,18 @@ final class ExampleDataSource {
     // MARK: - Public API
 
     /// 예문 생성
-    /// - Parameters:
-    ///   - sentence: 예문 원문
-    ///   - vocabularyId: 연결할 단어 ID
-    ///   - phraseId: 연결할 구문 ID
-    ///   - translations: 예문 번역(전체 치환 정책). en/ko 등 언어별 텍스트
     /// - Returns: 생성된 Example
     @discardableResult
     func createExample(
-        sentence: String,
         vocabularyId: Int?,
         phraseId: Int? = nil,
+        isActive: Bool = true,
         translations: [ExampleSentenceTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleCreate(
-            sentence: sentence,
             vocabularyId: vocabularyId,
             phraseId: phraseId,
+            isActive: isActive,
             translations: translations
         )
         return try await api.request("POST", "admin/examples", jsonBody: body.toDict(), as: Example.self)
@@ -56,15 +51,15 @@ final class ExampleDataSource {
     @discardableResult
     func updateExample(
         id: Int,
-        sentence: String?,
         vocabularyId: Int? = nil,
         phraseId: Int? = nil,
+        isActive: Bool? = nil,
         translations: [ExampleSentenceTranslation]? = nil
     ) async throws -> Example {
         let body = ExampleUpdate(
-            sentence: sentence,
             vocabularyId: vocabularyId,
             phraseId: phraseId,
+            isActive: isActive,
             translations: translations
         )
         return try await api.request("PUT", "admin/examples/\(id)", jsonBody: body.toDict(), as: Example.self)

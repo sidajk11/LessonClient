@@ -118,9 +118,15 @@ final class WordDetailViewModel: ObservableObject {
 
             let exampleText = item.example.trimmingCharacters(in: .whitespacesAndNewlines)
             if !exampleText.isEmpty && exampleText != "-" {
+                // 예문 본문은 example_sentence로 분리 저장합니다.
                 let createdExample = try await ExampleDataSource.shared.createExample(
-                    sentence: exampleText,
                     vocabularyId: word.id
+                )
+                _ = try await ExampleSentenceDataSource.shared.createExampleSentence(
+                    payload: ExampleSentenceCreate(
+                        exampleId: createdExample.id,
+                        text: exampleText
+                    )
                 )
                 _ = try await dataSource.attachExampleToWordSense(
                     senseId: createdSense.id,

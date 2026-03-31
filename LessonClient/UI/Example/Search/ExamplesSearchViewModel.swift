@@ -51,7 +51,8 @@ final class ExamplesSearchViewModel: ObservableObject {
     @Published var error: String?
     private let searchLimit: Int = 400
     private var searchGeneration: Int = 0
-    private let sentenceUseCase = SentenceUseCase.shared
+    private let sentenceUseCase = GenerateTokensUseCase.shared
+    private let tokenRangesUseCase = TokenRangesUseCase.shared
     private let tokenVocabularyStatusLoader = ExampleTokenVocabularyStatusLoader()
 
     var displayItems: [Example] {
@@ -603,7 +604,7 @@ sense 추가 중 일부 실패:
         }
 
         do {
-            _ = try sentenceUseCase.buildTokenRangeUpdates(
+            _ = try tokenRangesUseCase.buildTokenRangeUpdates(
                 sentence: target.sentence.text,
                 tokens: target.sentence.tokens
             )
@@ -624,7 +625,7 @@ sense 추가 중 일부 실패:
 
     /// full replace PUT을 사용해서 기존 token 필드를 보존한 채 range만 갱신합니다.
     private func replaceTokenRanges(sentence: String, tokens: [SentenceTokenRead]) async throws -> Int {
-        let rangeUpdates = try sentenceUseCase.buildTokenRangeUpdates(
+        let rangeUpdates = try tokenRangesUseCase.buildTokenRangeUpdates(
             sentence: sentence,
             tokens: tokens
         )

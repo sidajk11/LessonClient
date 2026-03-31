@@ -40,11 +40,11 @@ final class ExerciseDetailViewModel: ObservableObject {
 
         if practice.type == .combine {
             sentence = exampleTranslations.text(langCode: .ko)
-            content = practice.prompt ?? ""
+            content = practice.displayPrompt
             optionsText = practice.options.map { $0.displayText }.joined(separator: ", ")
         } else if practice.type == .select {
             sentence = exampleTranslations.text(langCode: .ko)
-            content = practice.prompt ?? ""
+            content = practice.displayPrompt
             optionsText = practice.options.map { $0.displayText }.joined(separator: ", ")
         }
 
@@ -130,7 +130,8 @@ final class ExerciseDetailViewModel: ObservableObject {
         let update = ExerciseUpdate(
             exampleId: practice.exampleId,
             type: .select,
-            prompt: content,
+            // 옵션 저장 시에는 기존 prompt를 유지합니다.
+            prompt: practice.prompt ?? practice.displayPrompt,
             options: options,       // 기존 보기(선지)가 있다면 유지
             translations: [trans]
         )

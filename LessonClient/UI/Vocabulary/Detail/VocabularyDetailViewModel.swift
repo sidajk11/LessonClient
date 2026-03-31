@@ -175,14 +175,20 @@ final class VocabularyDetailViewModel: ObservableObject {
         do {
             let payload: [ExampleSentenceTranslation] = [ExampleSentenceTranslation].parse(from: newSentencetranslationText)
 
-            // 3) Create
             guard let wid = word?.id else { return }
-            let created = try await ExampleDataSource.shared.createExample(
-                sentence: newSentence.trimmed,
-                vocabularyId: wid,
-                translations: payload
+            // Example와 ExampleSentence를 순서대로 생성합니다.
+            let createdExample = try await ExampleDataSource.shared.createExample(
+                vocabularyId: wid
             )
-            examples.insert(created, at: 0)
+            _ = try await ExampleSentenceDataSource.shared.createExampleSentence(
+                payload: ExampleSentenceCreate(
+                    exampleId: createdExample.id,
+                    text: newSentence.trimmed,
+                    translations: payload
+                )
+            )
+            let refreshedExample = try await ExampleDataSource.shared.example(id: createdExample.id)
+            examples.insert(refreshedExample, at: 0)
 
             // reset
             newSentence = ""
@@ -207,14 +213,22 @@ final class VocabularyDetailViewModel: ObservableObject {
 
     func applyEditExample() async {
         guard let ex = editingExample else { return }
+        guard let targetSentence = ex.firstExampleSentence else {
+            error = "수정할 ExampleSentence가 없습니다."
+            return
+        }
         do {
             let payload = [ExampleSentenceTranslation].parse(from: editSentencetranslationText)
 
-            let updated = try await ExampleDataSource.shared.updateExample(
-                id: ex.id,
-                sentence: editSentence.trimmed,
-                translations: payload
+            // 대표 문장 수정도 example_sentence 단건 API를 사용합니다.
+            _ = try await ExampleSentenceDataSource.shared.updateExampleSentence(
+                id: targetSentence.id,
+                payload: ExampleSentenceUpdate(
+                    text: editSentence.trimmed,
+                    translations: payload
+                )
             )
+            let updated = try await ExampleDataSource.shared.example(id: ex.id)
             if let idx = examples.firstIndex(where: { $0.id == ex.id }) {
                 examples[idx] = updated
             }

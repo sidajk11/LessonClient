@@ -10,7 +10,7 @@ final class ExerciseCreateViewModel: ObservableObject {
     let exampleId: Int
     let vocabularyId: Int?
     var lesson: Lesson?
-    var word: Vocabulary?
+    var vocab: Vocabulary?
     
     @Published var type: ExerciseType = .select // change as needed
     @Published var selectedIndexes: [Int] = []
@@ -46,13 +46,13 @@ final class ExerciseCreateViewModel: ObservableObject {
         self.exampleId = exampleId
         self.vocabularyId = vocabularyId
         self.lesson = lesson
-        self.word = word
+        self.vocab = word
         if lesson == nil {
             Task {
                 do {
                     if let vocabularyId {
                         let word = try await VocabularyDataSource.shared.vocabulary(id: vocabularyId)
-                        self.word = self.word ?? word
+                        self.vocab = self.vocab ?? word
                         if let lessonId = word.lessonId {
                             self.lesson = try await LessonDataSource.shared.lesson(id: lessonId)
                             if let lesson = self.lesson {
@@ -108,44 +108,18 @@ extension ExerciseCreateViewModel {
 
 extension ExerciseCreateViewModel {
     func autoGenerate() async {
+        errorMessage = nil
+        createdPractice = nil
+        isSubmitting = true
+        defer { isSubmitting = false }
+
         do {
-            let practices = try await ExerciseDataSource.shared.list(exampleId: exampleId)
-            if !practices.contains(where: { $0.type == .combine }) {
-                type = .combine
-                await submit()
-            }
-            
-            if !practices.contains(where: { $0.type == .select }), let word {
-                type = .select
-                
-                selectedIndexes = []
-                if let index = allVocabularysInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() }) {
-                    selectedIndexes.append(index)
-                } else if let index = allVocabularysInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "s" }) {
-                    selectedIndexes.append(index)
-                } else if let index = allVocabularysInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "es" }) {
-                    selectedIndexes.append(index)
-                } else if let index = allVocabularysInSentence.firstIndex(where: { $0.lowercased() == word.text.lowercased() + "ed" }) {
-                    selectedIndexes.append(index)
-                }
-                let dummyVocabularys = dummyVocabularys
-                    .filter { dummyVocabulary in
-                        !dummyVocabulary.contains(" ")
-                    }
-                    .filter { dummyVocabulary in
-                        !allVocabularysInSentence.contains(where: {
-                            $0.lowercased() == dummyVocabulary.lowercased()
-                        })
-                    }
-                let index = Int.random(in: 0 ..< dummyVocabularys.count)
-                selectedDummyVocabularys = [dummyVocabularys[index]]
-                
-                if !content.contains("_") || selectedIndexes.count == 0 {
-                    errorMessage = "Generate select practice failed!"
-                    return
-                }
-                await submit()
-            }
+            let targetVocabulary = try await resolvedTargetVocabulary()
+            let created = try await GenerateExerciseUseCase.shared.autoGenerateMissingExercises(
+                exampleSentence: exampleSentence,
+                targetVocabulary: targetVocabulary
+            )
+            createdPractice = created.last
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -156,29 +130,18 @@ extension ExerciseCreateViewModel {
         createdPractice = nil
         isSubmitting = true
         defer { isSubmitting = false }
-        
-        var transList: [ExerciseTranslation] = []
-        if type == .combine || type == .select {
-            let trans = ExerciseTranslation(langCode: .enUS, question: content)
-            transList.append(trans)
-        }
-        var options: [ExerciseOptionUpdate] = []
-        if type == .combine || type == .select, wordOptionTextList.count > 0 {
-            options = wordOptionTextList.map {
-                let text = NL.lowercaseAvailable(sentence: exampleSentence.text, word: $0) ? $0.lowercased() : $0
-                return ExerciseOptionUpdate.textOption(text)
-            }
-        }
-        
-        let practiceCrate = ExerciseCreate(
-            exampleId: exampleId,
-            targetSentenceIds: [exampleSentence.id],
-            type: type,
-            options: options,
-            translations: transList
-        )
+
         do {
-            let practice = try await ExerciseDataSource.shared.create(practice: practiceCrate)
+            // submit 생성도 use case를 통해 일관되게 처리합니다.
+            let draft = GenerateExerciseUseCase.Draft(
+                type: type,
+                prompt: content,
+                optionTexts: wordOptionTextList
+            )
+            let practice = try await GenerateExerciseUseCase.shared.createExercise(
+                exampleSentence: exampleSentence,
+                draft: draft
+            )
             createdPractice = practice
         } catch {
             errorMessage = error.localizedDescription
@@ -211,7 +174,7 @@ extension ExerciseCreateViewModel {
             .sink { [weak self] (type, selectedIndexes) in
                 guard let self else { return }
                 sentence = exampleSentence.text
-                var tokens = sentence.tokenize(word: word?.text)
+                var tokens = sentence.tokenize(word: vocab?.text)
                 for index in selectedIndexes {
                     tokens[index] = "_"
                 }
@@ -241,6 +204,20 @@ extension ExerciseCreateViewModel {
 
     private func words(from sentence: String) -> [String] {
         // 문장에 포함된 단어들 (중복 제거, 순서 유지)
-        return sentence.tokenize(word: word?.text)
+        return sentence.tokenize(word: vocab?.text)
+    }
+
+    private func resolvedTargetVocabulary() async throws -> Vocabulary? {
+        if let vocab {
+            return vocab
+        }
+        guard let vocabularyId else {
+            return nil
+        }
+
+        // autoGenerate 시점에 vocabulary가 아직 로드되지 않았을 수 있어 한 번 더 보강합니다.
+        let loadedVocabulary = try await VocabularyDataSource.shared.vocabulary(id: vocabularyId)
+        vocab = loadedVocabulary
+        return loadedVocabulary
     }
 }

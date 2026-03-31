@@ -117,20 +117,26 @@ struct VocabularyDetailView: View {
             } else {
                 List {
                     ForEach(vm.examples) { example in
-                        let exampleSentence = defaultExampleSentence(for: example)
                         HStack {
-                            // 상세로 이동
-                            if let exampleSentence {
-                                NavigationLink {
-                                    ExampleSentenceDetailView(exampleSentence: exampleSentence, lesson: vm.lesson, word: vm.word)
-                                } label: {
-                                    Text(exampleSentence.text)
-                                        .lineLimit(1)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    // example에 속한 모든 ExampleSentence를 가로로 나열합니다.
+                                    ForEach(example.orderedExampleSentences) { exampleSentence in
+                                        NavigationLink {
+                                            ExampleSentenceDetailView(exampleSentence: exampleSentence, lesson: vm.lesson, word: vm.word)
+                                        } label: {
+                                            Text(exampleSentence.text)
+                                                .lineLimit(1)
+                                                .padding(.vertical, 6)
+                                                .padding(.horizontal, 10)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.secondary.opacity(0.08))
+                                                )
+                                        }
+                                        .buttonStyle(.plain) // macOS에서 과한 버튼 스타일 제거
+                                    }
                                 }
-                                .buttonStyle(.plain) // macOS에서 과한 버튼 스타일 제거
-                            } else {
-                                Text("")
-                                    .lineLimit(1)
                             }
 
                             Spacer()
@@ -346,8 +352,4 @@ struct VocabularyDetailView: View {
         .buttonStyle(.plain)
         .disabled(vm.isUpdatingForm)
     }
-}
-
-private func defaultExampleSentence(for example: Example) -> ExampleSentence? {
-    example.firstExampleSentence
 }

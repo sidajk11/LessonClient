@@ -219,11 +219,18 @@ final class VocabularyListViewModel: ObservableObject {
 
                 var createdExamples: [Example] = []
                 for sentence in sentences {
-                    let created = try await ExampleDataSource.shared.createExample(
-                        sentence: sentence,
+                    // 생성된 문장은 example_sentence로 저장합니다.
+                    let createdExample = try await ExampleDataSource.shared.createExample(
                         vocabularyId: vocabulary.id
                     )
-                    createdExamples.append(created)
+                    _ = try await ExampleSentenceDataSource.shared.createExampleSentence(
+                        payload: ExampleSentenceCreate(
+                            exampleId: createdExample.id,
+                            text: sentence
+                        )
+                    )
+                    let refreshedExample = try await ExampleDataSource.shared.example(id: createdExample.id)
+                    createdExamples.append(refreshedExample)
                 }
 
                 createdWordCount += 1

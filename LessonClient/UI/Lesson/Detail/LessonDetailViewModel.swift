@@ -157,8 +157,8 @@ final class LessonDetailViewModel: ObservableObject {
                 .filter { !$0.isEmpty }
             let title: String
             if vocabularyTexts.isEmpty {
-                let prompt = exercise.prompt?.trimmingCharacters(in: .whitespacesAndNewlines)
-                if let prompt, !prompt.isEmpty {
+                let prompt = exercise.displayPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !prompt.isEmpty {
                     title = prompt
                 } else {
                     title = exercise.type.rawValue
@@ -171,7 +171,7 @@ final class LessonDetailViewModel: ObservableObject {
                 id: exercise.id,
                 title: title,
                 type: exercise.type.rawValue,
-                prompt: exercise.prompt
+                prompt: exercise.displayPrompt
             )
         }
     }

@@ -37,7 +37,7 @@ struct ExerciseCreateView: View {
                         Text(vm.exampleSentence.text)
                     }
                     Text(vm.translation)
-                    Text(vm.word?.text ?? "")
+                    Text(vm.vocab?.text ?? "")
                 }
                 Button {
                     Task {

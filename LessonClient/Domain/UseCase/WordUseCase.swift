@@ -7,6 +7,7 @@
 
 import Foundation
 
+// 단어, 구문, 활용형, vocabulary 조회를 한 곳에서 조합해 제공합니다.
 class WordUseCase {
     static let shared = WordUseCase()
 

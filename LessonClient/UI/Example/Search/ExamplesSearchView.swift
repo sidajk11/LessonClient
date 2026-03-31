@@ -171,73 +171,7 @@ struct ExamplesSearchView: View {
                 // 결과 리스트
                 List {
                     ForEach(vm.displayItems) { row in
-                        VStack(alignment: .leading, spacing: 6) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                    Text(vm.unitBadgeText(for: row))
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.secondary.opacity(0.15))
-                                        .clipShape(RoundedRectangle(cornerRadius: 4))
-
-                                    ExampleSentenceLinksRow(example: row)
-                                }
-
-                                Text(displayTranslations(for: row).toString())
-
-                                Text("단어: \(row.wordText ?? (row.vocabularyId.map { "#\($0)" } ?? "-"))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-
-                                if let sentenceStatus = vm.sentenceStatus(for: row) {
-                                    Text(sentenceStatus.text)
-                                        .font(.caption)
-                                        .foregroundStyle(sentenceStatus.isWarning ? .red : .secondary)
-                                }
-
-                                if vm.needsStartEndIndexRepair(for: row) {
-                                    Text("start_end_index재생성 필요")
-                                        .font(.caption)
-                                        .foregroundStyle(.red)
-                                }
-
-                                let sortedTokens = displayTokens(for: row).sorted(by: { $0.tokenIndex < $1.tokenIndex })
-                                let checkTargets = sortedTokens.filter { token in
-                                    !punctuationSet.contains(token.surface)
-                                }
-                                let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
-                                    token.senseId != nil || token.phraseId != nil
-                                }
-
-                                if isTokenReady {
-                                    Text("tokens: \(sortedTokens.map(\.surface).joinTokens())")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    Text("tokens 수정 필요")
-                                        .font(.caption)
-                                        .foregroundStyle(.orange)
-                                }
-
-                                let senseTokens = checkTargets.map { token -> String in
-                                    guard let senseId = token.senseId else {
-                                        return "\(token.surface):-"
-                                    }
-                                    let senseCode = vm.senseCodeBySenseId[senseId] ?? "#\(senseId)"
-                                    let cefr = vm.senseCefrBySenseId[senseId] ?? "-"
-                                    return "\(senseCode)(\(cefr))"
-                                }
-                                if !senseTokens.isEmpty {
-                                    Text("senses: \(senseTokens.joined(separator: ", "))")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            .padding(.vertical, 2)
-
-                        }
+                        ExampleSearchRow(example: row, vm: vm)
                         .padding(.vertical, 2)
                     }
 
@@ -258,53 +192,109 @@ struct ExamplesSearchView: View {
     }
 }
 
-private func displaySentence(for example: Example) -> ExampleSentence? {
-    example.firstExampleSentence
-}
-
-private func displayTranslations(for example: Example) -> [ExampleSentenceTranslation] {
-    displaySentence(for: example)?.translations ?? []
-}
-
-private func displayTokens(for example: Example) -> [SentenceTokenRead] {
-    displaySentence(for: example)?.tokens ?? []
-}
-
-private struct ExampleSentenceLinksRow: View {
+private struct ExampleSearchRow: View {
     let example: Example
+    @ObservedObject var vm: ExamplesSearchViewModel
 
     var body: some View {
         let sentences = example.orderedExampleSentences
 
         if sentences.count > 1 {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(alignment: .top, spacing: 12) {
                     ForEach(sentences) { sentence in
-                        NavigationLink {
-                            ExampleSentenceDetailView(exampleSentence: sentence, lesson: nil, word: nil)
-                        } label: {
-                            Text(sentence.text)
-                                .font(.body)
-                                .lineLimit(1)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.accentColor.opacity(0.08))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
+                        ExampleSentenceSummaryCard(example: example, sentence: sentence, vm: vm)
+                            .frame(width: 320, alignment: .leading)
                     }
                 }
             }
         } else {
-            NavigationLink {
-                if let sentence = sentences.first {
-                    ExampleSentenceDetailView(exampleSentence: sentence, lesson: nil, word: nil)
-                }
-            } label: {
-                Text(sentences.first?.text ?? "")
-                    .font(.body)
+            if let sentence = sentences.first {
+                ExampleSentenceSummaryCard(example: example, sentence: sentence, vm: vm)
             }
-            .buttonStyle(.plain)
         }
+    }
+}
+
+private struct ExampleSentenceSummaryCard: View {
+    let example: Example
+    let sentence: ExampleSentence
+    @ObservedObject var vm: ExamplesSearchViewModel
+
+    var body: some View {
+        let sortedTokens = sentence.tokens.sorted(by: { $0.tokenIndex < $1.tokenIndex })
+        let checkTargets = sortedTokens.filter { token in
+            !punctuationSet.contains(token.surface)
+        }
+        let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
+            token.senseId != nil || token.phraseId != nil
+        }
+        let senseTokens = checkTargets.map { token -> String in
+            guard let senseId = token.senseId else {
+                return "\(token.surface):-"
+            }
+            let senseCode = vm.senseCodeBySenseId[senseId] ?? "#\(senseId)"
+            let cefr = vm.senseCefrBySenseId[senseId] ?? "-"
+            return "\(senseCode)(\(cefr))"
+        }
+
+        NavigationLink {
+            ExampleSentenceDetailView(exampleSentence: sentence, lesson: nil, word: nil)
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(vm.unitBadgeText(for: example))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+
+                    Text(sentence.text)
+                        .font(.body)
+                        .lineLimit(2)
+                }
+
+                Text(sentence.translations.toString())
+
+                Text("단어: \(example.wordText ?? (example.vocabularyId.map { "#\($0)" } ?? "-"))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                if let sentenceStatus = vm.sentenceStatus(for: example) {
+                    Text(sentenceStatus.text)
+                        .font(.caption)
+                        .foregroundStyle(sentenceStatus.isWarning ? .red : .secondary)
+                }
+
+                if vm.needsStartEndIndexRepair(for: example) {
+                    Text("start_end_index재생성 필요")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                if isTokenReady {
+                    Text("tokens: \(sortedTokens.map(\.surface).joinTokens())")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("tokens 수정 필요")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+
+                if !senseTokens.isEmpty {
+                    Text("senses: \(senseTokens.joined(separator: ", "))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.accentColor.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
     }
 }

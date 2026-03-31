@@ -14,6 +14,7 @@ struct MainTabView: View {
             LessonListView().tabItem { Text("레슨") }
             VocabularyListView().tabItem { Text("학습 단어") }
             ExamplesSearchView().tabItem { Text("예문") }
+            ExampleSentenceSearchView().tabItem { Text("예문 문장") }
             ExerciseSearchView().tabItem { Text("연습문제") }
             ExerciseAttemptListView().tabItem { Text("시도 기록") }
             ExerciseQueueListView().tabItem { Text("학습 큐") }
