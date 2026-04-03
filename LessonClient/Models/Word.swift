@@ -76,6 +76,7 @@ struct WordSenseRead: Codable, Identifiable {
 // MARK: - WordRead
 struct WordRead: Codable, Identifiable {
     var id: Int
+    var createdAt: Date?
     var lemma: String
     var kind: String
     var normalized: String
@@ -84,6 +85,7 @@ struct WordRead: Codable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id
+        case createdAt = "created_at"
         case lemma
         case kind
         case normalized
@@ -91,8 +93,20 @@ struct WordRead: Codable, Identifiable {
         case pronunciations
     }
 
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt)
+        lemma = try c.decode(String.self, forKey: .lemma)
+        kind = try c.decode(String.self, forKey: .kind)
+        normalized = try c.decode(String.self, forKey: .normalized)
+        senses = try c.decodeIfPresent([WordSenseRead].self, forKey: .senses) ?? []
+        pronunciations = try c.decodeIfPresent([PronunciationRead].self, forKey: .pronunciations)
+    }
+
     init(
         id: Int,
+        createdAt: Date? = nil,
         lemma: String,
         kind: String,
         normalized: String,
@@ -100,6 +114,7 @@ struct WordRead: Codable, Identifiable {
         pronunciations: [PronunciationRead]? = nil
     ) {
         self.id = id
+        self.createdAt = createdAt
         self.lemma = lemma
         self.kind = kind
         self.normalized = normalized

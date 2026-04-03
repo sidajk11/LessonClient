@@ -10,9 +10,8 @@ import Foundation
 @MainActor
 final class VocabularyListViewModel: ObservableObject {
     private let openAIClient = OpenAIClient()
-    private let wordUseCase = WordUseCase.shared
     private var lessonTopicByLessonId: [Int: String] = [:]
-    private let linkAuditor = VocabularyLinkAuditor()
+    private let vocabularyLinkAuditUseCase = VocabularyLinkAuditUseCase.shared
     private var hasLoadedOnce = false
 
     // UI State
@@ -91,36 +90,23 @@ final class VocabularyListViewModel: ObservableObject {
         auditFailureMessageByVocabularyId = [:]
         defer { isCheckingLinks = false }
 
-        var auditResults: [Int: VocabularyLinkAuditResult] = [:]
-        var failureMessages: [Int: String] = [:]
-        var mismatchCount = 0
-        var failureCount = 0
-
-        for (index, vocabulary) in targetItems.enumerated() {
-            progressText = "연결 검사 중... (\(index + 1)/\(targetItems.count)) \(vocabulary.text)"
-
-            do {
-                let result = try await linkAuditor.audit(vocabulary: vocabulary)
-                auditResults[vocabulary.id] = result
-                if result.requiresSenseFix {
-                    mismatchCount += 1
-                }
-            } catch {
-                failureCount += 1
-                failureMessages[vocabulary.id] = (error as NSError).localizedDescription
+        let result = await vocabularyLinkAuditUseCase.audit(
+            vocabularies: targetItems,
+            onProgress: { [weak self] message in
+                self?.progressText = message
             }
-        }
+        )
 
-        linkAuditByVocabularyId = auditResults
-        auditFailureMessageByVocabularyId = failureMessages
-        progressText = "연결 검사 완료 mismatch=\(mismatchCount) failed=\(failureCount)"
-        if mismatchCount > 0 {
-            info = "센스수정 필요 \(mismatchCount)개"
-        } else if failureCount == 0 {
+        linkAuditByVocabularyId = result.auditsByVocabularyId
+        auditFailureMessageByVocabularyId = result.failureMessagesByVocabularyId
+        progressText = "연결 검사 완료 mismatch=\(result.mismatchCount) failed=\(result.failureCount)"
+        if result.mismatchCount > 0 {
+            info = "센스수정 필요 \(result.mismatchCount)개"
+        } else if result.failureCount == 0 {
             info = "모든 단어가 현재 연결과 일치합니다."
         }
-        if failureCount > 0 {
-            error = "일부 단어 검사에 실패했습니다. failed=\(failureCount)"
+        if result.failureCount > 0 {
+            error = "일부 단어 검사에 실패했습니다. failed=\(result.failureCount)"
         }
     }
 
@@ -151,54 +137,29 @@ final class VocabularyListViewModel: ObservableObject {
         isApplyingAuditResults = true
         defer { isApplyingAuditResults = false }
 
-        var updatedCount = 0
-        var failureCount = 0
+        let result = await vocabularyLinkAuditUseCase.applyAuditResults(
+            to: targetItems,
+            auditsByVocabularyId: targetAudits,
+            onProgress: { [weak self] message in
+                self?.progressText = message
+            }
+        )
 
-        for vocabulary in targetItems {
-            guard let audit = targetAudits[vocabulary.id] else { continue }
-
-            progressText = "검사 결과 적용 중... (\(updatedCount + failureCount + 1)/\(targetAudits.count)) \(vocabulary.text)"
-
-            do {
-                let updated = try await VocabularyDataSource.shared.replaceVocabulary(
-                    id: vocabulary.id,
-                    text: vocabulary.text,
-                    lessonId: vocabulary.lessonId,
-                    formId: audit.expectedFormId,
-                    senseId: audit.expectedSenseId,
-                    phraseId: audit.expectedPhraseId,
-                    exampleExercise: vocabulary.exampleExercise,
-                    vocabularyExercise: vocabulary.vocabularyExercise,
-                    isForm: vocabulary.isForm,
-                    translations: vocabulary.translations
-                )
-                if let itemIndex = items.firstIndex(where: { $0.id == updated.id }) {
-                    items[itemIndex] = updated
-                }
-                linkAuditByVocabularyId[updated.id] = VocabularyLinkAuditResult(
-                    currentPhraseId: updated.phraseId,
-                    currentFormId: updated.formId,
-                    currentSenseId: updated.senseId,
-                    expectedPhraseId: audit.expectedPhraseId,
-                    expectedFormId: audit.expectedFormId,
-                    expectedSenseId: audit.expectedSenseId,
-                    cefr: audit.cefr
-                )
-                if let unit = unitByVocabularyId[vocabulary.id] {
-                    unitByVocabularyId[updated.id] = unit
-                }
-                updatedCount += 1
-            } catch {
-                failureCount += 1
+        for updated in result.updatedVocabulariesById.values {
+            if let itemIndex = items.firstIndex(where: { $0.id == updated.id }) {
+                items[itemIndex] = updated
             }
         }
-
-        progressText = "검사 결과 적용 완료 updated=\(updatedCount) failed=\(failureCount)"
-        if updatedCount > 0 {
-            info = "검사 결과 적용 완료 updated=\(updatedCount)"
+        for (vocabularyId, audit) in result.auditsByVocabularyId {
+            linkAuditByVocabularyId[vocabularyId] = audit
         }
-        if failureCount > 0 {
-            error = "일부 단어 적용에 실패했습니다. failed=\(failureCount)"
+
+        progressText = "검사 결과 적용 완료 updated=\(result.updatedCount) failed=\(result.failureCount)"
+        if result.updatedCount > 0 {
+            info = "검사 결과 적용 완료 updated=\(result.updatedCount)"
+        }
+        if result.failureCount > 0 {
+            error = "일부 단어 적용에 실패했습니다. failed=\(result.failureCount)"
         }
     }
 

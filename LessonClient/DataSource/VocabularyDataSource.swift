@@ -134,6 +134,24 @@ final class VocabularyDataSource {
         )
     }
 
+    // MARK: - 예문이 없는 Vocabulary 조회 (GET /vocabularies/list/without-examples)
+    func listWithoutExamples(
+        limit: Int = 30,
+        offset: Int = 0
+    ) async throws -> [Vocabulary] {
+        let query: [URLQueryItem] = [
+            .init(name: "limit", value: String(min(max(limit, 1), 600))),
+            .init(name: "offset", value: String(max(offset, 0)))
+        ]
+
+        return try await api.request(
+            "GET",
+            "admin/vocabularies/list/without-examples",
+            query: query,
+            as: [Vocabulary].self
+        )
+    }
+
     func listByWord(
         wordId: Int,
         limit: Int = 30,

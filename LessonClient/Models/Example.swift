@@ -55,9 +55,7 @@ struct Example: Codable, Identifiable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
-        // 서버가 ISO8601 문자열을 내려주므로 문자열로 받아서 파싱합니다.
-        let createdAtRaw = try c.decodeIfPresent(String.self, forKey: .createdAt)
-        createdAt = ExampleDateParser.parse(createdAtRaw)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt)
         isActive = try c.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
         tokensNeedFix = try c.decodeIfPresent(Bool.self, forKey: .tokensNeedFix) ?? false
         vocabularyId = try c.decodeIfPresent(Int.self, forKey: .vocabularyId)
@@ -156,23 +154,4 @@ struct ExampleSentenceTranslation: Codable {
         case langCode = "lang_code"
         case text
     }
-}
-
-private enum ExampleDateParser {
-    static func parse(_ raw: String?) -> Date? {
-        guard let raw, !raw.isEmpty else { return nil }
-        return iso8601WithFractional.date(from: raw) ?? iso8601.date(from: raw)
-    }
-
-    static let iso8601WithFractional: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    static let iso8601: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
 }

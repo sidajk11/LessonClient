@@ -76,7 +76,7 @@ final class APIClient {
         }
         if T.self == Empty.self { return Empty() as! T }
         do {
-            return try JSONDecoder().decode(T.self, from: data)
+            return try JSONDecoder.lessonClient.decode(T.self, from: data)
         } catch let DecodingError.dataCorrupted(context) {
             print("Data corrupted:", context.debugDescription)
             print("CodingPath:", context.codingPath)

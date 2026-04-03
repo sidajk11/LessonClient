@@ -38,14 +38,9 @@ struct ExerciseQueueRead: Codable, Identifiable {
         batchId = try c.decode(Int.self, forKey: .batchId)
         position = try c.decode(Int.self, forKey: .position)
         batchUnit = try c.decodeIfPresent(Int.self, forKey: .batchUnit)
-
-        let batchCompletedAtRaw = try c.decodeIfPresent(String.self, forKey: .batchCompletedAt)
-        let createdAtRaw = try c.decodeIfPresent(String.self, forKey: .createdAt)
-        let consumedAtRaw = try c.decodeIfPresent(String.self, forKey: .consumedAt)
-
-        batchCompletedAt = ExerciseQueueDateParser.parse(batchCompletedAtRaw)
-        createdAt = ExerciseQueueDateParser.parse(createdAtRaw)
-        consumedAt = ExerciseQueueDateParser.parse(consumedAtRaw)
+        batchCompletedAt = try c.decodeIfPresent(Date.self, forKey: .batchCompletedAt)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt)
+        consumedAt = try c.decodeIfPresent(Date.self, forKey: .consumedAt)
     }
 }
 
@@ -87,23 +82,4 @@ struct ExerciseQueueUpdate: Codable {
         case batchCompletedAt = "batch_completed_at"
         case consumedAt = "consumed_at"
     }
-}
-
-private enum ExerciseQueueDateParser {
-    static func parse(_ raw: String?) -> Date? {
-        guard let raw, !raw.isEmpty else { return nil }
-        return iso8601WithFractional.date(from: raw) ?? iso8601.date(from: raw)
-    }
-
-    static let iso8601WithFractional: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    static let iso8601: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
 }

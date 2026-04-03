@@ -507,13 +507,14 @@ start_end_index 복구 중 일부 실패:
                 continue
             }
 
-            guard let tokenSummary = await detailVM.tokenSummary(),
-                  !tokenSummary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                failedRows.append("\(target.progressLabel) tokenSummary: empty")
+            guard let tokenLLMText = await detailVM.tokenLLMText(),
+                  !tokenLLMText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                let llmTextError = detailVM.error?.trimmingCharacters(in: .whitespacesAndNewlines)
+                failedRows.append("\(target.progressLabel) tokenLLMText: \(llmTextError?.isEmpty == false ? llmTextError! : "empty")")
                 continue
             }
 
-            let prompt = Prompt.makeSentenceTokenSensePrompt(copyText: tokenSummary)
+            let prompt = Prompt.makeSentenceTokenSensePrompt(copyText: tokenLLMText)
 
             do {
                 let result = try? await openAIClient.generateText(prompt: prompt)

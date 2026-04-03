@@ -16,7 +16,7 @@ struct PhraseRead: Codable, Identifiable {
     let id: Int
     let text: String
     let normalized: String
-    let createdAt: String?
+    let createdAt: Date?
     let translations: [PhraseTranslationSchema]
 
     enum CodingKeys: String, CodingKey {

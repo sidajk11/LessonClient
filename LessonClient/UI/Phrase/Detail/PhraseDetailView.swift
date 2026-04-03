@@ -46,7 +46,8 @@ struct PhraseDetailView: View {
                     HStack {
                         Text("created_at")
                         Spacer()
-                        Text(phrase.createdAt ?? "-").foregroundStyle(.secondary)
+                        Text(phrase.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "-")
+                            .foregroundStyle(.secondary)
                     }
                 }
             }

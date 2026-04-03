@@ -42,16 +42,10 @@ struct UserVocabularyStateRead: Codable, Identifiable {
         attempts = try c.decode(Int.self, forKey: .attempts)
         correctAttempts = try c.decode(Int.self, forKey: .correctAttempts)
         wrongStreak = try c.decode(Int.self, forKey: .wrongStreak)
-
-        let lastAttemptAtRaw = try c.decodeIfPresent(String.self, forKey: .lastAttemptAt)
-        let lastCorrectAtRaw = try c.decodeIfPresent(String.self, forKey: .lastCorrectAt)
-        let nextReviewAtRaw = try c.decodeIfPresent(String.self, forKey: .nextReviewAt)
-        let updatedAtRaw = try c.decodeIfPresent(String.self, forKey: .updatedAt)
-
-        lastAttemptAt = UserVocabularyStateDateParser.parse(lastAttemptAtRaw)
-        lastCorrectAt = UserVocabularyStateDateParser.parse(lastCorrectAtRaw)
-        nextReviewAt = UserVocabularyStateDateParser.parse(nextReviewAtRaw)
-        updatedAt = UserVocabularyStateDateParser.parse(updatedAtRaw)
+        lastAttemptAt = try c.decodeIfPresent(Date.self, forKey: .lastAttemptAt)
+        lastCorrectAt = try c.decodeIfPresent(Date.self, forKey: .lastCorrectAt)
+        nextReviewAt = try c.decodeIfPresent(Date.self, forKey: .nextReviewAt)
+        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt)
     }
 }
 
@@ -122,22 +116,3 @@ struct UserVocabularyStateUpdate: Codable {
 typealias UserLessonTargetStateRead = UserVocabularyStateRead
 typealias UserLessonTargetStateCreate = UserVocabularyStateCreate
 typealias UserLessonTargetStateUpdate = UserVocabularyStateUpdate
-
-private enum UserVocabularyStateDateParser {
-    static func parse(_ raw: String?) -> Date? {
-        guard let raw, !raw.isEmpty else { return nil }
-        return iso8601WithFractional.date(from: raw) ?? iso8601.date(from: raw)
-    }
-
-    static let iso8601WithFractional: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    static let iso8601: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
-}

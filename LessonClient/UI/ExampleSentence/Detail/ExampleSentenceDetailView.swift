@@ -62,7 +62,7 @@ struct ExampleSentenceDetailView: View {
                         .disabled(vm.isRecreatingTokens)
 
                         Button {
-                            Task { await vm.copyTokenSummary() }
+                            Task { await vm.copyTokenLLMText() }
                         } label: {
                             if vm.isCopyingTokenSummary {
                                 ProgressView()

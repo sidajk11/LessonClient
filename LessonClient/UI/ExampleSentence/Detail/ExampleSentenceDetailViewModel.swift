@@ -34,6 +34,7 @@ final class ExampleSentenceDetailViewModel: ObservableObject {
     
     private let sentenceUseCase = GenerateTokensUseCase.shared
     private let tokenRangesUseCase = TokenRangesUseCase.shared
+    private let buildTokenLLMTextUseCase = BuildTokenLLMTextUseCase.shared
 
     /// 뷰모델의 대상 예문/문맥 정보를 설정합니다.
     init(exampleSentence: ExampleSentence, lesson: Lesson?, word: Vocabulary?) {
@@ -301,115 +302,30 @@ final class ExampleSentenceDetailViewModel: ObservableObject {
     }
 
     /// 전체 복사
-    func copyTokenSummary() async {
-        guard let text = await tokenSummary() else { return }
+    func copyTokenLLMText() async {
+        guard let text = await tokenLLMText() else { return }
         copyToPasteboard(text)
     }
     
-    func tokenSummary() async -> String? {
+    func tokenLLMText() async -> String? {
         guard let currentSentence = displayExampleSentence else { return nil }
         guard !isCopyingTokenSummary else { return nil }
 
         isCopyingTokenSummary = true
         defer { isCopyingTokenSummary = false }
 
-        let text = await makeTokenSummaryText(exampleSentence: currentSentence)
-        return text
+        do {
+            let text = try await makeTokenLLMText(exampleSentence: currentSentence)
+            return text
+        } catch {
+            self.error = error.localizedDescription
+            return nil
+        }
     }
 
-    /// 토큰/센스 요약 문자열을 생성합니다.
-    private func makeTokenSummaryText(exampleSentence: ExampleSentence) async -> String {
-        let sortedTokens = exampleSentence.tokens.sorted { $0.tokenIndex < $1.tokenIndex }
-        let tokenLines = sortedTokens
-            .filter { token in
-                let trimmed = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
-                return !trimmed.isEmpty && !punctuationSet.contains(trimmed)
-            }
-            .map { token in
-                "token_id:\(token.id) \(token.surface)"
-            }
-        let searchableTokens = sortedTokens
-            .filter { token in
-                let trimmed = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
-                return !trimmed.isEmpty && !punctuationSet.contains(trimmed)
-            }
-
-        var sensesById: [Int: (lemma: String, sense: WordSenseRead)] = [:]
-
-        for token in searchableTokens {
-            var surface = token.surface
-            let isNumber = Int(surface) != nil
-            if isNumber {
-                surface = numberDict[surface] ?? surface
-            }
-            let sensesSurface = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: surface, limit: 100)) ?? []
-            var lemmaForOutput = surface
-            
-            var sensesForm: [WordSenseRead] = []
-            if let formId = token.formId,
-               let form = try? await WordFormDataSource.shared.wordForm(id: formId),
-               let word = try? await WordDataSource.shared.word(id: form.wordId) {
-                sensesForm = word.senses
-                lemmaForOutput = word.lemma
-            }
-            
-            // tired: form은 tire의 form이고 sense는 tired의 센스
-            // 우선 surface의
-            if !sensesForm.isEmpty || !sensesSurface.isEmpty {
-                for sense in sensesForm {
-                    sensesById[sense.id] = (lemma: lemmaForOutput, sense: sense)
-                }
-                
-                for sense in sensesSurface {
-                    sensesById[sense.id] = (lemma: surface, sense: sense)
-                }
-            } else if let lemma = NL.getLemma(of: surface) {
-                // tomorrow's 인 경우 tomorrow로 검색
-                let sensesLemma = (try? await WordDataSource.shared.listWordSensesByLemma(lemma: lemma)) ?? []
-                for sense in sensesLemma {
-                    sensesById[sense.id] = (lemma: lemma, sense: sense)
-                }
-            }
-        }
-
-        var senseDetailCache: [Int: WordSenseRead] = [:]
-        var sensesLines: [String] = []
-        for row in sensesById.values.sorted(by: { $0.sense.id < $1.sense.id }) {
-            let sense: WordSenseRead
-            if !row.sense.examples.isEmpty {
-                sense = row.sense
-            } else if let cached = senseDetailCache[row.sense.id] {
-                sense = cached
-            } else if let loaded = try? await WordDataSource.shared.wordSense(senseId: row.sense.id) {
-                senseDetailCache[row.sense.id] = loaded
-                sense = loaded
-            } else {
-                sense = row.sense
-            }
-
-            let examplesText = sense.examples
-                .compactMap { $0.firstExampleSentence?.text }
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
-                .joined(separator: " | ")
-
-            let line = """
-sense_id:\(sense.id) \(row.lemma) (\(sense.senseCode)): \(sense.explain)
-sense_examples: \(examplesText.isEmpty ? "-" : examplesText)
-"""
-            sensesLines.append(line)
-        }
-
-        let text = """
-        sentence: \(exampleSentence.text)
-
-        tokens:
-        \(tokenLines.isEmpty ? "-" : tokenLines.joined(separator: "\n"))
-
-        senses:
-        \(sensesLines.isEmpty ? "-" : sensesLines.joined(separator: "\n"))
-        """
-        return text
+    /// 토큰/센스 LLM 입력 문자열을 생성합니다.
+    private func makeTokenLLMText(exampleSentence: ExampleSentence) async throws -> String {
+        try await buildTokenLLMTextUseCase.build(exampleSentence: exampleSentence)
 
 //        let instruction = """
 //

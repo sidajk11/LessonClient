@@ -34,9 +34,7 @@ struct ExerciseAttemptRead: Codable, Identifiable {
         isCorrect = try c.decode(Bool.self, forKey: .isCorrect)
         score = try c.decodeIfPresent(Int.self, forKey: .score)
         durationMs = try c.decodeIfPresent(Int.self, forKey: .durationMs)
-
-        let createdAtRaw = try c.decodeIfPresent(String.self, forKey: .createdAt)
-        createdAt = ExerciseAttemptDateParser.parse(createdAtRaw)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt)
     }
 }
 
@@ -70,23 +68,4 @@ struct ExerciseAttemptUpdate: Codable {
         case score
         case durationMs = "duration_ms"
     }
-}
-
-private enum ExerciseAttemptDateParser {
-    static func parse(_ raw: String?) -> Date? {
-        guard let raw, !raw.isEmpty else { return nil }
-        return iso8601WithFractional.date(from: raw) ?? iso8601.date(from: raw)
-    }
-
-    static let iso8601WithFractional: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    static let iso8601: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
 }

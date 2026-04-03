@@ -113,9 +113,7 @@ struct SentenceTokenRead: Codable, Identifiable {
         endIndex = try c.decodeIfPresent(Int.self, forKey: .endIndex)
         translations = try c.decodeIfPresent([SentenceTokenTranslationRead].self, forKey: .translations) ?? []
         vocabulary = try c.decodeIfPresent(SentenceTokenVocabularyRead.self, forKey: .vocabulary)
-
-        let createdAtRaw = try c.decodeIfPresent(String.self, forKey: .createdAt)
-        createdAt = SentenceTokenDateParser.parse(createdAtRaw)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -134,7 +132,7 @@ struct SentenceTokenRead: Codable, Identifiable {
         try c.encodeIfPresent(endIndex, forKey: .endIndex)
         try c.encode(translations, forKey: .translations)
         try c.encodeIfPresent(vocabulary, forKey: .vocabulary)
-        try c.encodeIfPresent(createdAt.map(SentenceTokenDateParser.string), forKey: .createdAt)
+        try c.encodeIfPresent(createdAt.map(LessonClientDateCoding.string), forKey: .createdAt)
     }
 }
 
@@ -199,28 +197,5 @@ struct SentenceTokenTranslationCreate: Codable {
         case lang
         case text
         case isPrimary = "is_primary"
-    }
-}
-
-private enum SentenceTokenDateParser {
-    static func parse(_ raw: String?) -> Date? {
-        guard let raw, !raw.isEmpty else { return nil }
-        return iso8601WithFractional.date(from: raw) ?? iso8601.date(from: raw)
-    }
-
-    static let iso8601WithFractional: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    static let iso8601: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
-
-    static func string(_ date: Date) -> String {
-        iso8601WithFractional.string(from: date)
     }
 }

@@ -54,7 +54,7 @@ extension Decodable {
     static func fromDict(dict: [String: Any]) -> Self? {
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: dict, options: [])
-            let person = try JSONDecoder().decode(Self.self, from: jsonData)
+            let person = try JSONDecoder.lessonClient.decode(Self.self, from: jsonData)
             return person
         } catch {
             print("Error converting dictionary to Person: \(error)")

@@ -13,6 +13,7 @@ struct MainTabView: View {
 
     private enum Tab: String, CaseIterable, Identifiable {
         case lesson
+        case batches
         case vocabulary
         case examples
         case exampleSentence
@@ -33,6 +34,7 @@ struct MainTabView: View {
         var title: String {
             switch self {
             case .lesson: "레슨"
+            case .batches: "Batches"
             case .vocabulary: "학습 단어"
             case .examples: "예문"
             case .exampleSentence: "예문 문장"
@@ -75,6 +77,7 @@ struct MainTabView: View {
 
             TabView(selection: $selectedTab) {
                 LessonListView().tag(Tab.lesson)
+                BatchesView().tag(Tab.batches)
                 VocabularyListView().tag(Tab.vocabulary)
                 ExamplesSearchView().tag(Tab.examples)
                 ExampleSentenceSearchView().tag(Tab.exampleSentence)
