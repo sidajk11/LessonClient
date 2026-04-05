@@ -290,7 +290,7 @@ private extension GenerateExerciseUseCase {
     func normalizedText(_ text: String) -> String {
         text
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "’", with: "'")
+            .normalizedApostrophe
             .lowercased()
     }
 }

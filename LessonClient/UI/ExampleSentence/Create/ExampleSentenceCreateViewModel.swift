@@ -17,7 +17,7 @@ final class ExampleSentenceCreateViewModel: ObservableObject {
             throw NSError(domain: "invalid.form", code: 0, userInfo: [NSLocalizedDescriptionKey: "문장을 입력해 주세요."])
         }
         
-        text = text.replacingOccurrences(of: "’", with: "'")
+        text = text.normalizedApostrophe
         
         isSaving = true
         defer { isSaving = false }

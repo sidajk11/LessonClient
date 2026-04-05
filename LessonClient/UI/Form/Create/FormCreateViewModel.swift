@@ -38,6 +38,7 @@ final class FormCreateViewModel: ObservableObject {
     @Published var isParsing: Bool = false
     @Published var isSaving: Bool = false
     @Published var isAutoAdding: Bool = false
+    @Published var isSingleAdding: Bool = false
     @Published private(set) var isAutoSessionActive: Bool = false
     @Published private(set) var autoCurrentWord: String? = nil
     @Published private(set) var autoCurrentIndex: Int = 0
@@ -207,6 +208,42 @@ Parsing: blocks=\(result.totalBlocks), parsed=\(parsedCount), ready=\(readyCount
             try await generateAndParseCurrentWord()
         } catch {
             statusMessage = "AutoAdd: 중단 - \(error.localizedDescription)"
+        }
+    }
+
+    func singleAdd(word inputWord: String) async {
+        let lemma = inputWord.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !lemma.isEmpty else {
+            statusMessage = "단일생성: 단어를 입력해 주세요."
+            return
+        }
+        guard !isSingleAdding, !isSaving, !isAutoAdding else { return }
+
+        parseTask?.cancel()
+        isSingleAdding = true
+        defer { isSingleAdding = false }
+
+        do {
+            statusMessage = "단일생성: '\(lemma)' 생성 중..."
+            let prompt = Prompt.makeFormPrompt(for: lemma)
+            let generated = try await openAIClient.generateText(prompt: prompt)
+
+            rawText = generated
+            parseTask?.cancel()
+            parseNow()
+
+            let readyCount = rows.filter {
+                if case .ready = $0.status { return true }
+                return false
+            }.count
+            guard readyCount > 0 else {
+                throw AutoAddError.noParsableRows(word: lemma)
+            }
+
+            let result = await saveCurrentRows(stopOnFailure: false)
+            statusMessage = "단일생성: '\(lemma)' 완료 ✅ success=\(result.success), failed=\(result.fail), skipped=\(result.skipped)"
+        } catch {
+            statusMessage = "단일생성: '\(lemma)' 실패 - \(error.localizedDescription)"
         }
     }
 

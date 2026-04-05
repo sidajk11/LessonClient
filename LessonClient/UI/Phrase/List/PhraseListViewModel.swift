@@ -12,6 +12,7 @@ final class PhraseListViewModel: ObservableObject {
     @Published var items: [PhraseRead] = []
     @Published var q: String = ""
     @Published var isLoading: Bool = false
+    @Published var deletingIds: Set<Int> = []
     @Published var errorMessage: String?
 
     func load() async {
@@ -30,6 +31,21 @@ final class PhraseListViewModel: ObservableObject {
             errorMessage = error.localizedDescription
         }
     }
+
+    func deletePhrase(id: Int) async {
+        guard !deletingIds.contains(id) else { return }
+
+        deletingIds.insert(id)
+        errorMessage = nil
+        defer { deletingIds.remove(id) }
+
+        do {
+            try await PhraseDataSource.shared.deletePhrase(id: id)
+            items.removeAll { $0.id == id }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
 }
 
 private extension String {
@@ -38,4 +54,3 @@ private extension String {
         return trimmed.isEmpty ? nil : trimmed
     }
 }
-

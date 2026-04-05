@@ -14,10 +14,12 @@ extension Prompt {
 
 구두점, 번호, 설명은 빼고 lemma만 쉼표로 나열해줘
 숙어/구문이면 필요한 공백은 유지해줘
+축약형은 그대로 유지해줘
 
 lemma,lemma, ...
 
-word: \(text)
+아래는 영어단어 목록이야.
+words: [\(text)]
 """
     }
 }

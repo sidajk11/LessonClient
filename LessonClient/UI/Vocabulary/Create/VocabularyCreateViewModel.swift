@@ -34,7 +34,7 @@ final class VocabularyCreateViewModel: ObservableObject {
         isSaving = true
         defer { isSaving = false }
         
-        text = text.replacingOccurrences(of: "’", with: "'")
+        text = text.normalizedApostrophe
         
         var words: [Vocabulary] = []
         let paras = text.components(separatedBy: "\n\n")
@@ -54,5 +54,4 @@ final class VocabularyCreateViewModel: ObservableObject {
         return words
     }
 }
-
 

@@ -128,12 +128,14 @@ final class WordFormDataSource {
     func updateWordForm(
         id formId: Int,
         wordId: Int? = nil,
+        derivedWordId: Int? = nil,
         form: String? = nil,
         formType: String? = nil,
         translations: [WordFormTranslationSchema]? = nil
     ) async throws -> WordFormRead {
         let body = WordFormUpdate(
             wordId: wordId,
+            derivedWordId: derivedWordId,
             form: form,
             formType: formType,
             translations: translations

@@ -15,7 +15,7 @@ extension Prompt {
         phrase: 
         ko: 
         
-        phrase: \(phrase)
+        phrase: [\(phrase)]
         """
     }
 }

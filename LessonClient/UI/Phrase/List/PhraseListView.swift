@@ -10,6 +10,7 @@ import SwiftUI
 struct PhraseListView: View {
     @StateObject private var vm = PhraseListViewModel()
     @State private var showingCreate = false
+    @State private var deletingPhrase: PhraseRead?
 
     var body: some View {
         NavigationStack {
@@ -36,23 +37,39 @@ struct PhraseListView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(vm.items) { item in
-                            NavigationLink {
-                                PhraseDetailView(phraseId: item.id)
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
-                                        Text(item.text).bold()
-                                        Spacer()
-                                        Text("#\(item.id)")
+                            HStack(spacing: 12) {
+                                NavigationLink {
+                                    PhraseDetailView(phraseId: item.id)
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack {
+                                            Text(item.text).bold()
+                                            Spacer()
+                                            Text("#\(item.id)")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Text(item.translations.map { "\($0.lang): \($0.text)" }.joined(separator: " | "))
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
+                                            .lineLimit(1)
                                     }
-                                    Text(item.translations.map { "\($0.lang): \($0.text)" }.joined(separator: " | "))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
+                                    .padding(.vertical, 2)
                                 }
-                                .padding(.vertical, 2)
+                                .buttonStyle(.plain)
+
+                                Button(role: .destructive) {
+                                    deletingPhrase = item
+                                } label: {
+                                    if vm.deletingIds.contains(item.id) {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                    } else {
+                                        Image(systemName: "trash")
+                                    }
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(vm.deletingIds.contains(item.id))
                             }
                         }
                     }
@@ -80,6 +97,30 @@ struct PhraseListView: View {
                     .padding()
                     .frame(minWidth: 520, minHeight: 460)
                 }
+            }
+            .confirmationDialog(
+                "Phrase를 삭제할까요?",
+                isPresented: Binding(
+                    get: { deletingPhrase != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            deletingPhrase = nil
+                        }
+                    }
+                ),
+                presenting: deletingPhrase
+            ) { phrase in
+                Button("삭제", role: .destructive) {
+                    Task {
+                        await vm.deletePhrase(id: phrase.id)
+                        deletingPhrase = nil
+                    }
+                }
+                Button("취소", role: .cancel) {
+                    deletingPhrase = nil
+                }
+            } message: { phrase in
+                Text("\"\(phrase.text)\" 구문을 삭제합니다.")
             }
         }
     }

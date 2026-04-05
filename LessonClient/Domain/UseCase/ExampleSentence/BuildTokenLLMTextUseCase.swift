@@ -34,7 +34,7 @@ extension BuildTokenLLMTextUseCase {
         let sortedTokens = exampleSentence.tokens.sorted { $0.tokenIndex < $1.tokenIndex }
         let tokenLines = sortedTokens
             .filter { token in
-                let trimmed = token.surface.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmed = token.surface.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "’", with: "'")
                 return !trimmed.isEmpty && !punctuationSet.contains(trimmed)
             }
             .map { token in
@@ -49,20 +49,22 @@ extension BuildTokenLLMTextUseCase {
         var sensesById: [Int: (lemma: String, sense: WordSenseRead)] = [:]
 
         for token in searchableTokens {
-            var surface = token.surface
+            var surface = token.surface.replacingOccurrences(of: "’", with: "'")
             let isNumber = Int(surface) != nil
             if isNumber {
                 surface = numberDict[surface] ?? surface
             }
-
+            //surface로 sense list조회
+            // surface로 form조회
+            // form.word_id로 sense list 조회
+            // 두 list합병해서 ai prompt 생성
             // lemma로 조회해서 sense수집
             let sensesSurface = (try? await wordDataSource.listWordSensesByLemma(lemma: surface, limit: 100)) ?? []
             var lemmaForOutput = surface
             
             // form으로 조회해서 해당 lemma의 sense수집
             var sensesForm: [WordSenseRead] = []
-            if let formId = token.formId,
-               let form = try? await formDataSource.wordForm(id: formId),
+            if let form = try? await formDataSource.listWordFormsByForm(form: surface).first,
                let word = try? await wordDataSource.word(id: form.wordId) {
                 sensesForm = word.senses
                 lemmaForOutput = word.lemma
@@ -76,8 +78,8 @@ extension BuildTokenLLMTextUseCase {
                 for sense in sensesSurface {
                     sensesById[sense.id] = (lemma: surface, sense: sense)
                 }
-            } else if let lemma = NL.getLemma(of: surface) {
-                throw BuildTokenLLMTextUseCaseError.fallbackLemmaLookupUsed(surface: surface, lemma: lemma)
+            } else {
+                throw BuildTokenLLMTextUseCaseError.fallbackLemmaLookupUsed(surface: surface, lemma: "")
             }
         }
 

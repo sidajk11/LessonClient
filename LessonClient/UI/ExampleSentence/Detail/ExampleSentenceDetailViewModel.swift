@@ -9,6 +9,12 @@ import UIKit
 
 @MainActor
 final class ExampleSentenceDetailViewModel: ObservableObject {
+    struct SenseAssignmentRow: Hashable {
+        let token: String?
+        let tokenId: Int
+        let senseId: Int
+    }
+
     let exampleSentence: ExampleSentence
     let lesson: Lesson?
     let word: Vocabulary?
@@ -349,7 +355,7 @@ final class ExampleSentenceDetailViewModel: ObservableObject {
     }
 
     /// 외부 입력 텍스트를 token_id/sense_id 쌍으로 파싱합니다.
-    func parseSenseAssignmentsText(_ raw: String) throws -> [(tokenId: Int, senseId: Int)] {
+    func parseSenseAssignmentsText(_ raw: String) throws -> [SenseAssignmentRow] {
         try parseSenseAssignments(from: raw)
     }
 
@@ -462,7 +468,7 @@ final class ExampleSentenceDetailViewModel: ObservableObject {
         guard example != nil else { return }
         guard !isApplyingSenseAssign else { return }
 
-        let assignments: [(tokenId: Int, senseId: Int)]
+        let assignments: [SenseAssignmentRow]
         do {
             assignments = try parseSenseAssignments(from: senseAssignText)
         } catch {
@@ -520,8 +526,8 @@ final class ExampleSentenceDetailViewModel: ObservableObject {
         }
     }
 
-    /// token_id/sense_id 텍스트 블록을 파싱합니다.
-    private func parseSenseAssignments(from raw: String) throws -> [(tokenId: Int, senseId: Int)] {
+    /// token/token_id/sense_id 텍스트 블록을 파싱합니다.
+    private func parseSenseAssignments(from raw: String) throws -> [SenseAssignmentRow] {
         enum ParseError: LocalizedError {
             case invalidLine(String)
             case missingPair
@@ -539,7 +545,8 @@ final class ExampleSentenceDetailViewModel: ObservableObject {
             }
         }
 
-        var rows: [(Int, Int)] = []
+        var rows: [SenseAssignmentRow] = []
+        var token: String?
         var tokenId: Int?
         var senseId: Int?
 
@@ -547,7 +554,10 @@ final class ExampleSentenceDetailViewModel: ObservableObject {
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed.isEmpty {
-                if let t = tokenId, let s = senseId { rows.append((t, s)) }
+                if let t = tokenId, let s = senseId {
+                    rows.append(.init(token: token, tokenId: t, senseId: s))
+                }
+                token = nil
                 tokenId = nil
                 senseId = nil
                 continue
@@ -558,9 +568,10 @@ final class ExampleSentenceDetailViewModel: ObservableObject {
             }
             let key = trimmed[..<idx].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             let value = trimmed[trimmed.index(after: idx)...].trimmingCharacters(in: .whitespacesAndNewlines)
-            if key == "token" { continue }
 
-            if key == "token_id" || key == "tokenid" {
+            if key == "token" {
+                token = value.isEmpty ? nil : value
+            } else if key == "token_id" || key == "tokenid" {
                 guard let v = Int(value), v >= 1 else { throw ParseError.invalidNumber(value) }
                 tokenId = v
             } else if key == "sense_id" || key == "senseid" {
@@ -572,7 +583,9 @@ final class ExampleSentenceDetailViewModel: ObservableObject {
             }
         }
 
-        if let t = tokenId, let s = senseId { rows.append((t, s)) }
+        if let t = tokenId, let s = senseId {
+            rows.append(.init(token: token, tokenId: t, senseId: s))
+        }
         if rows.isEmpty { throw ParseError.missingPair }
         return rows
     }

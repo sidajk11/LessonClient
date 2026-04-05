@@ -84,6 +84,8 @@ struct ExamplesSearchView: View {
                 HStack {
                     Toggle("미학습단어 포함만", isOn: $vm.showOnlyUnresolvableVocabulary)
                         .toggleStyle(.checkbox)
+                    Toggle("tokens 수정필요만", isOn: $vm.showOnlyTokenNeedingExamples)
+                        .toggleStyle(.checkbox)
                     Spacer()
                 }
                 .padding(.horizontal)
@@ -188,6 +190,32 @@ struct ExamplesSearchView: View {
             .alert("오류", isPresented: .constant(vm.error != nil)) {
                 Button("확인") { vm.error = nil }
             } message: { Text(vm.error ?? "") }
+            .sheet(item: $vm.copyableMessage, onDismiss: {
+                vm.copyableMessage = nil
+            }) { message in
+                NavigationStack {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(message.title)
+                            .font(.headline)
+
+                        TextEditor(text: .constant(message.text))
+                            .font(.system(.body, design: .monospaced))
+                            .frame(minHeight: 320)
+
+                        HStack {
+                            Spacer()
+                            Button("복사") {
+                                vm.copyToPasteboard(message.copyText)
+                            }
+                            Button("닫기") {
+                                vm.copyableMessage = nil
+                            }
+                        }
+                    }
+                    .padding()
+                    .frame(minWidth: 700, minHeight: 440)
+                }
+            }
         }
     }
 }
@@ -226,9 +254,7 @@ private struct ExampleSentenceSummaryCard: View {
         let checkTargets = sortedTokens.filter { token in
             !punctuationSet.contains(token.surface)
         }
-        let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
-            token.senseId != nil || token.phraseId != nil
-        }
+        let isTokenReady = !vm.needsTokenRepair(for: sentence)
         let senseTokens = checkTargets.map { token -> String in
             guard let senseId = token.senseId else {
                 return "\(token.surface):-"

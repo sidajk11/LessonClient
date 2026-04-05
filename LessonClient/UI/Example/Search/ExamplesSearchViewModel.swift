@@ -6,9 +6,19 @@
 //
 
 import Foundation
+#if canImport(AppKit)
+import AppKit
+#endif
 
 @MainActor
 final class ExamplesSearchViewModel: ObservableObject {
+    struct CopyableMessage: Identifiable {
+        let id = UUID()
+        let title: String
+        let text: String
+        let copyText: String
+    }
+
     struct SentenceStatusPresentation {
         let text: String
         let isWarning: Bool
@@ -28,6 +38,7 @@ final class ExamplesSearchViewModel: ObservableObject {
     @Published var levelText: String = ""   // numeric-only text
     @Published var unitText: String = ""    // numeric-only text
     @Published var showOnlyUnresolvableVocabulary: Bool = false
+    @Published var showOnlyTokenNeedingExamples: Bool = false
 
     // State
     @Published var items: [Example] = []
@@ -48,6 +59,7 @@ final class ExamplesSearchViewModel: ObservableObject {
     @Published var highestUnitByExampleId: [Int: Int] = [:]
     @Published var highestUnitWordByExampleId: [Int: String] = [:]
     @Published var needsStartEndIndexRepairByExampleId: [Int: Bool] = [:]
+    @Published var copyableMessage: CopyableMessage?
     @Published var error: String?
     private let searchLimit: Int = 400
     private var searchGeneration: Int = 0
@@ -56,8 +68,17 @@ final class ExamplesSearchViewModel: ObservableObject {
     private let tokenVocabularyStatusLoader = ExampleTokenVocabularyStatusLoader()
 
     var displayItems: [Example] {
-        guard showOnlyUnresolvableVocabulary else { return items }
-        return items.filter { hasUnresolvableVocabularyByExampleId[$0.id] == true }
+        items.filter { example in
+            if showOnlyUnresolvableVocabulary &&
+                hasUnresolvableVocabularyByExampleId[example.id] != true {
+                return false
+            }
+            if showOnlyTokenNeedingExamples &&
+                !needsTokenRepair(for: example) {
+                return false
+            }
+            return true
+        }
     }
 
     var hasDeletableUnresolvableItems: Bool {
@@ -196,6 +217,20 @@ final class ExamplesSearchViewModel: ObservableObject {
             return .init(text: "최고 unit: \(highestUnit)", isWarning: false)
         }
         return nil
+    }
+
+    func needsTokenRepair(for example: Example) -> Bool {
+        example.orderedExampleSentences.contains { needsTokenRepair(for: $0) }
+    }
+
+    func needsTokenRepair(for sentence: ExampleSentence) -> Bool {
+        let checkTargets = sentence.tokens.filter { token in
+            !punctuationSet.contains(token.surface)
+        }
+        let isTokenReady = !checkTargets.isEmpty && checkTargets.allSatisfy { token in
+            token.senseId != nil || token.phraseId != nil
+        }
+        return !isTokenReady
     }
 
     private func highestUnitExceedsExampleUnit(for example: Example) -> Bool {
@@ -460,6 +495,7 @@ start_end_index 복구 중 일부 실패:
     func addSensesForAllExamples() async {
         guard !isAddingSenses else { return }
         guard !isRecreatingAllTokens else { return }
+        copyableMessage = nil
         let visibleItems = sentenceTargets(in: displayItems)
         guard !visibleItems.isEmpty else {
             error = "sense를 추가할 예문 문장이 없습니다."
@@ -481,6 +517,7 @@ start_end_index 복구 중 일부 실패:
         var emptySenseSentences = 0
         var skippedByExistingSense = 0
         var failedRows: [String] = []
+        var failedSurfaces: [String] = []
 
         for (idx, target) in targetItems.enumerated() {
             senseProgressText = "sense 추가 중... (\(idx + 1)/\(targetItems.count)) \(target.progressLabel)"
@@ -492,7 +529,11 @@ start_end_index 복구 중 일부 실패:
             )
             await detailVM.load()
             if let loadError = detailVM.error, !loadError.isEmpty {
-                failedRows.append("\(target.progressLabel) load: \(loadError)")
+                let row = "\(target.progressLabel) load: \(loadError)"
+                failedRows.append(row)
+                if let surface = copyableFailedSurface(from: row) {
+                    failedSurfaces.append(surface)
+                }
                 continue
             }
 
@@ -510,7 +551,11 @@ start_end_index 복구 중 일부 실패:
             guard let tokenLLMText = await detailVM.tokenLLMText(),
                   !tokenLLMText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 let llmTextError = detailVM.error?.trimmingCharacters(in: .whitespacesAndNewlines)
-                failedRows.append("\(target.progressLabel) tokenLLMText: \(llmTextError?.isEmpty == false ? llmTextError! : "empty")")
+                let row = "\(target.progressLabel) tokenLLMText: \(llmTextError?.isEmpty == false ? llmTextError! : "empty")"
+                failedRows.append(row)
+                if let surface = copyableFailedSurface(from: row) {
+                    failedSurfaces.append(surface)
+                }
                 continue
             }
 
@@ -529,9 +574,9 @@ start_end_index 복구 중 일부 실패:
                 }
 
                 let assignments = try detailVM.parseSenseAssignmentsText(result)
-                var latestByTokenId: [Int: Int] = [:]
+                var latestByTokenId: [Int: (token: String?, senseId: Int)] = [:]
                 for assignment in assignments {
-                    latestByTokenId[assignment.tokenId] = assignment.senseId
+                    latestByTokenId[assignment.tokenId] = (assignment.token, assignment.senseId)
                 }
 
                 if latestByTokenId.isEmpty {
@@ -539,17 +584,63 @@ start_end_index 복구 중 일부 실패:
                     continue
                 }
 
-                for (tokenId, senseId) in latestByTokenId {
+                var wordBySenseId: [Int: WordRead] = [:]
+                var formIdByWordToken: [String: Int?] = [:]
+                let tokenById = Dictionary(uniqueKeysWithValues: target.sentence.tokens.map { ($0.id, $0) })
+
+                for (tokenId, assignment) in latestByTokenId {
+                    let word: WordRead
+                    if let cached = wordBySenseId[assignment.senseId] {
+                        word = cached
+                    } else {
+                        let sense = try await WordDataSource.shared.wordSense(senseId: assignment.senseId)
+                        let loadedWord = try await WordDataSource.shared.word(id: sense.wordId)
+                        wordBySenseId[assignment.senseId] = loadedWord
+                        word = loadedWord
+                    }
+
+                    let parsedToken = assignment.token?.trimmed
+                    let resolvedToken = (parsedToken?.isEmpty == false ? parsedToken : nil) ?? tokenById[tokenId]?.surface.trimmed
+                    let normalizedToken = resolvedToken?.normalizedApostrophe.lowercased()
+                    let normalizedLemma = word.lemma.trimmed.normalizedApostrophe.lowercased()
+
+                    let formId: Int?
+                    if normalizedToken == nil || normalizedToken == normalizedLemma {
+                        formId = nil
+                    } else {
+                        let formCacheKey = "\(word.id)|\(normalizedToken!)"
+                        if let cached = formIdByWordToken[formCacheKey] {
+                            formId = cached
+                        } else {
+                            let rows = try await WordFormDataSource.shared.listWordFormsByForm(
+                                form: resolvedToken ?? "",
+                                limit: 50
+                            )
+                            let matched = rows.first { row in
+                                row.wordId == word.id &&
+                                row.form.trimmed.normalizedApostrophe.lowercased() == normalizedToken
+                            }
+                            formId = matched?.id
+                            formIdByWordToken[formCacheKey] = formId
+                        }
+                    }
+
                     _ = try await SentenceTokenDataSource.shared.updateSentenceToken(
                         id: tokenId,
-                        senseId: senseId
+                        wordId: word.id,
+                        formId: formId,
+                        senseId: assignment.senseId
                     )
                 }
 
                 updatedTokenCount += latestByTokenId.count
                 successSentences += 1
             } catch {
-                failedRows.append("\(target.progressLabel) sense: \((error as NSError).localizedDescription)")
+                let row = "\(target.progressLabel) sense: \((error as NSError).localizedDescription)"
+                failedRows.append(row)
+                if let surface = copyableFailedSurface(from: row) {
+                    failedSurfaces.append(surface)
+                }
             }
         }
 
@@ -560,12 +651,12 @@ start_end_index 복구 중 일부 실패:
             return
         }
 
-        let preview = failedRows.prefix(3).joined(separator: "\n")
         senseProgressText = "sense 추가 완료 sentences=\(successSentences) tokens=\(updatedTokenCount) empty=\(emptySenseSentences) skipped=\(skippedByExistingSense) failed=\(failedRows.count)"
-        error = """
-sense 추가 중 일부 실패:
-\(preview)
-"""
+        copyableMessage = .init(
+            title: "sense 추가 실패 목록",
+            text: failedRows.joined(separator: "\n"),
+            copyText: joinedCopyableSurfaces(from: failedSurfaces)
+        )
     }
 
     private func missingSenseTargetItems(in examples: [Example]) -> [ExampleSentenceTarget] {
@@ -622,6 +713,42 @@ sense 추가 중 일부 실패:
                 ExampleSentenceTarget(example: example, sentence: sentence)
             }
         }
+    }
+
+    private func copyableFailedSurface(from row: String) -> String? {
+        let pattern = #"surface=([^,]+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let range = NSRange(row.startIndex..<row.endIndex, in: row)
+        guard
+            let match = regex.firstMatch(in: row, range: range),
+            match.numberOfRanges > 1,
+            let captureRange = Range(match.range(at: 1), in: row)
+        else {
+            return nil
+        }
+
+        let surface = row[captureRange].trimmingCharacters(in: .whitespacesAndNewlines)
+        return surface.isEmpty ? nil : surface
+    }
+
+    private func joinedCopyableSurfaces(from surfaces: [String]) -> String {
+        var seen: Set<String> = []
+        let ordered = surfaces.compactMap { raw -> String? in
+            let surface = raw.trimmed
+            guard !surface.isEmpty else { return nil }
+
+            let key = surface.normalizedApostrophe.lowercased()
+            guard seen.insert(key).inserted else { return nil }
+            return surface
+        }
+        return ordered.joined(separator: ",")
+    }
+
+    func copyToPasteboard(_ text: String) {
+#if canImport(AppKit)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+#endif
     }
 
     /// full replace PUT을 사용해서 기존 token 필드를 보존한 채 range만 갱신합니다.

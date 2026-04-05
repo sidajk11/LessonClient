@@ -27,6 +27,18 @@ struct BatchesView: View {
                 } label: {
                     Text("예문없는 단어 재생성")
                 }
+
+                NavigationLink {
+                    BatchReGenWordView()
+                } label: {
+                    Text("Word 다시 생성")
+                }
+
+                NavigationLink {
+                    BatchReGenFormsView()
+                } label: {
+                    Text("Form 다시 생성")
+                }
             }
             .navigationTitle("Batches")
         }

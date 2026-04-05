@@ -9,6 +9,8 @@ import SwiftUI
 
 struct FormCreateView: View {
     @StateObject private var vm = FormCreateViewModel()
+    @State private var isShowingSingleAddSheet = false
+    @State private var singleInputWord = ""
     
     let onFinished: () -> Void
 
@@ -39,6 +41,14 @@ struct FormCreateView: View {
                     }
                 }
 
+                if vm.isSingleAdding {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text("Single Adding…")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 if let progress = vm.autoProgressText {
                     Text(progress)
                         .font(.footnote)
@@ -51,22 +61,28 @@ struct FormCreateView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Button("단일생성") {
+                    singleInputWord = ""
+                    isShowingSingleAddSheet = true
+                }
+                .disabled(vm.isSaving || vm.isAutoAdding || vm.isSingleAdding)
+
                 Button("자동추가") {
                     Task {
                         await vm.autoAddMissingForms()
                     }
                 }
-                .disabled(vm.isSaving || vm.isAutoAdding)
+                .disabled(vm.isSaving || vm.isAutoAdding || vm.isSingleAdding)
 
                 Button("다음") {
                     Task { await vm.moveToNextWordWithoutSaving() }
                 }
-                .disabled(!vm.canMoveNextWord || vm.isSaving || vm.isAutoAdding)
+                .disabled(!vm.canMoveNextWord || vm.isSaving || vm.isAutoAdding || vm.isSingleAdding)
 
                 Button("OpenAI 호출") {
                     Task { await vm.callOpenAIForCurrentWord() }
                 }
-                .disabled(!vm.isAutoSessionActive || vm.isSaving || vm.isAutoAdding)
+                .disabled(!vm.isAutoSessionActive || vm.isSaving || vm.isAutoAdding || vm.isSingleAdding)
 
                 Button("Save") {
                     Task {
@@ -80,11 +96,11 @@ struct FormCreateView: View {
                         }
                     }
                 }
-                .disabled(previewRows.isEmpty || vm.isSaving || vm.isAutoAdding)
+                .disabled(previewRows.isEmpty || vm.isSaving || vm.isAutoAdding || vm.isSingleAdding)
                 .keyboardShortcut(.defaultAction)
 
                 Button("Clear") { vm.clearAll() }
-                    .disabled(vm.isSaving || vm.isAutoAdding)
+                    .disabled(vm.isSaving || vm.isAutoAdding || vm.isSingleAdding)
             }
 
             // Error banner
@@ -156,6 +172,39 @@ struct FormCreateView: View {
             }
         }
         .padding(16)
+        .sheet(isPresented: $isShowingSingleAddSheet) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("단일 Form 생성")
+                    .font(.title3)
+                    .bold()
+
+                TextField("단어 입력", text: $singleInputWord)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        let word = singleInputWord
+                        isShowingSingleAddSheet = false
+                        Task { await vm.singleAdd(word: word) }
+                    }
+
+                HStack {
+                    Spacer()
+
+                    Button("취소") {
+                        isShowingSingleAddSheet = false
+                    }
+
+                    Button("생성") {
+                        let word = singleInputWord
+                        isShowingSingleAddSheet = false
+                        Task { await vm.singleAdd(word: word) }
+                    }
+                    .disabled(singleInputWord.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .keyboardShortcut(.defaultAction)
+                }
+            }
+            .padding(16)
+            .frame(width: 360)
+        }
         .onAppear {
             // 예시 텍스트(원하면 지워도 됨)
             if vm.rawText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

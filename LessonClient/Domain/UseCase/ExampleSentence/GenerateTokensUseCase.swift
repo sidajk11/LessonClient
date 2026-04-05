@@ -33,10 +33,9 @@ final class GenerateTokensUseCase {
 
     private let tokenPhraseMerger = SentenceTokenPhraseMerger()
     private let tokenRangesUseCase = TokenRangesUseCase.shared
-    private let formDataSource = WordFormDataSource.shared
     private let sentenceTokenDataSource = SentenceTokenDataSource.shared
 
-    /// 문장을 token 초안 목록으로 만들고 필요하면 phrase/form 정보를 채웁니다.
+    /// 문장을 token 초안 목록으로 만들고 필요하면 phrase 정보를 채웁니다.
     func buildTokenDrafts(
         from sentence: String,
         includePhrases: Bool = true
@@ -58,12 +57,11 @@ final class GenerateTokensUseCase {
                 TokenDraft(surface: $0, phraseId: nil, formId: nil)
             }
         }
-        let drafts = try await fillFormIds(in: mergedDrafts)
-        guard !drafts.isEmpty else {
+        guard !mergedDrafts.isEmpty else {
             throw GenerateTokensUseCaseError.noTokenizableSentence
         }
 
-        return drafts
+        return mergedDrafts
     }
 
     /// 문장 하나를 서버 token 레코드들로 생성합니다.
@@ -88,7 +86,7 @@ final class GenerateTokensUseCase {
                 tokenIndex: idx,
                 surface: draft.surface,
                 phraseId: draft.phraseId,
-                formId: draft.formId,
+                formId: nil,
                 startIndex: rangeDraft.startIndex,
                 endIndex: rangeDraft.endIndex
             )
@@ -96,36 +94,5 @@ final class GenerateTokensUseCase {
         }
 
         return created
-    }
-
-    /// token 초안의 surface를 기준으로 form_id를 보강합니다.
-    private func fillFormIds(in drafts: [TokenDraft]) async throws -> [TokenDraft] {
-        var cache: [String: Int?] = [:]
-        var output: [TokenDraft] = []
-        output.reserveCapacity(drafts.count)
-
-        for draft in drafts {
-            let trimmed = draft.surface.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty || punctuationSet.contains(trimmed) {
-                output.append(draft)
-                continue
-            }
-
-            let key = trimmed.lowercased()
-            let formId: Int?
-            if let cached = cache[key] {
-                formId = cached
-            } else {
-                let rows = try await formDataSource.listWordFormsByForm(form: trimmed, limit: 50)
-                let exact = rows.first(where: { $0.form.lowercased() == key })
-                let picked = exact ?? rows.first
-                formId = picked?.id
-                cache[key] = formId
-            }
-
-            output.append(.init(surface: draft.surface, phraseId: draft.phraseId, formId: formId))
-        }
-
-        return output
     }
 }

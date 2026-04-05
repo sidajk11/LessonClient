@@ -55,6 +55,7 @@ final class AutoGenerateWordSensesUseCase {
     private let formDataSource = WordFormDataSource.shared
     private let phraseDataSource = PhraseDataSource.shared
     private let exampleDataSource = ExampleDataSource.shared
+    private let generateWordUseCase = GenerateWordUseCase.shared
     private let openAIClient = OpenAIClient()
 
     private init() {}
@@ -66,13 +67,35 @@ extension AutoGenerateWordSensesUseCase {
         from rawInput: String,
         onProgress: (String) -> Void = { _ in }
     ) async throws -> AutoGenerateResult {
-        let lemmas = try await normalizedLemmas(from: rawInput, onProgress: onProgress)
+        var lemmas = try await normalizedLemmas(from: rawInput, onProgress: onProgress)
+        if try await shouldIncludeRawInputAsIndependentWord(rawInput: rawInput, lemmas: lemmas, onProgress: onProgress) {
+            lemmas.append(rawInput.trimmed)
+        }
+        
         let generation = try await generateSenses(
             for: lemmas,
             progressPrefix: "Sense 자동 생성 중...",
             onProgress: onProgress
         )
         return AutoGenerateResult(lemmas: lemmas, generation: generation)
+    }
+
+    // word의 기존 form을 지우고 다시 생성한다.
+    func regenerateForms(for word: WordRead) async throws -> Int {
+        let lemma = word.lemma.trimmed
+        guard shouldGenerateForms(for: lemma) else { return 0 }
+
+        let existingForms = try await formDataSource.listWordForms(wordId: word.id, limit: 200, offset: 0)
+        for form in existingForms {
+            try await formDataSource.deleteWordForm(id: form.id)
+        }
+
+        return try await generateForms(for: lemma, word: word)
+    }
+
+    // 새 word에 필요한 form들을 생성한다.
+    func generateForms(for lemma: String, word: WordRead) async throws -> Int {
+        try await generateFormsInternal(for: lemma, word: word)
     }
 
     // lemma 목록을 순회하며 word, sense, form, phrase 생성을 처리한다.
@@ -113,7 +136,7 @@ extension AutoGenerateWordSensesUseCase {
                 )
                 let parsed = try SenseBulkParser.parse(generated)
                 let parsedHead = parsed.head.trimmed
-                if !parsedHead.isEmpty, parsedHead.lowercased().replacingOccurrences(of: "-", with: " ") != lemma.lowercased().replacingOccurrences(of: "’", with: "'") {
+                if !parsedHead.isEmpty, parsedHead.lowercased().normalizedApostrophe != lemma.lowercased().normalizedApostrophe {
                     throw AutoGenerateError.mismatchedHead(expected: lemma, actual: parsedHead)
                 }
 
@@ -148,6 +171,31 @@ extension AutoGenerateWordSensesUseCase {
 }
 
 private extension AutoGenerateWordSensesUseCase {
+    // 원문 자체도 독립 단어 학습 대상인지 LLM으로 한 번 더 판단한다.
+    func shouldIncludeRawInputAsIndependentWord(
+        rawInput: String,
+        lemmas: [String],
+        onProgress: (String) -> Void
+    ) async throws -> Bool {
+        let trimmedInput = rawInput.trimmed
+        guard !trimmedInput.isEmpty else { return false }
+
+        let isSingleEntry = !trimmedInput.contains(",") && !trimmedInput.contains("\n")
+        guard isSingleEntry else { return false }
+
+        let normalizedInput = trimmedInput.normalizedApostrophe.lowercased()
+        let alreadyIncluded = lemmas.contains {
+            $0.normalizedApostrophe.lowercased() == normalizedInput
+        }
+        guard !alreadyIncluded else { return false }
+
+        onProgress("독립 단어 여부 확인 중...")
+        let response = try await openAIClient.generateText(
+            prompt: Prompt.makeIndependentWordPrompts(for: trimmedInput)
+        )
+        return response.trimmed.uppercased().hasPrefix("Y")
+    }
+
     // 자유 입력을 LLM에 보내 서버 처리용 lemma 목록으로 정규화한다.
     func normalizedLemmas(
         from rawInput: String,
@@ -160,6 +208,7 @@ private extension AutoGenerateWordSensesUseCase {
         let generated = try await openAIClient.generateText(
             prompt: Prompt.makeLemmaPrompt(for: trimmedInput)
         )
+        
         let lemmas = parseLemmaOutput(generated)
 
         guard !lemmas.isEmpty else {
@@ -209,14 +258,10 @@ private extension AutoGenerateWordSensesUseCase {
         return value
     }
 
-    // lemma에 대응하는 word를 조회하고 없으면 새로 만든다.
+    // surface에 연결된 word를 찾고 없으면 새로 만든다.
     func ensureWord(for lemma: String) async throws -> (word: WordRead, wordWasCreated: Bool) {
-        if let existing = try? await wordDataSource.getWord(word: lemma) {
-            return (existing, false)
-        }
-
-        let created = try await wordDataSource.createWord(lemma: lemma)
-        return (created, true)
+        let result = try await generateWordUseCase.ensureWord(surface: lemma)
+        return (result.word, result.wordWasCreated)
     }
 
     // 서버에 저장된 기존 sense 목록을 조회한다.
@@ -274,6 +319,11 @@ private extension AutoGenerateWordSensesUseCase {
         let existingForms = try await formDataSource.listWordForms(wordId: word.id, limit: 1, offset: 0)
         guard existingForms.isEmpty else { return 0 }
 
+        return try await generateFormsInternal(for: lemma, word: word)
+    }
+
+    // form 프롬프트를 호출해 실제 form 레코드들을 생성한다.
+    func generateFormsInternal(for lemma: String, word: WordRead) async throws -> Int {
         let generated = try await openAIClient.generateText(
             prompt: Prompt.makeFormPrompt(for: lemma)
         )
@@ -380,7 +430,11 @@ private extension AutoGenerateWordSensesUseCase {
             return false
         }
 
-        _ = try await phraseDataSource.createPhrase(text: lemma, translations: translations)
+        do {
+            _ = try await phraseDataSource.createPhrase(text: lemma, translations: translations)
+        } catch APIClient.APIError.http(let statusCode, _) where statusCode == 409 {
+            return false
+        }
         return true
     }
 

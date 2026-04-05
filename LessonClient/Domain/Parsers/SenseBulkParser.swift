@@ -85,7 +85,7 @@ enum SenseBulkParser {
             guard let idx = line.firstIndex(of: ":") else { continue }
             let key = line[..<idx].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             var value = line[line.index(after: idx)...].trimmingCharacters(in: .whitespacesAndNewlines)
-            value = value.replacingOccurrences(of: "’", with: "'")
+            value = value.normalizedApostrophe
 
             switch key {
             case "word": word = value

@@ -14,7 +14,7 @@ final class RegenerateVocabulariesWithoutExamplesUseCase {
     }
 
     private struct RegenerationTask {
-        let wordId: Int
+        let wordId: Int?
         let lemma: String
     }
 
@@ -100,6 +100,7 @@ final class RegenerateVocabulariesWithoutExamplesUseCase {
         var failures: [String] = []
 
         for (index, input) in inputs.enumerated() {
+            let input = input.normalizedApostrophe
             onProgress("입력 vocabulary 조회 중... (\(index + 1)/\(inputs.count)) \(input)")
 
             do {
@@ -170,8 +171,10 @@ private extension RegenerateVocabulariesWithoutExamplesUseCase {
             onProgress("word 재생성 중... (\(index + 1)/\(tasks.count)) \(task.lemma)")
 
             do {
-                let word = try await wordDataSource.word(id: task.wordId)
-                try await deleteLinkedWord(word)
+                if let wordId = task.wordId {
+                    let word = try await wordDataSource.word(id: wordId)
+                    try await deleteLinkedWord(word)
+                }
 
                 let generation = try await autoGenerateWordSensesUseCase.autoGenerateSenses(
                     from: task.lemma,
@@ -238,20 +241,46 @@ private extension RegenerateVocabulariesWithoutExamplesUseCase {
         onProgress: (String) -> Void
     ) async -> [RegenerationTask] {
         var tasks: [RegenerationTask] = []
-        var seenWordIds: Set<Int> = []
+        var seenTaskKeys: Set<String> = []
 
         for (index, vocabulary) in vocabularies.enumerated() {
             onProgress("연결 word 조회 중... (\(index + 1)/\(vocabularies.count)) \(vocabulary.text)")
 
             do {
-                let word = try await resolveLinkedWord(for: vocabulary)
-                guard let createdAt = word.createdAt, createdAt < cutoffDate else { continue }
-                let lemma = word.lemma.trimmed
-                guard !lemma.isEmpty else {
-                    throw RegenerationError.emptyLemma(wordId: word.id)
+                if let word = try await resolveLinkedWord(for: vocabulary) {
+                    let isEligibleByDate = word.createdAt.map { $0 < cutoffDate } ?? false
+                    guard isEligibleByDate else { continue }
+
+                    let lemma = word.lemma.trimmed
+                    guard !lemma.isEmpty else {
+                        throw RegenerationError.emptyLemma(wordId: word.id)
+                    }
+
+                    let taskKey = "word:\(word.id)"
+                    guard seenTaskKeys.insert(taskKey).inserted else { continue }
+
+                    tasks.append(
+                        RegenerationTask(
+                            wordId: word.id,
+                            lemma: lemma
+                        )
+                    )
+                } else {
+                    let lemma = vocabulary.text.trimmed
+                    guard !lemma.isEmpty else {
+                        throw RegenerationError.noLinkedWord(vocabularyText: vocabulary.text)
+                    }
+
+                    let taskKey = "lemma:\(lemma.lowercased())"
+                    guard seenTaskKeys.insert(taskKey).inserted else { continue }
+
+                    tasks.append(
+                        RegenerationTask(
+                            wordId: nil,
+                            lemma: lemma
+                        )
+                    )
                 }
-                guard seenWordIds.insert(word.id).inserted else { continue }
-                tasks.append(RegenerationTask(wordId: word.id, lemma: lemma))
             } catch {
                 failures.append("\(vocabulary.text): \(error.localizedDescription)")
             }
@@ -260,7 +289,9 @@ private extension RegenerateVocabulariesWithoutExamplesUseCase {
         return tasks
     }
 
-    func resolveLinkedWord(for vocabulary: Vocabulary) async throws -> WordRead {
+    func resolveLinkedWord(
+        for vocabulary: Vocabulary
+    ) async throws -> WordRead? {
         if let wordId = vocabulary.wordId {
             return try await wordDataSource.word(id: wordId)
         }
@@ -275,7 +306,7 @@ private extension RegenerateVocabulariesWithoutExamplesUseCase {
             return try await wordDataSource.word(id: form.wordId)
         }
 
-        throw RegenerationError.noLinkedWord(vocabularyText: vocabulary.text)
+        return nil
     }
 
     func deleteLinkedWord(_ word: WordRead) async throws {

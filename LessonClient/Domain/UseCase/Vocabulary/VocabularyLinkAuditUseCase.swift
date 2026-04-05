@@ -107,7 +107,7 @@ actor VocabularyLinkAuditor {
 
     private func normalizedLookupKey(for text: String) -> String {
         text
-            .replacingOccurrences(of: "’", with: "'")
+            .normalizedApostrophe
             .trimmed
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
     }
