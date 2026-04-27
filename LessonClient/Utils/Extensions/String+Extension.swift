@@ -33,7 +33,6 @@ extension String {
     var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
     var normalizedApostrophe: String {
         replacingOccurrences(of: "’", with: "'")
-            .replacingOccurrences(of: "-", with: " ")
     }
 }
 

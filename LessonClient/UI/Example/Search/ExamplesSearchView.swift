@@ -288,7 +288,7 @@ private struct ExampleSentenceSummaryCard: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                if let sentenceStatus = vm.sentenceStatus(for: example) {
+                ForEach(vm.sentenceStatuses(for: example)) { sentenceStatus in
                     Text(sentenceStatus.text)
                         .font(.caption)
                         .foregroundStyle(sentenceStatus.isWarning ? .red : .secondary)

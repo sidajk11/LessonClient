@@ -19,9 +19,11 @@ final class ExamplesSearchViewModel: ObservableObject {
         let copyText: String
     }
 
-    struct SentenceStatusPresentation {
+    struct SentenceStatusPresentation: Identifiable {
         let text: String
         let isWarning: Bool
+
+        var id: String { text }
     }
 
     private struct ExampleSentenceTarget {
@@ -56,6 +58,8 @@ final class ExamplesSearchViewModel: ObservableObject {
     @Published var senseCefrBySenseId: [Int: String] = [:]
     @Published var hasUnresolvableVocabularyByExampleId: [Int: Bool] = [:]
     @Published var unresolvableVocabularyWordByExampleId: [Int: String] = [:]
+    @Published var hasMissingTokenVocabularyByExampleId: [Int: Bool] = [:]
+    @Published var missingTokenVocabularyWordByExampleId: [Int: String] = [:]
     @Published var highestUnitByExampleId: [Int: Int] = [:]
     @Published var highestUnitWordByExampleId: [Int: String] = [:]
     @Published var needsStartEndIndexRepairByExampleId: [Int: Bool] = [:]
@@ -70,7 +74,8 @@ final class ExamplesSearchViewModel: ObservableObject {
     var displayItems: [Example] {
         items.filter { example in
             if showOnlyUnresolvableVocabulary &&
-                hasUnresolvableVocabularyByExampleId[example.id] != true {
+                hasUnresolvableVocabularyByExampleId[example.id] != true &&
+                hasMissingTokenVocabularyByExampleId[example.id] != true {
                 return false
             }
             if showOnlyTokenNeedingExamples &&
@@ -121,6 +126,8 @@ final class ExamplesSearchViewModel: ObservableObject {
             sortItemsByUnitAscending()
             hasUnresolvableVocabularyByExampleId = [:]
             unresolvableVocabularyWordByExampleId = [:]
+            hasMissingTokenVocabularyByExampleId = [:]
+            missingTokenVocabularyWordByExampleId = [:]
             highestUnitByExampleId = [:]
             highestUnitWordByExampleId = [:]
             needsStartEndIndexRepairByExampleId = [:]
@@ -190,6 +197,8 @@ final class ExamplesSearchViewModel: ObservableObject {
         guard generation == searchGeneration else { return }
         hasUnresolvableVocabularyByExampleId = batch.hasUnresolvableVocabularyByExampleId
         unresolvableVocabularyWordByExampleId = batch.unresolvableVocabularyWordByExampleId
+        hasMissingTokenVocabularyByExampleId = batch.hasMissingTokenVocabularyByExampleId
+        missingTokenVocabularyWordByExampleId = batch.missingTokenVocabularyWordByExampleId
         highestUnitByExampleId = batch.highestUnitByExampleId
         highestUnitWordByExampleId = batch.highestUnitWordByExampleId
     }
@@ -202,21 +211,39 @@ final class ExamplesSearchViewModel: ObservableObject {
     }
 
     func sentenceStatus(for example: Example) -> SentenceStatusPresentation? {
+        sentenceStatuses(for: example).first
+    }
+
+    func sentenceStatuses(for example: Example) -> [SentenceStatusPresentation] {
+        var statuses: [SentenceStatusPresentation] = []
+
+        if hasMissingTokenVocabularyByExampleId[example.id] == true {
+            if let word = missingTokenVocabularyWordByExampleId[example.id], !word.isEmpty {
+                statuses.append(.init(text: "vocabulary 없음 (\(word))", isWarning: true))
+            } else {
+                statuses.append(.init(text: "vocabulary 없음", isWarning: true))
+            }
+        }
+
         if hasUnresolvableVocabularyByExampleId[example.id] == true {
             if let word = unresolvableVocabularyWordByExampleId[example.id], !word.isEmpty {
-                return .init(text: "미학습 단어 포함 (\(word))", isWarning: true)
+                statuses.append(.init(text: "미학습 단어 포함 (\(word))", isWarning: true))
+            } else {
+                statuses.append(.init(text: "미학습 단어 포함", isWarning: true))
             }
-            return .init(text: "미학습 단어 포함", isWarning: true)
         }
+
         if let highestUnit = highestUnitByExampleId[example.id] {
             if highestUnitExceedsExampleUnit(for: example),
                let word = highestUnitWordByExampleId[example.id],
                !word.isEmpty {
-                return .init(text: "최고 unit: \(highestUnit) (\(word))", isWarning: true)
+                statuses.append(.init(text: "최고 unit: \(highestUnit) (\(word))", isWarning: true))
+            } else {
+                statuses.append(.init(text: "최고 unit: \(highestUnit)", isWarning: false))
             }
-            return .init(text: "최고 unit: \(highestUnit)", isWarning: false)
         }
-        return nil
+
+        return statuses
     }
 
     func needsTokenRepair(for example: Example) -> Bool {

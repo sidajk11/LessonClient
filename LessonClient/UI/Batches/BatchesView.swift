@@ -39,6 +39,18 @@ struct BatchesView: View {
                 } label: {
                     Text("Form 다시 생성")
                 }
+
+                NavigationLink {
+                    BatchDeleteLessonsView()
+                } label: {
+                    Text("레슨 삭제")
+                }
+
+                NavigationLink {
+                    BatchAddLessonsView()
+                } label: {
+                    Text("레슨 추가")
+                }
             }
             .navigationTitle("Batches")
         }

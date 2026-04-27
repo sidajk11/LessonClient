@@ -305,80 +305,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "87D814DA-C3F1-4BCB-AD8D-1BD7C76807B8"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "LessonClient/Domain/UseCase/ExampleSentence/BuildTokenLLMTextUseCase.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "73"
-            endingLineNumber = "73"
-            landmarkName = "build(exampleSentence:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "87D814DA-C3F1-4BCB-AD8D-1BD7C76807B8 - 702464978e1ee597"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(5) suspend resume partial function for LessonClient.BuildTokenLLMTextUseCase.build(exampleSentence: LessonClient.ExampleSentence) async throws -&gt; Swift.String"
-                  moduleName = "LessonClient.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/Domain/UseCase/ExampleSentence/BuildTokenLLMTextUseCase.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "73"
-                  endingLineNumber = "73">
-               </Location>
-               <Location
-                  uuid = "87D814DA-C3F1-4BCB-AD8D-1BD7C76807B8 - 2789ceb32025a199"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(7) suspend resume partial function for LessonClient.BuildTokenLLMTextUseCase.build(exampleSentence: LessonClient.ExampleSentence) async throws -&gt; Swift.String"
-                  moduleName = "LessonClient.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/Domain/UseCase/ExampleSentence/BuildTokenLLMTextUseCase.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "73"
-                  endingLineNumber = "73">
-               </Location>
-               <Location
-                  uuid = "87D814DA-C3F1-4BCB-AD8D-1BD7C76807B8 - b6d5ca8047e959c2"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(11) suspend resume partial function for LessonClient.BuildTokenLLMTextUseCase.build(exampleSentence: LessonClient.ExampleSentence) async throws -&gt; Swift.String"
-                  moduleName = "LessonClient.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/Domain/UseCase/ExampleSentence/BuildTokenLLMTextUseCase.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "73"
-                  endingLineNumber = "73">
-               </Location>
-               <Location
-                  uuid = "87D814DA-C3F1-4BCB-AD8D-1BD7C76807B8 - c5700ba557613c4"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(12) suspend resume partial function for LessonClient.BuildTokenLLMTextUseCase.build(exampleSentence: LessonClient.ExampleSentence) async throws -&gt; Swift.String"
-                  moduleName = "LessonClient.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/ym/Work/Flangmind/LessonClient/LessonClient/Domain/UseCase/ExampleSentence/BuildTokenLLMTextUseCase.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "73"
-                  endingLineNumber = "73">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "27B58D9A-62DE-4B84-974E-2DB444DC6F7C"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -817,38 +743,6 @@
             startingLineNumber = "28"
             endingLineNumber = "28"
             landmarkName = "submit()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "927EE09D-E460-461E-BC6F-ACE44AD42B1B"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "LessonClient/UI/Example/Search/ExamplesSearchViewModel.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "562"
-            endingLineNumber = "562"
-            landmarkName = "addSensesForAllExamples()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "23DDAA79-3ED9-4D36-9F65-BE5A803A6C0A"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "LessonClient/Domain/UseCase/ExampleSentence/BuildTokenLLMTextUseCase.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "35"
-            endingLineNumber = "35"
-            landmarkName = "build(exampleSentence:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

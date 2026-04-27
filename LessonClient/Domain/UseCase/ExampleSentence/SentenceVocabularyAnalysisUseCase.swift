@@ -230,7 +230,7 @@ private extension SentenceVocabularyAnalysisUseCase {
             }
         }
 
-        if let wordId = token.sense?.wordId {
+        if let wordId = token.wordId ?? token.sense?.wordId {
             if let cached = vocabularyByWordId[wordId] {
                 return cached
             }
