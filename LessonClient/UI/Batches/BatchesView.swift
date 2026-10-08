@@ -51,6 +51,12 @@ struct BatchesView: View {
                 } label: {
                     Text("레슨 추가")
                 }
+
+                NavigationLink {
+                    SentenceUnitCheckView()
+                } label: {
+                    Text("문장유닛검사")
+                }
             }
             .navigationTitle("Batches")
         }
