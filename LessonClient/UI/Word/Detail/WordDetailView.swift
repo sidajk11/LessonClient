@@ -129,6 +129,14 @@ struct WordDetailView: View {
 
                             Text(cellData.explain)
 
+                            Button {
+                                vm.presentExampleAttachment(for: cellData.senseId)
+                            } label: {
+                                Label("예문 검색·연결", systemImage: "link.badge.plus")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
+
                             if !cellData.examples.isEmpty {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Examples")
@@ -272,6 +280,11 @@ struct WordDetailView: View {
                 }
             }
         }
+        .sheet(item: $vm.exampleAttachmentSense) { sense in
+            NavigationStack {
+                ExampleAttachmentSheet(viewModel: vm, sense: sense)
+            }
+        }
         .overlay(alignment: .top) {
             if showCopyToast {
                 Text(copyStatus)
@@ -284,5 +297,119 @@ struct WordDetailView: View {
             }
         }
         .task { await vm.load() }
+    }
+}
+
+private struct ExampleAttachmentSheet: View {
+    @ObservedObject var viewModel: WordDetailViewModel
+    let sense: WordSenseRead
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("\(sense.senseCode) 의미에 연결할 예문을 검색하세요.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 8) {
+                TextField("예문 또는 번역 검색", text: $viewModel.exampleSearchText)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        Task { await viewModel.searchExamplesForAttachment() }
+                    }
+
+                Button("검색") {
+                    Task { await viewModel.searchExamplesForAttachment() }
+                }
+                .disabled(viewModel.isSearchingExamples)
+            }
+
+            if let error = viewModel.exampleAttachmentErrorMessage {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if viewModel.isSearchingExamples {
+                ProgressView("예문 검색 중...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.exampleSearchResults.isEmpty {
+                ContentUnavailableView(
+                    "연결할 예문이 없습니다",
+                    systemImage: "text.magnifyingglass",
+                    description: Text("검색어를 바꾸어 다시 검색해 보세요.")
+                )
+            } else {
+                List(viewModel.exampleSearchResults) { example in
+                    ExampleAttachmentResultRow(
+                        example: example,
+                        isAttaching: viewModel.isAttachingExample(id: example.id),
+                        onAttach: {
+                            Task {
+                                await viewModel.attachExample(example, to: sense.id)
+                            }
+                        }
+                    )
+                }
+                .listStyle(.plain)
+            }
+        }
+        .padding()
+        .frame(minWidth: 680, minHeight: 480)
+        .navigationTitle("예문 연결")
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("닫기") { dismiss() }
+            }
+        }
+    }
+}
+
+private struct ExampleAttachmentResultRow: View {
+    let example: Example
+    let isAttaching: Bool
+    let onAttach: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(example.firstExampleSentence?.text ?? "문장이 없는 예문")
+                    .font(.body)
+                    .lineLimit(2)
+
+                if let sentence = example.firstExampleSentence {
+                    let translation = sentence.translations.toString()
+                    if !translation.isEmpty {
+                        Text(translation)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+
+                Text("예문 #\(example.id) · 연결 단어: \(example.wordText ?? "-")")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Button {
+                onAttach()
+            } label: {
+                if isAttaching {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Text("연결")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(isAttaching)
+        }
+        .padding(.vertical, 4)
     }
 }

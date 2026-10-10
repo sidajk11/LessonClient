@@ -56,6 +56,15 @@ struct LessonListView: View {
                     .buttonStyle(.borderedProminent)
 
                     NavigationLink {
+                        LessonInsertView {
+                            Task { await vm.refreshCurrentList() }
+                        }
+                    } label: {
+                        Text("삽입")
+                    }
+                    .buttonStyle(.bordered)
+
+                    NavigationLink {
                         LessonCreateView { newLesson in
                             vm.items.insert(newLesson, at: 0)
                         }

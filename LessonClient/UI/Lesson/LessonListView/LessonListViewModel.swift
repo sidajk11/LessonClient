@@ -48,6 +48,15 @@ final class LessonListViewModel: ObservableObject {
         await load()
     }
 
+    /// 레슨 삽입처럼 기존 unit이 함께 변경되는 작업 후 현재 목록을 다시 불러옵니다.
+    func refreshCurrentList() async {
+        if unitText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            await load()
+        } else {
+            await search()
+        }
+    }
+
     // MARK: - Copy / Export
 
     func copyLessons() async {

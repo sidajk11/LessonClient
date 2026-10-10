@@ -36,6 +36,14 @@ final class WordDetailViewModel: ObservableObject {
     @Published var addSenseText: String = ""
     @Published var isAddingSense: Bool = false
 
+    // 기존 예문을 sense에 연결하기 위한 검색 상태
+    @Published var exampleAttachmentSense: WordSenseRead?
+    @Published var exampleSearchText: String = ""
+    @Published private(set) var exampleSearchResults: [Example] = []
+    @Published private(set) var isSearchingExamples: Bool = false
+    @Published private(set) var attachingExampleIds: Set<Int> = []
+    @Published var exampleAttachmentErrorMessage: String?
+
     init(wordId: Int, dataSource: WordDataSource = .shared) {
         self.wordId = wordId
         self.dataSource = dataSource
@@ -65,6 +73,71 @@ final class WordDetailViewModel: ObservableObject {
 
     func isSavingPos(for senseId: Int) -> Bool {
         savingSenseIds.contains(senseId)
+    }
+
+    func presentExampleAttachment(for senseId: Int) {
+        guard let sense = senses.first(where: { $0.id == senseId }) else {
+            errorMessage = "연결할 sense를 찾지 못했습니다."
+            return
+        }
+
+        exampleAttachmentSense = sense
+        exampleSearchText = word?.lemma ?? ""
+        exampleSearchResults = []
+        exampleAttachmentErrorMessage = nil
+
+        Task { await searchExamplesForAttachment() }
+    }
+
+    func searchExamplesForAttachment() async {
+        guard let sense = exampleAttachmentSense else { return }
+        let senseId = sense.id
+        isSearchingExamples = true
+        exampleAttachmentErrorMessage = nil
+        defer { isSearchingExamples = false }
+
+        do {
+            let examples = try await ExampleDataSource.shared.search(
+                q: exampleSearchText,
+                limit: 50
+            )
+
+            guard exampleAttachmentSense?.id == senseId else { return }
+            let attachedExampleIds = Set(sense.examples.map(\.id))
+            exampleSearchResults = examples.filter { !attachedExampleIds.contains($0.id) }
+        } catch {
+            guard exampleAttachmentSense?.id == senseId else { return }
+            exampleAttachmentErrorMessage = error.localizedDescription
+        }
+    }
+
+    func isAttachingExample(id exampleId: Int) -> Bool {
+        attachingExampleIds.contains(exampleId)
+    }
+
+    func attachExample(_ example: Example, to senseId: Int) async {
+        guard exampleAttachmentSense?.id == senseId else { return }
+        guard attachingExampleIds.insert(example.id).inserted else { return }
+        exampleAttachmentErrorMessage = nil
+        defer { attachingExampleIds.remove(example.id) }
+
+        do {
+            _ = try await dataSource.attachExampleToWordSense(
+                senseId: senseId,
+                exampleId: example.id
+            )
+            let refreshedWord = try await dataSource.word(id: wordId)
+            apply(word: refreshedWord)
+            exampleAttachmentSense = nil
+        } catch let error as APIClient.APIError {
+            if case .http(409, _) = error {
+                exampleAttachmentErrorMessage = "이 sense에 이미 연결된 예문입니다."
+            } else {
+                exampleAttachmentErrorMessage = error.localizedDescription
+            }
+        } catch {
+            exampleAttachmentErrorMessage = error.localizedDescription
+        }
     }
 
     func canSavePos(for senseId: Int) -> Bool {

@@ -64,6 +64,8 @@ final class ExamplesSearchViewModel: ObservableObject {
     @Published var highestUnitWordByExampleId: [Int: String] = [:]
     @Published var needsStartEndIndexRepairByExampleId: [Int: Bool] = [:]
     @Published var copyableMessage: CopyableMessage?
+    @Published var examplePendingDeletion: Example?
+    @Published private(set) var deletingExampleIds: Set<Int> = []
     @Published var error: String?
     private let searchLimit: Int = 400
     private var searchGeneration: Int = 0
@@ -88,6 +90,36 @@ final class ExamplesSearchViewModel: ObservableObject {
 
     var hasDeletableUnresolvableItems: Bool {
         return unresolvableVocabularyTargetItems(in: displayItems).contains { !$0.sentence.tokens.isEmpty }
+    }
+
+    func requestExampleDeletion(_ example: Example) {
+        guard !deletingExampleIds.contains(example.id) else { return }
+        examplePendingDeletion = example
+    }
+
+    func isDeleting(_ example: Example) -> Bool {
+        deletingExampleIds.contains(example.id)
+    }
+
+    func deleteExample(_ example: Example) async {
+        guard deletingExampleIds.insert(example.id).inserted else { return }
+        examplePendingDeletion = nil
+        error = nil
+        defer { deletingExampleIds.remove(example.id) }
+
+        do {
+            try await ExampleDataSource.shared.deleteExample(id: example.id)
+            items.removeAll { $0.id == example.id }
+            hasUnresolvableVocabularyByExampleId[example.id] = nil
+            unresolvableVocabularyWordByExampleId[example.id] = nil
+            hasMissingTokenVocabularyByExampleId[example.id] = nil
+            missingTokenVocabularyWordByExampleId[example.id] = nil
+            highestUnitByExampleId[example.id] = nil
+            highestUnitWordByExampleId[example.id] = nil
+            needsStartEndIndexRepairByExampleId[example.id] = nil
+        } catch {
+            self.error = (error as NSError).localizedDescription
+        }
     }
 
     func search() async {

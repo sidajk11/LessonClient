@@ -216,6 +216,28 @@ struct ExamplesSearchView: View {
                     .frame(minWidth: 700, minHeight: 440)
                 }
             }
+            .confirmationDialog(
+                "예문을 삭제할까요?",
+                isPresented: Binding(
+                    get: { vm.examplePendingDeletion != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            vm.examplePendingDeletion = nil
+                        }
+                    }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("삭제", role: .destructive) {
+                    guard let example = vm.examplePendingDeletion else { return }
+                    Task { await vm.deleteExample(example) }
+                }
+                Button("취소", role: .cancel) {}
+            } message: {
+                if let example = vm.examplePendingDeletion {
+                    Text("예문 #\(example.id)을 삭제합니다.")
+                }
+            }
         }
     }
 }
@@ -227,17 +249,38 @@ private struct ExampleSearchRow: View {
     var body: some View {
         let sentences = example.orderedExampleSentences
 
-        if sentences.count > 1 {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 12) {
-                    ForEach(sentences) { sentence in
-                        ExampleSentenceSummaryCard(example: example, sentence: sentence, vm: vm)
-                            .frame(width: 320, alignment: .leading)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("예문 #\(example.id)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button(role: .destructive) {
+                    vm.requestExampleDeletion(example)
+                } label: {
+                    if vm.isDeleting(example) {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Label("삭제", systemImage: "trash")
                     }
                 }
+                .buttonStyle(.bordered)
+                .disabled(vm.isDeleting(example))
             }
-        } else {
-            if let sentence = sentences.first {
+
+            if sentences.count > 1 {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 12) {
+                        ForEach(sentences) { sentence in
+                            ExampleSentenceSummaryCard(example: example, sentence: sentence, vm: vm)
+                                .frame(width: 320, alignment: .leading)
+                        }
+                    }
+                }
+            } else if let sentence = sentences.first {
                 ExampleSentenceSummaryCard(example: example, sentence: sentence, vm: vm)
             }
         }

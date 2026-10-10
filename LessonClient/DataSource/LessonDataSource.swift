@@ -21,6 +21,22 @@ extension LessonDataSource {
         enum CodingKeys: String, CodingKey { case vocabularyId = "vocabulary_id" }
     }
 
+    private struct InsertLessonBody: Encodable {
+        let unit: Int
+        let trackCode: String
+        let grammar: String?
+        let vocabularyIds: [Int]
+        let translations: [LessonTranslation]?
+
+        enum CodingKeys: String, CodingKey {
+            case unit
+            case trackCode = "track_code"
+            case grammar
+            case vocabularyIds = "vocabulary_ids"
+            case translations
+        }
+    }
+
     // MARK: - Lessons
 
     /// 레슨 생성
@@ -45,6 +61,26 @@ extension LessonDataSource {
             translations: translations
         )
         return try await api.request("POST", "admin/lessons", jsonBody: body.toDict(), as: Lesson.self)
+    }
+
+    /// 지정한 unit에 레슨을 삽입합니다.
+    /// 같은 트랙에서 해당 unit 이후의 레슨 unit은 한 칸씩 뒤로 이동합니다.
+    @discardableResult
+    func insertLesson(
+        unit: Int,
+        trackCode: String = "en-US",
+        grammar: String? = nil,
+        translations: [LessonTranslation]? = nil,
+        vocabularyIds: [Int]? = nil
+    ) async throws -> Lesson {
+        let body = InsertLessonBody(
+            unit: unit,
+            trackCode: trackCode,
+            grammar: grammar,
+            vocabularyIds: vocabularyIds ?? [],
+            translations: translations
+        )
+        return try await api.request("POST", "admin/lessons/insert", jsonBody: body.toDict(), as: Lesson.self)
     }
 
     /// 레슨 목록
