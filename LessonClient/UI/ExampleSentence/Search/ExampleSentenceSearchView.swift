@@ -62,6 +62,28 @@ struct ExampleSentenceSearchView: View {
             } message: {
                 Text(vm.error ?? "")
             }
+            .confirmationDialog(
+                "예문 문장을 삭제할까요?",
+                isPresented: Binding(
+                    get: { vm.sentencePendingDeletion != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            vm.sentencePendingDeletion = nil
+                        }
+                    }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("삭제", role: .destructive) {
+                    guard let item = vm.sentencePendingDeletion else { return }
+                    Task { await vm.deleteSentence(item) }
+                }
+                Button("취소", role: .cancel) {}
+            } message: {
+                if let item = vm.sentencePendingDeletion {
+                    Text("문장 #\(item.sentence.id)을 삭제합니다. 이 작업은 되돌릴 수 없습니다.")
+                }
+            }
         }
     }
 }
@@ -147,6 +169,22 @@ private struct ExampleSentenceSearchRow: View {
 
             VStack(alignment: .trailing, spacing: 8) {
                 Button(role: .destructive) {
+                    vm.requestSentenceDeletion(item)
+                } label: {
+                    if vm.isDeletingSentence(for: item.sentence.id) {
+                        ProgressView()
+                    } else {
+                        Label("문장 삭제", systemImage: "trash")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(
+                    vm.isDeletingSentence(for: item.sentence.id) ||
+                    vm.isDeletingExercises(for: item.sentence.id) ||
+                    vm.isGeneratingExercises(for: item.sentence.id)
+                )
+
+                Button(role: .destructive) {
                     Task { await vm.deleteExercises(for: item) }
                 } label: {
                     if vm.isDeletingExercises(for: item.sentence.id) {
@@ -156,7 +194,11 @@ private struct ExampleSentenceSearchRow: View {
                     }
                 }
                 .buttonStyle(.bordered)
-                .disabled(vm.isDeletingExercises(for: item.sentence.id) || vm.isGeneratingExercises(for: item.sentence.id))
+                .disabled(
+                    vm.isDeletingSentence(for: item.sentence.id) ||
+                    vm.isDeletingExercises(for: item.sentence.id) ||
+                    vm.isGeneratingExercises(for: item.sentence.id)
+                )
 
                 Button {
                     Task { await vm.autoGenerateExercises(for: item) }
@@ -168,7 +210,11 @@ private struct ExampleSentenceSearchRow: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(vm.isDeletingExercises(for: item.sentence.id) || vm.isGeneratingExercises(for: item.sentence.id))
+                .disabled(
+                    vm.isDeletingSentence(for: item.sentence.id) ||
+                    vm.isDeletingExercises(for: item.sentence.id) ||
+                    vm.isGeneratingExercises(for: item.sentence.id)
+                )
             }
         }
     }

@@ -28,6 +28,8 @@ final class ExampleSentenceSearchViewModel: ObservableObject {
     @Published var senseCefrBySenseId: [Int: String] = [:]
     @Published var deletingExerciseSentenceIds: Set<Int> = []
     @Published var generatingExerciseSentenceIds: Set<Int> = []
+    @Published var sentencePendingDeletion: Item?
+    @Published private(set) var deletingSentenceIds: Set<Int> = []
 
     private let searchLimit: Int = 400
 
@@ -132,6 +134,31 @@ final class ExampleSentenceSearchViewModel: ObservableObject {
 
     func isGeneratingExercises(for sentenceId: Int) -> Bool {
         generatingExerciseSentenceIds.contains(sentenceId)
+    }
+
+    func requestSentenceDeletion(_ item: Item) {
+        guard !deletingSentenceIds.contains(item.sentence.id) else { return }
+        sentencePendingDeletion = item
+    }
+
+    func isDeletingSentence(for sentenceId: Int) -> Bool {
+        deletingSentenceIds.contains(sentenceId)
+    }
+
+    func deleteSentence(_ item: Item) async {
+        let sentenceId = item.sentence.id
+        guard deletingSentenceIds.insert(sentenceId).inserted else { return }
+
+        sentencePendingDeletion = nil
+        error = nil
+        defer { deletingSentenceIds.remove(sentenceId) }
+
+        do {
+            try await ExampleSentenceDataSource.shared.deleteExampleSentence(id: sentenceId)
+            items.removeAll { $0.sentence.id == sentenceId }
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     func deleteExercises(for item: Item) async {

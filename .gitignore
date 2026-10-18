@@ -2,5 +2,7 @@ LessonClient.xcodeproj/project.xcworkspace/xcuserdata/jeong-yeongmin.xcuserdatad
 LessonClient/UI/.DS_Store
 LessonClient/.DS_Store
 .DS_Store
+.build/
+.swiftpm/
 LessonClient.xcodeproj/project.xcworkspace/xcuserdata/mahnshin.xcuserdatad/UserInterfaceState.xcuserstate
 LessonClient/AI/OpenAIClient.swift

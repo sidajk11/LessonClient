@@ -20,6 +20,12 @@ final class VocabularyDetailViewModel: ObservableObject {
     @Published var word: Vocabulary?
     @Published var translationText: String = ""
     @Published var examples: [Example] = []
+    @Published var isExampleAttachmentPresented: Bool = false
+    @Published var exampleSearchText: String = ""
+    @Published private(set) var exampleSearchResults: [Example] = []
+    @Published private(set) var isSearchingExamples: Bool = false
+    @Published private(set) var attachingExampleIds: Set<Int> = []
+    @Published var exampleAttachmentErrorMessage: String?
     @Published var senseIdText: String = ""
     @Published var currentSense: WordSenseRead?
     @Published var currentForm: WordFormRead?
@@ -245,6 +251,76 @@ final class VocabularyDetailViewModel: ObservableObject {
             info = "예문 연결이 해제되었습니다."
         } catch {
             self.error = (error as NSError).localizedDescription
+        }
+    }
+
+    func presentExampleAttachment() {
+        guard let word else { return }
+
+        exampleSearchText = word.text
+        exampleSearchResults = []
+        exampleAttachmentErrorMessage = nil
+        isExampleAttachmentPresented = true
+
+        Task { await searchExamplesForAttachment() }
+    }
+
+    func searchExamplesForAttachment() async {
+        guard isExampleAttachmentPresented else { return }
+
+        isSearchingExamples = true
+        exampleAttachmentErrorMessage = nil
+        defer { isSearchingExamples = false }
+
+        do {
+            let matchedSentences = try await ExampleSentenceDataSource.shared.searchExampleSentences(
+                q: exampleSearchText,
+                limit: 50
+            )
+            guard isExampleAttachmentPresented else { return }
+
+            // 예문 문장 화면과 동일하게 문장 텍스트/번역을 기준으로 먼저 검색한 뒤,
+            // 해당 문장이 속한 예문을 연결 후보로 표시합니다.
+            var examplesById: [Int: Example] = [:]
+            for exampleId in Set(matchedSentences.map(\.exampleId)).sorted() {
+                examplesById[exampleId] = try await ExampleDataSource.shared.example(id: exampleId)
+            }
+
+            var seenExampleIds = Set<Int>()
+            let searchResults = matchedSentences.compactMap { sentence -> Example? in
+                guard seenExampleIds.insert(sentence.exampleId).inserted else { return nil }
+                return examplesById[sentence.exampleId]
+            }
+
+            let attachedExampleIds = Set(examples.map(\.id))
+            exampleSearchResults = searchResults.filter { !attachedExampleIds.contains($0.id) }
+        } catch {
+            guard isExampleAttachmentPresented else { return }
+            exampleAttachmentErrorMessage = error.localizedDescription
+        }
+    }
+
+    func isAttachingExample(id exampleId: Int) -> Bool {
+        attachingExampleIds.contains(exampleId)
+    }
+
+    func attachExample(_ example: Example) async {
+        guard let word else { return }
+        guard attachingExampleIds.insert(example.id).inserted else { return }
+
+        exampleAttachmentErrorMessage = nil
+        defer { attachingExampleIds.remove(example.id) }
+
+        do {
+            let attachedExample = try await ExampleDataSource.shared.attachExampleToVocabulary(
+                exampleId: example.id,
+                vocabularyId: word.id
+            )
+            examples.insert(attachedExample, at: 0)
+            isExampleAttachmentPresented = false
+            info = "예문이 연결되었습니다."
+        } catch {
+            exampleAttachmentErrorMessage = error.localizedDescription
         }
     }
 

@@ -84,6 +84,21 @@ final class ExampleDataSource {
         )
     }
 
+    /// 예문을 특정 학습단어(vocabulary)에 직접 연결합니다.
+    /// 예문은 하나의 vocabulary_id만 가질 수 있으므로 기존 연결이 있으면 새 단어로 변경됩니다.
+    @discardableResult
+    func attachExampleToVocabulary(exampleId: Int, vocabularyId: Int) async throws -> Example {
+        let body: [String: Any] = [
+            "vocabulary_id": vocabularyId
+        ]
+        return try await api.request(
+            "PUT",
+            "admin/examples/\(exampleId)",
+            jsonBody: body,
+            as: Example.self
+        )
+    }
+
     // MARK: - Search
 
     /// 예문 검색

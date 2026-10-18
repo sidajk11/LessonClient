@@ -1,0 +1,57 @@
+{
+  "lesson.unit": 10,
+  "lesson.korean_topic": "동물",
+  "vocabulary.korean": "고양이",
+  "sentence.text": "A cat.",
+  "exercise.prompt": "A _.",
+  "exercise.type": "combine",
+  "option.raw_display": "translated",
+  "option.language_priority": "cat",
+  "tokens.currency": "I paid $ 5.",
+  "tokens.parentheses": "I (love) cats.",
+  "tokens.contractions": [
+    "Christmas Day",
+    "isn't",
+    "far",
+    "away",
+    "."
+  ],
+  "parser.sense_valid": "accepted",
+  "parser.sense_without_example": "rejected",
+  "parser.sense_empty_pos": "accepted",
+  "attempt.current_response": "correct",
+  "request.attempt_filter": {
+    "method": "GET",
+    "path": "/admin/exercise-attempts",
+    "query": {
+      "user_id": "1",
+      "attempt_type": "correct",
+      "limit": "100",
+      "offset": "0"
+    }
+  },
+  "request.lesson_insert": {
+    "method": "POST",
+    "path": "/admin/lessons/insert",
+    "query": {},
+    "body": {
+      "unit": 10,
+      "track_code": "en-US",
+      "vocabulary_ids": []
+    }
+  },
+  "request.example_attach": {
+    "method": "PUT",
+    "path": "/admin/examples/3",
+    "query": {},
+    "body": {
+      "vocabulary_id": 7
+    }
+  },
+  "login.decoded_fields": {
+    "username": "test+tag@example.com",
+    "password": "p+a&b=c",
+    "grant_type": "password",
+    "scope": ""
+  }
+}

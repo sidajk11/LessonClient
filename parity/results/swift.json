@@ -1,0 +1,64 @@
+{
+  "attempt.current_response" : "decode_error",
+  "exercise.prompt" : "A _.",
+  "exercise.type" : "combine",
+  "lesson.korean_topic" : "동물",
+  "lesson.unit" : 10,
+  "login.decoded_fields" : {
+    "b" : "c",
+    "grant_type" : "password",
+    "password" : "p a",
+    "scope" : "",
+    "username" : "test tag@example.com"
+  },
+  "option.language_priority" : "고양이",
+  "option.raw_display" : "visible",
+  "parser.sense_empty_pos" : "rejected",
+  "parser.sense_valid" : "accepted",
+  "parser.sense_without_example" : "accepted",
+  "request.attempt_filter" : {
+    "method" : "GET",
+    "path" : "\/admin\/exercise-attempts",
+    "query" : {
+      "is_correct" : "true",
+      "limit" : "100",
+      "offset" : "0",
+      "user_id" : "1"
+    }
+  },
+  "request.example_attach" : {
+    "body" : {
+      "vocabulary_id" : 7
+    },
+    "method" : "PUT",
+    "path" : "\/admin\/examples\/3",
+    "query" : {
+
+    }
+  },
+  "request.lesson_insert" : {
+    "body" : {
+      "track_code" : "en-US",
+      "unit" : 10,
+      "vocabulary_ids" : [
+
+      ]
+    },
+    "method" : "POST",
+    "path" : "\/admin\/lessons\/insert",
+    "query" : {
+
+    }
+  },
+  "sentence.text" : "A cat.",
+  "tokens.contractions" : [
+    "Christmas Day",
+    "isn't",
+    "far",
+    "away",
+    "."
+  ],
+  "tokens.currency" : "I paid$5.",
+  "tokens.parentheses" : "I ( love ) cats.",
+  "vocabulary.korean" : "고양이"
+}
